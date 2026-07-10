@@ -38,20 +38,60 @@ export function isLaunchMarket(countryCode: string): boolean {
   return LAUNCH_MARKETS.includes(countryCode.toUpperCase());
 }
 
+export type LegalForm = "incorporated" | "sole_trader" | "unknown";
+export type ContactType = "role" | "named" | "unknown";
+
 /**
  * The "sole-trader trap" guardrail. In opt-out markets the cold-email exemption
  * covers incorporated companies and generic/role inboxes — NOT sole traders or
- * named-individual addresses. Returns whether this lead is safe to cold-email.
+ * named-individual addresses. Defensible ONLY when we have positive evidence:
+ * an incorporated entity (non-named contact) or a generic role inbox.
  */
 export function isEmailable(input: {
   countryCode: string;
-  legalForm?: "incorporated" | "sole_trader" | "unknown";
-  contactType?: "role" | "named" | "unknown";
+  legalForm?: LegalForm;
+  contactType?: ContactType;
 }): boolean {
   if (!isLaunchMarket(input.countryCode)) return false;
-  if (input.legalForm === "sole_trader") return false;
-  if (input.contactType === "named") return false;
-  return true;
+  if (input.contactType === "named") return false; // a named individual = opt-in everywhere
+  if (input.legalForm === "sole_trader") return false; // natural person
+  if (input.contactType === "role") return true; // generic inbox (info@, contact@…)
+  if (input.legalForm === "incorporated") return true; // company, non-named contact
+  return false; // unknown/unknown → not defensible
+}
+
+/** Incorporation-marker suffixes in the business name, per launch market. */
+const INCORPORATED_SUFFIXES: Record<string, string[]> = {
+  GB: ["ltd", "limited", "llp", "plc"],
+  IE: ["ltd", "limited", "teoranta", "teo", "plc", "dac", "clg"],
+  NL: ["bv", "nv"],
+  SE: ["ab"],
+  NO: ["as", "asa"],
+};
+
+/** Infer legal form from the business name. Absence of a marker → unknown (not sole_trader). */
+export function inferLegalForm(name: string, countryCode: string): LegalForm {
+  const suffixes = INCORPORATED_SUFFIXES[countryCode.toUpperCase()];
+  if (!suffixes) return "unknown";
+  const tokens = name.toLowerCase().replace(/[.,]/g, "").split(/\s+/).filter(Boolean);
+  return tokens.some((t) => suffixes.includes(t)) ? "incorporated" : "unknown";
+}
+
+const ROLE_LOCALPARTS = new Set([
+  "info", "contact", "hello", "hi", "hey", "office", "admin", "enquiries", "enquiry",
+  "reception", "reservations", "reservation", "booking", "bookings", "sales", "mail",
+  "email", "team", "support", "geral", "kontakt", "post", "boka", "hallo", "kontor",
+]);
+
+/** Classify an email address as a generic role inbox vs a named individual. */
+export function inferContactType(email?: string | null): ContactType {
+  if (!email) return "unknown";
+  const local = (email.split("@")[0] ?? "").toLowerCase().replace(/[0-9]+$/, "");
+  if (!local) return "unknown";
+  if (ROLE_LOCALPARTS.has(local)) return "role";
+  if (/^[a-z]+[._-][a-z]+$/.test(local)) return "named"; // firstname.lastname
+  if (/^[a-z]{2,12}$/.test(local)) return "named"; // single given name
+  return "unknown";
 }
 
 // ---------------------------------------------------------------------------

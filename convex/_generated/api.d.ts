@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as foursquare from "../foursquare.js";
 import type * as leads from "../leads.js";
 import type * as lib_domain from "../lib/domain.js";
 import type * as lib_enrich from "../lib/enrich.js";
@@ -25,6 +26,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  foursquare: typeof foursquare;
   leads: typeof leads;
   "lib/domain": typeof lib_domain;
   "lib/enrich": typeof lib_enrich;

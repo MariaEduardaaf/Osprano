@@ -39,6 +39,48 @@ export interface PageSpeed {
   mobileFriendly: boolean; // viewport audit passed
 }
 
+const JUNK_EMAIL =
+  /(sentry|example\.(com|org)|wixpress|godaddy|googleapis|schema\.org|w3\.org|\.png|\.jpg|@x\.com)/i;
+
+/** Extract a contact email from the business's own website (free, legit). Prefers role/same-domain. */
+export async function extractEmail(url: string): Promise<string | null> {
+  const host = url.replace(/^https?:\/\//, "");
+  try {
+    const res = await fetchWithTimeout(`https://${host}`, 8000, {
+      headers: { "user-agent": "Mozilla/5.0 (compatible; sitescout/1.0)" },
+    });
+    if (!res.ok) return null;
+    const html = (await res.text()).slice(0, 500_000);
+
+    const found = new Set<string>();
+    for (const m of html.match(/mailto:([^"'?\s>]+)/gi) ?? []) {
+      found.add(m.replace(/mailto:/i, "").split("?")[0]);
+    }
+    for (const e of html.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) ?? []) {
+      found.add(e);
+    }
+
+    const clean = [...found]
+      .map((e) => e.toLowerCase())
+      .filter((e) => e.includes("@") && !JUNK_EMAIL.test(e) && !/\.(png|jpe?g|gif|webp|css|js)$/i.test(e));
+    if (!clean.length) return null;
+
+    const domain = host.replace(/^www\./, "").split("/")[0];
+    const base = domain.split(".")[0];
+    const sameDomain = clean.filter((e) => {
+      const d = e.split("@")[1] ?? "";
+      return d === domain || d.includes(base);
+    });
+    const pool = sameDomain.length ? sameDomain : clean;
+    const role = pool.find((e) =>
+      /^(info|contact|hello|office|admin|enquir|reserv|booking|sales|mail|reception|geral|kontakt)/i.test(e),
+    );
+    return role ?? pool[0];
+  } catch {
+    return null;
+  }
+}
+
 /** Google PageSpeed Insights (mobile). Returns null on any failure. */
 export async function fetchPageSpeed(url: string, key?: string): Promise<PageSpeed | null> {
   const endpoint =

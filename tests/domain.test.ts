@@ -5,6 +5,8 @@ import {
   computeScore,
   tierFromScore,
   isEmailable,
+  inferLegalForm,
+  inferContactType,
   type Signals,
 } from "../convex/lib/domain.ts";
 
@@ -72,21 +74,47 @@ test("tierFromScore thresholds", () => {
   assert.equal(tierFromScore(10), "cold");
 });
 
-test("isEmailable: opt-out market OK", () => {
-  assert.equal(isEmailable({ countryCode: "GB" }), true);
-  assert.equal(isEmailable({ countryCode: "NL" }), true);
+test("isEmailable: needs positive evidence (incorporated or role inbox)", () => {
+  // bare launch market, no evidence → not defensible
+  assert.equal(isEmailable({ countryCode: "GB" }), false);
+  assert.equal(isEmailable({ countryCode: "NL" }), false);
+  // positive evidence unlocks it
+  assert.equal(isEmailable({ countryCode: "GB", legalForm: "incorporated" }), true);
+  assert.equal(isEmailable({ countryCode: "NL", contactType: "role" }), true);
 });
 
-test("isEmailable: opt-in market blocked", () => {
-  assert.equal(isEmailable({ countryCode: "DE" }), false);
-  assert.equal(isEmailable({ countryCode: "CH" }), false);
+test("isEmailable: opt-in market always blocked", () => {
+  assert.equal(isEmailable({ countryCode: "DE", legalForm: "incorporated" }), false);
+  assert.equal(isEmailable({ countryCode: "CH", contactType: "role" }), false);
 });
 
 test("isEmailable: sole-trader trap", () => {
   assert.equal(isEmailable({ countryCode: "GB", legalForm: "sole_trader" }), false);
   assert.equal(isEmailable({ countryCode: "GB", contactType: "named" }), false);
+  // named individual beats incorporation (a person = opt-in)
+  assert.equal(
+    isEmailable({ countryCode: "GB", legalForm: "incorporated", contactType: "named" }),
+    false,
+  );
   assert.equal(
     isEmailable({ countryCode: "GB", legalForm: "incorporated", contactType: "role" }),
     true,
   );
+});
+
+test("inferLegalForm: name suffix", () => {
+  assert.equal(inferLegalForm("Smith & Sons Ltd", "GB"), "incorporated");
+  assert.equal(inferLegalForm("Jansen B.V.", "NL"), "incorporated");
+  assert.equal(inferLegalForm("Nordic Bygg AS", "NO"), "incorporated");
+  assert.equal(inferLegalForm("The Corner Café", "GB"), "unknown");
+  assert.equal(inferLegalForm("Padaria X", "PT"), "unknown"); // non-launch market
+});
+
+test("inferContactType: role vs named", () => {
+  assert.equal(inferContactType("info@x.co.uk"), "role");
+  assert.equal(inferContactType("bookings2024@x.com"), "role");
+  assert.equal(inferContactType("john.smith@x.com"), "named");
+  assert.equal(inferContactType("maria@x.com"), "named");
+  assert.equal(inferContactType(undefined), "unknown");
+  assert.equal(inferContactType("x1y2z3@x.com"), "unknown");
 });

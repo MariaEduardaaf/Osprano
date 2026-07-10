@@ -11,8 +11,17 @@ import {
   computeScore,
   tierFromScore,
   isEmailable,
+  inferLegalForm,
+  inferContactType,
   type Signals,
 } from "./lib/domain";
+
+const legalFormV = v.union(
+  v.literal("incorporated"),
+  v.literal("sole_trader"),
+  v.literal("unknown"),
+);
+const contactTypeV = v.union(v.literal("role"), v.literal("named"), v.literal("unknown"));
 
 const stageArg = v.union(
   v.literal("base"),
@@ -142,7 +151,9 @@ export const insertDiscovered = internalMutation({
       sparseProfile: !args.phone || args.rating === undefined || (args.reviewsCount ?? 0) < 5,
     };
     const score = computeScore(signals);
-    const emailable = isEmailable({ countryCode: args.countryCode });
+    const legalForm = inferLegalForm(args.name, args.countryCode);
+    const contactType = inferContactType(args.email);
+    const emailable = isEmailable({ countryCode: args.countryCode, legalForm, contactType });
 
     const existing = await ctx.db
       .query("leads")
@@ -163,6 +174,8 @@ export const insertDiscovered = internalMutation({
         score,
         tier: tierFromScore(score),
         scoredAt: now,
+        legalForm,
+        contactType,
         emailable,
         fetchedAt: now,
       });
@@ -187,8 +200,8 @@ export const insertDiscovered = internalMutation({
       tier: tierFromScore(score),
       signals,
       scoredAt: now,
-      legalForm: "unknown",
-      contactType: "unknown",
+      legalForm,
+      contactType,
       emailable,
       stage: "base",
       stageUpdatedAt: now,
@@ -197,19 +210,27 @@ export const insertDiscovered = internalMutation({
   },
 });
 
-/** Apply the refined Digital Presence Score after enrichment. */
+/** Apply the refined Digital Presence Score + compliance enrichment after scoring. */
 export const applyScore = internalMutation({
   args: {
     leadId: v.id("leads"),
     signals: signalsV,
     score: v.number(),
     tier: v.union(v.literal("hot"), v.literal("warm"), v.literal("cold")),
+    email: v.optional(v.string()),
+    legalForm: legalFormV,
+    contactType: contactTypeV,
+    emailable: v.boolean(),
   },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.leadId, {
       signals: args.signals,
       score: args.score,
       tier: args.tier,
+      ...(args.email ? { email: args.email } : {}),
+      legalForm: args.legalForm,
+      contactType: args.contactType,
+      emailable: args.emailable,
       scoredAt: Date.now(),
     });
   },
