@@ -1,63 +1,74 @@
 # sitescout — setup
 
-Stack: **Next.js 16** (App Router, TS strict, Tailwind 4) · **Convex** (dados + jobs) · **Clerk** (auth) · **Resend** (email).
+Concorrente do LeadSite para o **mercado europeu**. Acha negócios locais com presença
+digital fraca, pontua a dor (Digital Presence Score) e aborda por **email, compliant by design**.
 
-## 1. Contas (grátis pra começar)
+**Stack:** Next.js 16 (App Router, TS strict, Tailwind 4) · Convex (dados + jobs) · Clerk (auth) ·
+Anthropic (redação) · Resend (email opcional).
 
-| Serviço | Pra quê | Onde |
+## 1. Contas
+
+| Serviço | Pra quê | Obrigatório? |
 |---|---|---|
-| **Convex** | banco reativo + jobs de scoring | convex.dev |
-| **Clerk** | login/contas | clerk.com |
-| **Google Cloud** | Places + PageSpeed (Fase 1) | console.cloud.google.com |
-| **Resend** | envio de email (Fase 3) | resend.com |
+| **Convex** (convex.dev) | banco + jobs de scoring | sim |
+| **Clerk** (clerk.com) | login/contas | sim |
+| **Google Cloud** (Places API) | descoberta de leads | sim (é pago) |
+| **Anthropic** (console.anthropic.com) | redação da abordagem | sim p/ outreach |
+| **Resend** (resend.com) | envio automático de email | opcional |
 
-## 2. Rodar local
+## 2. Rodar
 
 ```bash
-cp .env.example .env.local        # preencha as chaves do Clerk
+cp .env.example .env.local              # preencha as chaves do Clerk
 
-npx convex dev                    # 1º run: cria o deployment, gera convex/_generated,
-                                  # e escreve NEXT_PUBLIC_CONVEX_URL no .env.local
+npx convex dev                          # cria/conecta o deployment e escreve NEXT_PUBLIC_CONVEX_URL
 ```
 
-No **Clerk**: crie um JWT Template chamado `convex`. Depois aponte o Convex pra ele:
+No **Clerk**: crie um JWT Template chamado `convex`. Depois configure as variáveis do
+**deployment Convex** (server-side; NÃO vão no .env.local):
 
 ```bash
 npx convex env set CLERK_JWT_ISSUER_DOMAIN https://<sua-app>.clerk.accounts.dev
+npx convex env set GOOGLE_PLACES_API_KEY   <chave>
+npx convex env set ANTHROPIC_API_KEY       <chave>
+npx convex env set APP_URL                 http://localhost:3000
+# opcionais:
+npx convex env set GOOGLE_PAGESPEED_API_KEY <chave>
+npx convex env set RESEND_API_KEY <chave> && npx convex env set RESEND_FROM "Você <voce@dominio.com>"
 ```
 
 Em outro terminal:
 
 ```bash
-pnpm dev                          # http://localhost:3000
+pnpm dev                                 # http://localhost:3000
 ```
 
 ## 3. Verificação
 
 ```bash
-pnpm typecheck                    # tsc do app
-pnpm lint                         # eslint
-# o `npx convex dev` faz o typecheck do backend (pasta convex/)
+pnpm typecheck    # tsc do app        (verde)
+pnpm lint         # eslint            (verde)
+pnpm test         # lógica do Score   (12/12)
+npx convex dev --once   # typecheck + deploy do backend
 ```
 
-## Estado atual — Fase 0 (Fundação) ✅
+## Estado — MVP V1 completo ✅
 
-- Scaffold Next 16 + Convex + Clerk + Resend/Zod
-- Schema Convex: `leads`, `previews`, `outreach`, `events`, `users`
-- Domínio compartilhado (`convex/lib/domain.ts`): mercados opt-out, denylist "só-social",
-  pesos do Digital Presence Score, guardrail de compliance (armadilha do autônomo)
-- Auth Clerk (`proxy.ts` do Next 16) + provider Convex↔Clerk
-- Shell do dashboard (Dashboard / Leads / CRM / Outreach) com empty states
+| Fase | O que faz | Status |
+|---|---|---|
+| 0 · Fundação | scaffold, schema, auth, shell | ✅ |
+| 1 · Descoberta + Score | Places + Foursquare-ready, HTTPS/PageSpeed, Score 0–100 | ✅ |
+| 2 · Preview + tracking | preview rastreado /p/[token] + sinal de abertura | ✅ |
+| 3 · Outreach compliant | redação IA + guardrail + copiar/enviar | ✅ |
+| 4 · Pipeline/CRM + dashboard | kanban com estágios + funil ao vivo | ✅ |
 
-## Próximas fases
+## Notas de arquitetura
 
-1. **Descoberta + Score** — Google Places + Foursquare OS, Digital Presence Score
-2. **Preview + tracking** — preview em link rastreado + notificação de abertura
-3. **Outreach compliant** — redação IA + envio email (identificação/opt-out) + guardrails
-4. **Pipeline/CRM + dashboard** — funil ao vivo
-
-> **Notas de arquitetura**
-> - Next 16 renomeou `middleware.ts` → `proxy.ts` (runtime nodejs). Se o Clerk exigir o
->   nome legado no futuro, renomeie o arquivo e o export pra `middleware`.
-> - ToS do Google Places: só o `place_id` é armazenável pra sempre; os demais campos, ~30 dias
->   (ver `fetchedAt`). A base armazenável/revendável é o Foursquare OS.
+- **Compliant by design:** busca e outreach travados aos mercados **opt-out** (UK/NL/IE/SE/NO);
+  `isEmailable()` aplica a "armadilha do autônomo" (só incorporados / inbox de função).
+- **Next 16:** `middleware.ts` virou `proxy.ts` (runtime nodejs); `params` é `Promise` (await).
+- **Google Places ToS:** só o `place_id` é armazenável pra sempre; demais campos ~30 dias
+  (`fetchedAt`). Base armazenável/revendável = Foursquare OS.
+- **WhatsApp a frio = ilegal na UE** sem opt-in → só pós-resposta (fora do V1).
+- **Deployment local** (`--dev-deployment local`) foi usado para verificação sem conta cloud;
+  rode `npx convex dev` com a sua conta para produção.
