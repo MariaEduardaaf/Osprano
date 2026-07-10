@@ -26,8 +26,8 @@ const contactTypeV = v.union(v.literal("role"), v.literal("named"), v.literal("u
 const stageArg = v.union(
   v.literal("base"),
   v.literal("approached"),
-  v.literal("opened"),
-  v.literal("replied"),
+  v.literal("scheduled"),
+  v.literal("followup"),
   v.literal("converted"),
   v.literal("lost"),
 );
@@ -83,7 +83,7 @@ export const stats = query({
       .withIndex("by_org", (q) => q.eq("orgId", orgId))
       .collect();
 
-    const byStage = { base: 0, approached: 0, opened: 0, replied: 0, converted: 0, lost: 0 };
+    const byStage = { base: 0, approached: 0, scheduled: 0, followup: 0, converted: 0, lost: 0 };
     let emailable = 0;
     let noSite = 0;
     for (const lead of leads) {

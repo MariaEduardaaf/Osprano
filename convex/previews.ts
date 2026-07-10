@@ -114,8 +114,8 @@ export const recordOpen = mutation({
     });
 
     const lead = await ctx.db.get(preview.leadId);
-    if (lead && (lead.stage === "base" || lead.stage === "approached")) {
-      await ctx.db.patch(lead._id, { stage: "opened", stageUpdatedAt: now });
+    if (lead && lead.stage === "base") {
+      await ctx.db.patch(lead._id, { stage: "approached", stageUpdatedAt: now });
     }
   },
 });

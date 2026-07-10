@@ -14,8 +14,8 @@ import { v } from "convex/values";
 const stage = v.union(
   v.literal("base"), // discovered, not yet contacted
   v.literal("approached"), // outreach sent
-  v.literal("opened"), // prospect opened the preview
-  v.literal("replied"), // prospect replied
+  v.literal("scheduled"), // meeting agreed
+  v.literal("followup"), // being nurtured
   v.literal("converted"), // closed / won
   v.literal("lost"),
 );

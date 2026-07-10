@@ -9,11 +9,15 @@ import { PIPELINE_STAGES, MARKETS } from "@convex/lib/domain";
 const STAGE_COLOR: Record<string, string> = {
   base: "var(--cold)",
   approached: "var(--brand)",
-  opened: "var(--warm)",
-  replied: "var(--warm)",
+  scheduled: "var(--warm)",
+  followup: "var(--warm)",
   converted: "var(--brand)",
   lost: "var(--faint)",
 };
+
+function pct(num: number, den: number): number {
+  return den > 0 ? Math.round((num / den) * 100) : 0;
+}
 
 const SIGNAL_LABEL: Record<string, string> = {
   noSite: "Sem site",
@@ -58,6 +62,15 @@ export default function DashboardPage() {
   const analytics = useQuery(api.leads.analytics);
   const activity = useQuery(api.events.recent);
   const total = stats?.total ?? 0;
+  const by = stats?.byStage;
+  const abordados = by ? total - by.base : 0;
+  const rates = [
+    { key: "conv", label: "Taxa de conversão", value: pct(by?.converted ?? 0, total), desc: "Convertidos / Total — o KPI principal do funil.", color: "var(--brand)" },
+    { key: "abord", label: "Taxa de abordagem", value: pct(abordados, total), desc: "Abordados / Total — quanto da base está sendo trabalhado.", color: "var(--brand)" },
+    { key: "agend", label: "Taxa de agendamento", value: pct(by?.scheduled ?? 0, abordados), desc: "Agendados / Abordados — eficiência da abordagem fria.", color: "var(--warm)" },
+    { key: "fup", label: "Taxa de follow up", value: pct(by?.followup ?? 0, abordados), desc: "Follow Up / Abordados — estado transitório; muitos = pipeline parado.", color: "var(--warm)" },
+    { key: "perd", label: "Taxa de perdidos", value: pct(by?.lost ?? 0, abordados), desc: "Perdidos / Abordados — problema no script ou no perfil.", color: "var(--hot)" },
+  ];
 
   const countryRows = Object.entries(analytics?.byCountry ?? {})
     .sort((a, b) => b[1] - a[1])
@@ -85,6 +98,35 @@ export default function DashboardPage() {
         <StatCard label="Sem site / social" value={stats?.noSite ?? "—"} hint="maior intenção" />
         <StatCard label="Abordáveis" value={stats?.emailable ?? "—"} hint="opt-out + incorporados" />
         <StatCard label="Convertidos" value={stats?.byStage.converted ?? "—"} hint="fechados" accent />
+      </div>
+
+      {/* Funnel rates */}
+      <div className="mt-6">
+        <ChartCard title="Taxas do funil" right="performance">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {rates.map((r) => (
+              <div key={r.key} className="rounded-xl border border-border bg-surface-2 p-4">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: r.color }} />
+                  <span className="text-xs font-semibold text-foreground">{r.label}</span>
+                </div>
+                <div
+                  className="mt-2 font-display text-3xl font-bold tabular-nums"
+                  style={{ color: r.color }}
+                >
+                  {r.value}%
+                </div>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-border">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${r.value}%`, background: r.color }}
+                  />
+                </div>
+                <p className="mt-2.5 text-[11px] leading-snug text-muted">{r.desc}</p>
+              </div>
+            ))}
+          </div>
+        </ChartCard>
       </div>
 
       {/* Funnel + tier donut */}

@@ -13,8 +13,8 @@ const COLUMNS = PIPELINE_STAGES.filter((s) => s.id !== "lost");
 const STAGE_DOT: Record<string, string> = {
   base: "var(--cold)",
   approached: "var(--brand)",
-  opened: "var(--warm)",
-  replied: "var(--warm)",
+  scheduled: "var(--warm)",
+  followup: "var(--warm)",
   converted: "var(--brand)",
 };
 
@@ -135,7 +135,7 @@ export default function CrmPage() {
                             </a>
                           )}
                         </div>
-                        {(lead.stage === "replied" || lead.stage === "converted") && (
+                        {(lead.stage === "scheduled" || lead.stage === "converted") && (
                           <div className="mt-2 border-t border-border pt-2">
                             <WhatsAppFollowup leadId={lead._id} phone={lead.phone} />
                           </div>

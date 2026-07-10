@@ -208,13 +208,13 @@ export function tierFromScore(score: number): Tier {
 // Pipeline stages & starter categories
 // ---------------------------------------------------------------------------
 
-export type Stage = "base" | "approached" | "opened" | "replied" | "converted" | "lost";
+export type Stage = "base" | "approached" | "scheduled" | "followup" | "converted" | "lost";
 
 export const PIPELINE_STAGES: { id: Stage; label: string }[] = [
   { id: "base", label: "Base" },
   { id: "approached", label: "Abordado" },
-  { id: "opened", label: "Abriu preview" },
-  { id: "replied", label: "Respondeu" },
+  { id: "scheduled", label: "Agendado" },
+  { id: "followup", label: "Follow Up" },
   { id: "converted", label: "Convertido" },
   { id: "lost", label: "Perdido" },
 ];

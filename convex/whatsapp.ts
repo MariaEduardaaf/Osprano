@@ -14,8 +14,8 @@ export const sendFollowup = action({
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.runQuery(internal.leads.getInternal, { leadId });
     if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
-    if (lead.stage !== "replied" && lead.stage !== "converted") {
-      throw new Error("WhatsApp só depois que o prospect responde/opta (nunca a frio).");
+    if (lead.stage !== "scheduled" && lead.stage !== "converted") {
+      throw new Error("WhatsApp só depois que o prospect agenda/opta (nunca a frio).");
     }
     if (!lead.phone) throw new Error("Lead sem telefone.");
 
