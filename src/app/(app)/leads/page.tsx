@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useAction, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { MARKETS, LAUNCH_MARKETS, CATEGORY_OPTIONS, CITIES_BY_COUNTRY } from "@convex/lib/domain";
+import { MdOutlineSearch } from "react-icons/md";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { LeadCard } from "@/components/lead-card";
 import { GeneratePreviewButton } from "@/components/generate-preview-button";
@@ -86,8 +87,9 @@ export default function LeadsPage() {
         <button
           type="submit"
           disabled={busy || !category.trim() || !city.trim()}
-          className="rounded-lg bg-brand px-5 py-2 text-sm font-semibold text-brand-fg shadow-[var(--shadow-sm)] transition-colors hover:bg-brand-hover disabled:opacity-40"
+          className="flex items-center gap-1.5 rounded-lg bg-brand px-5 py-2 text-sm font-semibold text-brand-fg shadow-[var(--shadow-sm)] transition-colors hover:bg-brand-hover disabled:opacity-40"
         >
+          <MdOutlineSearch size={16} />
           {busy ? "Buscando…" : "Buscar"}
         </button>
       </form>

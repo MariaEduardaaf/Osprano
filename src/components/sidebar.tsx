@@ -4,13 +4,21 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
+import {
+  MdOutlineDashboard,
+  MdOutlineTravelExplore,
+  MdOutlineViewKanban,
+  MdOutlineForwardToInbox,
+  MdOutlineLanguage,
+} from "react-icons/md";
+import type { IconType } from "react-icons";
 
-const NAV = [
-  { href: "/dashboard", label: "Dashboard", icon: "M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" },
-  { href: "/leads", label: "Leads", icon: "M3 6h18M3 12h18M3 18h12" },
-  { href: "/crm", label: "CRM", icon: "M4 4h4v16H4zM10 4h4v16h-4zM16 4h4v16h-4z" },
-  { href: "/outreach", label: "Outreach", icon: "M4 4h16v12H7l-3 3z" },
-  { href: "/sites", label: "Meus Projetos", icon: "M3 5h18v14H3zM3 9h18" },
+const NAV: { href: string; label: string; Icon: IconType }[] = [
+  { href: "/dashboard", label: "Dashboard", Icon: MdOutlineDashboard },
+  { href: "/leads", label: "Leads", Icon: MdOutlineTravelExplore },
+  { href: "/crm", label: "CRM", Icon: MdOutlineViewKanban },
+  { href: "/outreach", label: "Outreach", Icon: MdOutlineForwardToInbox },
+  { href: "/sites", label: "Meus Projetos", Icon: MdOutlineLanguage },
 ];
 
 function Logo() {
@@ -84,19 +92,7 @@ export function Sidebar() {
                 : "text-muted hover:bg-surface-2/60 hover:text-foreground"
             }`}
           >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className={active ? "text-brand" : "text-faint"}
-            >
-              <path d={item.icon} />
-            </svg>
+            <item.Icon size={19} className={active ? "text-brand" : "text-faint"} />
             {item.label}
           </Link>
         );

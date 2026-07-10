@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
+import { MdOutlineSettings } from "react-icons/md";
 import { Sidebar } from "@/components/sidebar";
 
 const DEMO = process.env.NEXT_PUBLIC_DEMO === "1";
@@ -10,7 +11,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <header className="flex h-14 shrink-0 items-center justify-end gap-4 border-b border-border bg-surface px-6">
-          <Link href="/settings" className="text-sm font-medium text-muted hover:text-foreground">
+          <Link
+            href="/settings"
+            className="flex items-center gap-1.5 text-sm font-medium text-muted hover:text-foreground"
+          >
+            <MdOutlineSettings size={16} />
             Settings
           </Link>
           {DEMO ? (
