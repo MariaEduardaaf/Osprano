@@ -13,6 +13,7 @@ import type * as lib_domain from "../lib/domain.js";
 import type * as lib_enrich from "../lib/enrich.js";
 import type * as model_tenant from "../model/tenant.js";
 import type * as places from "../places.js";
+import type * as previews from "../previews.js";
 import type * as scoring from "../scoring.js";
 
 import type {
@@ -27,6 +28,7 @@ declare const fullApi: ApiFromModules<{
   "lib/enrich": typeof lib_enrich;
   "model/tenant": typeof model_tenant;
   places: typeof places;
+  previews: typeof previews;
   scoring: typeof scoring;
 }>;
 

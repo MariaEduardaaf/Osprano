@@ -6,6 +6,7 @@ import { api } from "@convex/_generated/api";
 import { MARKETS, LAUNCH_MARKETS } from "@convex/lib/domain";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { LeadCard } from "@/components/lead-card";
+import { GeneratePreviewButton } from "@/components/generate-preview-button";
 
 export default function LeadsPage() {
   const [country, setCountry] = useState("GB");
@@ -87,7 +88,11 @@ export default function LeadsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {leads.map((lead) => (
-            <LeadCard key={lead._id} lead={lead} />
+            <LeadCard
+              key={lead._id}
+              lead={lead}
+              action={<GeneratePreviewButton leadId={lead._id} />}
+            />
           ))}
         </div>
       )}
