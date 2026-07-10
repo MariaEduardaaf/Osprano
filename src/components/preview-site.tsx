@@ -46,7 +46,7 @@ export function PreviewSite({ content }: { content: PreviewContent }) {
           className="pointer-events-none absolute inset-0"
           style={{
             background:
-              "radial-gradient(80% 60% at 15% 0%, rgba(196,138,46,.28), transparent 55%), radial-gradient(70% 70% at 100% 30%, rgba(29,107,80,.32), transparent 60%)",
+              "radial-gradient(80% 60% at 15% 0%, rgba(196,138,46,.26), transparent 55%), radial-gradient(70% 70% at 100% 30%, rgba(90,129,250,.34), transparent 60%)",
           }}
         />
         <div className="relative mx-auto max-w-5xl px-6 pb-24 pt-20 sm:pt-28">
