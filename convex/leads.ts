@@ -1,4 +1,9 @@
-import { query, mutation } from "./_generated/server";
+import {
+  query,
+  mutation,
+  internalQuery,
+  internalMutation,
+} from "./_generated/server";
 import { v } from "convex/values";
 import { requireOrgId } from "./model/tenant";
 import {
@@ -17,6 +22,19 @@ const stageArg = v.union(
   v.literal("converted"),
   v.literal("lost"),
 );
+
+const signalsV = v.object({
+  noSite: v.boolean(),
+  socialOnly: v.boolean(),
+  noHttps: v.boolean(),
+  notMobile: v.boolean(),
+  slow: v.boolean(),
+  sparseProfile: v.boolean(),
+});
+
+// ---------------------------------------------------------------------------
+// Public (authed) API
+// ---------------------------------------------------------------------------
 
 /** Leads for the current org, ranked by digital-presence pain (score desc). */
 export const list = query({
@@ -46,7 +64,7 @@ export const get = query({
   },
 });
 
-/** Funnel counts for the dashboard. */
+/** Funnel + headline counts for the dashboard. */
 export const stats = query({
   args: {},
   handler: async (ctx) => {
@@ -86,10 +104,121 @@ export const setStage = mutation({
   },
 });
 
-/**
- * Manually add a lead. Computes the website-based signals + a partial score
- * now; full enrichment (PageSpeed/HTTPS) runs in the discovery pipeline (Fase 1).
- */
+// ---------------------------------------------------------------------------
+// Internal API (used by the discovery + scoring pipeline)
+// ---------------------------------------------------------------------------
+
+export const getInternal = internalQuery({
+  args: { leadId: v.id("leads") },
+  handler: async (ctx, { leadId }) => ctx.db.get(leadId),
+});
+
+/** Insert (or refresh) a discovered business, deduped by placeId within the org. */
+export const insertDiscovered = internalMutation({
+  args: {
+    orgId: v.string(),
+    source: v.union(v.literal("places"), v.literal("fsq"), v.literal("osm"), v.literal("scrape")),
+    placeId: v.string(),
+    name: v.string(),
+    category: v.optional(v.string()),
+    address: v.optional(v.string()),
+    city: v.optional(v.string()),
+    countryCode: v.string(),
+    phone: v.optional(v.string()),
+    website: v.optional(v.string()),
+    email: v.optional(v.string()),
+    rating: v.optional(v.number()),
+    reviewsCount: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const web = classifyWebsite(args.website);
+    const signals: Signals = {
+      noSite: !args.website,
+      socialOnly: web.socialOnly,
+      noHttps: false, // refined by scoring
+      notMobile: false,
+      slow: false,
+      sparseProfile: !args.phone || args.rating === undefined || (args.reviewsCount ?? 0) < 5,
+    };
+    const score = computeScore(signals);
+    const emailable = isEmailable({ countryCode: args.countryCode });
+
+    const existing = await ctx.db
+      .query("leads")
+      .withIndex("by_org_place", (q) => q.eq("orgId", args.orgId).eq("placeId", args.placeId))
+      .first();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        name: args.name,
+        category: args.category,
+        address: args.address,
+        city: args.city,
+        phone: args.phone,
+        website: args.website,
+        rating: args.rating,
+        reviewsCount: args.reviewsCount,
+        signals,
+        score,
+        tier: tierFromScore(score),
+        scoredAt: now,
+        emailable,
+        fetchedAt: now,
+      });
+      return existing._id;
+    }
+
+    return await ctx.db.insert("leads", {
+      orgId: args.orgId,
+      source: args.source,
+      placeId: args.placeId,
+      name: args.name,
+      category: args.category,
+      address: args.address,
+      city: args.city,
+      countryCode: args.countryCode,
+      phone: args.phone,
+      website: args.website,
+      email: args.email,
+      rating: args.rating,
+      reviewsCount: args.reviewsCount,
+      score,
+      tier: tierFromScore(score),
+      signals,
+      scoredAt: now,
+      legalForm: "unknown",
+      contactType: "unknown",
+      emailable,
+      stage: "base",
+      stageUpdatedAt: now,
+      fetchedAt: now,
+    });
+  },
+});
+
+/** Apply the refined Digital Presence Score after enrichment. */
+export const applyScore = internalMutation({
+  args: {
+    leadId: v.id("leads"),
+    signals: signalsV,
+    score: v.number(),
+    tier: v.union(v.literal("hot"), v.literal("warm"), v.literal("cold")),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.leadId, {
+      signals: args.signals,
+      score: args.score,
+      tier: args.tier,
+      scoredAt: Date.now(),
+    });
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Manual add (handy before wiring live discovery)
+// ---------------------------------------------------------------------------
+
 export const create = mutation({
   args: {
     name: v.string(),
@@ -110,7 +239,6 @@ export const create = mutation({
   handler: async (ctx, args) => {
     const orgId = await requireOrgId(ctx);
     const now = Date.now();
-
     const web = classifyWebsite(args.website);
     const signals: Signals = {
       noSite: !args.website,
@@ -121,7 +249,6 @@ export const create = mutation({
       sparseProfile: !args.phone || args.rating === undefined,
     };
     const score = computeScore(signals);
-
     return await ctx.db.insert("leads", {
       orgId,
       source: "manual",
