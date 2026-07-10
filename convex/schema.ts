@@ -39,6 +39,21 @@ export default defineSchema({
     name: v.optional(v.string()),
   }).index("by_clerk", ["clerkId"]),
 
+  workspaces: defineTable({
+    orgId: v.string(),
+    plan: v.union(v.literal("free"), v.literal("pro"), v.literal("agency")),
+    // usage (reset monthly from periodStart)
+    leadsUsed: v.number(),
+    sitesUsed: v.number(),
+    periodStart: v.number(),
+    // billing (Stripe)
+    stripeCustomerId: v.optional(v.string()),
+    stripeSubscriptionId: v.optional(v.string()),
+    subscriptionStatus: v.optional(v.string()),
+  })
+    .index("by_org", ["orgId"])
+    .index("by_customer", ["stripeCustomerId"]),
+
   leads: defineTable({
     orgId: v.string(),
     source: v.union(
@@ -89,12 +104,17 @@ export default defineSchema({
     orgId: v.string(),
     leadId: v.id("leads"),
     token: v.string(), // unique, tracked link
-    content: v.optional(v.any()), // generated site content (Phase 2)
+    content: v.optional(v.any()), // generated site content
     openCount: v.number(),
     lastOpenedAt: v.optional(v.number()),
+    // white-label publish
+    published: v.optional(v.boolean()),
+    slug: v.optional(v.string()), // stable public slug when published
   })
     .index("by_token", ["token"])
-    .index("by_lead", ["leadId"]),
+    .index("by_lead", ["leadId"])
+    .index("by_slug", ["slug"])
+    .index("by_org", ["orgId"]),
 
   outreach: defineTable({
     orgId: v.string(),

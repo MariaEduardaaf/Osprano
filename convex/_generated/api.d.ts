@@ -8,16 +8,21 @@
  * @module
  */
 
+import type * as billing from "../billing.js";
 import type * as foursquare from "../foursquare.js";
+import type * as http from "../http.js";
 import type * as leads from "../leads.js";
 import type * as lib_domain from "../lib/domain.js";
 import type * as lib_enrich from "../lib/enrich.js";
 import type * as lib_outreachAi from "../lib/outreachAi.js";
+import type * as lib_stripe from "../lib/stripe.js";
 import type * as model_tenant from "../model/tenant.js";
+import type * as model_workspace from "../model/workspace.js";
 import type * as outreach from "../outreach.js";
 import type * as places from "../places.js";
 import type * as previews from "../previews.js";
 import type * as scoring from "../scoring.js";
+import type * as workspaces from "../workspaces.js";
 
 import type {
   ApiFromModules,
@@ -26,16 +31,21 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  billing: typeof billing;
   foursquare: typeof foursquare;
+  http: typeof http;
   leads: typeof leads;
   "lib/domain": typeof lib_domain;
   "lib/enrich": typeof lib_enrich;
   "lib/outreachAi": typeof lib_outreachAi;
+  "lib/stripe": typeof lib_stripe;
   "model/tenant": typeof model_tenant;
+  "model/workspace": typeof model_workspace;
   outreach: typeof outreach;
   places: typeof places;
   previews: typeof previews;
   scoring: typeof scoring;
+  workspaces: typeof workspaces;
 }>;
 
 /**

@@ -1,6 +1,18 @@
 import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { requireOrgId } from "./model/tenant";
+import { reserveUsage } from "./model/workspace";
+
+function slugify(s: string): string {
+  return (
+    s
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40) || "site"
+  );
+}
 
 /** Generate (or refresh) a tracked preview site for a lead. Authed. */
 export const generate = mutation({
@@ -105,5 +117,83 @@ export const recordOpen = mutation({
     if (lead && (lead.stage === "base" || lead.stage === "approached")) {
       await ctx.db.patch(lead._id, { stage: "opened", stageUpdatedAt: now });
     }
+  },
+});
+
+/** Publish a preview as a white-label site with a stable slug. Charges 1 site of usage. */
+export const publish = mutation({
+  args: { leadId: v.id("leads") },
+  handler: async (ctx, { leadId }) => {
+    const orgId = await requireOrgId(ctx);
+    const lead = await ctx.db.get(leadId);
+    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+
+    const content = {
+      name: lead.name,
+      category: lead.category ?? null,
+      city: lead.city ?? null,
+      phone: lead.phone ?? null,
+      rating: lead.rating ?? null,
+      reviewsCount: lead.reviewsCount ?? null,
+      countryCode: lead.countryCode,
+    };
+
+    let preview = await ctx.db
+      .query("previews")
+      .withIndex("by_lead", (q) => q.eq("leadId", leadId))
+      .first();
+    if (!preview) {
+      const token = crypto.randomUUID().replace(/-/g, "");
+      const id = await ctx.db.insert("previews", { orgId, leadId, token, content, openCount: 0 });
+      preview = await ctx.db.get(id);
+    }
+    if (!preview) throw new Error("Falha ao criar preview");
+    if (preview.published && preview.slug) return preview.slug;
+
+    await reserveUsage(ctx, orgId, "sites", 1);
+    const slug = `${slugify(lead.name)}-${crypto.randomUUID().slice(0, 6)}`;
+    await ctx.db.patch(preview._id, { published: true, slug, content });
+    return slug;
+  },
+});
+
+/** PUBLIC — render a published white-label site by slug. */
+export const getBySlug = query({
+  args: { slug: v.string() },
+  handler: async (ctx, { slug }) => {
+    const p = await ctx.db
+      .query("previews")
+      .withIndex("by_slug", (q) => q.eq("slug", slug))
+      .first();
+    if (!p || !p.published) return null;
+    return { content: p.content, token: p.token };
+  },
+});
+
+/** All previews/sites for the workspace, newest first, with lead context. */
+export const listSites = query({
+  args: {},
+  handler: async (ctx) => {
+    const orgId = await requireOrgId(ctx);
+    const previews = await ctx.db
+      .query("previews")
+      .withIndex("by_org", (q) => q.eq("orgId", orgId))
+      .collect();
+    const rows = await Promise.all(
+      previews.map(async (p) => {
+        const lead = await ctx.db.get(p.leadId);
+        return {
+          _id: p._id,
+          leadId: p.leadId,
+          token: p.token,
+          slug: p.slug ?? null,
+          published: p.published ?? false,
+          openCount: p.openCount,
+          name: lead?.name ?? "—",
+          city: lead?.city ?? null,
+        };
+      }),
+    );
+    return rows.sort((a, b) => b.openCount - a.openCount);
   },
 });

@@ -219,6 +219,58 @@ export const PIPELINE_STAGES: { id: Stage; label: string }[] = [
   { id: "lost", label: "Perdido" },
 ];
 
+// ---------------------------------------------------------------------------
+// Plans (freemium)
+// ---------------------------------------------------------------------------
+
+export type Plan = "free" | "pro" | "agency";
+
+export interface PlanDef {
+  id: Plan;
+  name: string;
+  price: number; // EUR / month
+  leadsPerMonth: number;
+  sitesPerMonth: number;
+  features: string[];
+}
+
+export const PLANS: Record<Plan, PlanDef> = {
+  free: {
+    id: "free",
+    name: "Gratuito",
+    price: 0,
+    leadsPerMonth: 60,
+    sitesPerMonth: 2,
+    features: ["5 categorias", "Digital Presence Score", "2 sites/mês", "Preview rastreado"],
+  },
+  pro: {
+    id: "pro",
+    name: "Pro",
+    price: 49,
+    leadsPerMonth: 2000,
+    sitesPerMonth: 50,
+    features: [
+      "Todas as categorias",
+      "Todos os mercados opt-out",
+      "Outreach por IA",
+      "50 sites/mês",
+      "Export CSV",
+    ],
+  },
+  agency: {
+    id: "agency",
+    name: "Agência",
+    price: 149,
+    leadsPerMonth: 10000,
+    sitesPerMonth: 500,
+    features: ["Tudo do Pro", "White-label + domínio próprio", "500 sites/mês", "Prioridade"],
+  },
+};
+
+export function planLimit(plan: Plan, kind: "leads" | "sites"): number {
+  return kind === "leads" ? PLANS[plan].leadsPerMonth : PLANS[plan].sitesPerMonth;
+}
+
 export const STARTER_CATEGORIES = [
   "restaurant",
   "cafe",

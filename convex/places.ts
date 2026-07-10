@@ -41,6 +41,13 @@ export const search = action({
     const key = process.env.GOOGLE_PLACES_API_KEY;
     if (!key) throw new Error("GOOGLE_PLACES_API_KEY não configurada no deployment Convex.");
 
+    // Plan gating (reserve up front so we don't spend Places quota when over limit)
+    await ctx.runMutation(internal.workspaces.reserve, {
+      orgId,
+      kind: "leads",
+      count: Math.min(args.max ?? 20, 20),
+    });
+
     const res = await fetch("https://places.googleapis.com/v1/places:searchText", {
       method: "POST",
       headers: {

@@ -40,6 +40,12 @@ export const search = action({
     const key = process.env.FSQ_API_KEY;
     if (!key) throw new Error("FSQ_API_KEY não configurada no deployment Convex.");
 
+    await ctx.runMutation(internal.workspaces.reserve, {
+      orgId,
+      kind: "leads",
+      count: Math.min(args.max ?? 20, 50),
+    });
+
     const params = new URLSearchParams({
       query: args.category,
       near: `${args.city}, ${country}`,
