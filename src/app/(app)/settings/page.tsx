@@ -23,7 +23,7 @@ export default function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Settings" subtitle="Plano, uso e assinatura" />
+      <PageHeader eyebrow="Conta" title="Settings" subtitle="Plano, uso e assinatura" />
 
       <div className="max-w-xl space-y-6">
         <div className="rounded-xl border border-border bg-surface p-6">

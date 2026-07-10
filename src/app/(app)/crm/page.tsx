@@ -10,6 +10,14 @@ import { PIPELINE_STAGES, type Stage } from "@convex/lib/domain";
 
 const COLUMNS = PIPELINE_STAGES.filter((s) => s.id !== "lost");
 
+const STAGE_DOT: Record<string, string> = {
+  base: "var(--cold)",
+  approached: "var(--brand)",
+  opened: "var(--warm)",
+  replied: "var(--warm)",
+  converted: "var(--brand)",
+};
+
 const FILTERS: { id: string; label: string; fn: (l: Doc<"leads">) => boolean }[] = [
   { id: "all", label: "Todos", fn: () => true },
   { id: "nosite", label: "Sem site", fn: (l) => !!(l.signals?.noSite || l.signals?.socialOnly) },
@@ -45,17 +53,17 @@ export default function CrmPage() {
 
   return (
     <>
-      <PageHeader title="CRM" subtitle="Filtre, priorize e mova cada lead pelo funil" />
+      <PageHeader eyebrow="Pipeline" title="CRM" subtitle="Filtre, priorize e mova cada lead pelo funil" />
 
       <div className="mb-5 flex flex-wrap gap-2">
         {FILTERS.map((f) => (
           <button
             key={f.id}
             onClick={() => setFilter(f.id)}
-            className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
               filter === f.id
-                ? "bg-foreground text-background"
-                : "border border-border text-muted hover:bg-surface-2"
+                ? "bg-brand text-brand-fg shadow-[var(--shadow-sm)]"
+                : "border border-border text-muted hover:border-border-strong hover:text-foreground"
             }`}
           >
             {f.label}
@@ -71,9 +79,17 @@ export default function CrmPage() {
             const items = filtered.filter((l) => l.stage === col.id);
             return (
               <div key={col.id} className="w-72 shrink-0">
-                <div className="mb-3 flex items-center justify-between px-1">
-                  <span className="text-sm font-semibold">{col.label}</span>
-                  <span className="text-xs tabular-nums text-faint">{items.length}</span>
+                <div className="mb-3 flex items-center justify-between px-1.5">
+                  <span className="flex items-center gap-2 text-sm font-semibold">
+                    <span
+                      className="h-2 w-2 rounded-full"
+                      style={{ backgroundColor: STAGE_DOT[col.id] }}
+                    />
+                    {col.label}
+                  </span>
+                  <span className="rounded-full bg-surface-2 px-2 py-0.5 font-mono text-[10px] tabular-nums text-muted">
+                    {items.length}
+                  </span>
                 </div>
                 <div className="space-y-2">
                   {items.length === 0 ? (
@@ -82,16 +98,31 @@ export default function CrmPage() {
                     </div>
                   ) : (
                     items.map((lead) => (
-                      <div key={lead._id} className="rounded-xl border border-border bg-surface p-3">
+                      <div
+                        key={lead._id}
+                        className="rounded-[var(--radius)] border border-border bg-surface p-3.5 shadow-[var(--shadow-sm)] transition-all hover:border-border-strong hover:shadow-[var(--shadow-md)]"
+                      >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <h3 className="truncate text-sm font-semibold">{lead.name}</h3>
+                            <h3 className="truncate font-display text-sm font-semibold">{lead.name}</h3>
                             <p className="truncate text-[11px] text-muted">
-                              {lead.category ?? "—"}
+                              {(lead.category ?? "—").replace(/_/g, " ")}
                               {lead.city ? ` · ${lead.city}` : ""}
                             </p>
                           </div>
-                          <span className="text-sm font-bold tabular-nums">{lead.score ?? "—"}</span>
+                          <span
+                            className="font-display text-base font-bold tabular-nums"
+                            style={{
+                              color:
+                                lead.tier === "hot"
+                                  ? "var(--hot)"
+                                  : lead.tier === "warm"
+                                    ? "var(--warm)"
+                                    : "var(--cold)",
+                            }}
+                          >
+                            {lead.score ?? "—"}
+                          </span>
                         </div>
                         <div className="mt-3 flex items-center justify-between gap-2">
                           <StageSelect lead={lead} />

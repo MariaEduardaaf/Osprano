@@ -1,14 +1,11 @@
+import type { ReactNode } from "react";
 import type { Doc } from "@convex/_generated/dataModel";
-import type { Signals } from "@convex/lib/domain";
+import { type Signals, MARKETS } from "@convex/lib/domain";
+import { ScoreDonut, Badge } from "./ui";
 
 type Lead = Doc<"leads">;
 
 const TIER_LABEL: Record<string, string> = { hot: "Quente", warm: "Morno", cold: "Frio" };
-const TIER_CLASS: Record<string, string> = {
-  hot: "text-hot border-hot/30 bg-hot/10",
-  warm: "text-warm border-warm/30 bg-warm/10",
-  cold: "text-cold border-cold/30 bg-cold/10",
-};
 
 const SIGNAL_LABEL: Record<keyof Signals, string> = {
   noSite: "Sem site",
@@ -19,40 +16,38 @@ const SIGNAL_LABEL: Record<keyof Signals, string> = {
   sparseProfile: "Perfil fraco",
 };
 
-export function LeadCard({ lead, action }: { lead: Lead; action?: React.ReactNode }) {
-  const tier = lead.tier ?? "cold";
+export function LeadCard({ lead, action }: { lead: Lead; action?: ReactNode }) {
+  const tier = (lead.tier ?? "cold") as "hot" | "warm" | "cold";
   const signals = lead.signals;
+  const flag = MARKETS[lead.countryCode]?.flag ?? "";
+
   return (
-    <div className="rounded-xl border border-border bg-surface p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="truncate font-semibold">{lead.name}</h3>
-          <p className="mt-0.5 truncate text-xs text-muted">
-            {lead.category ?? "—"}
+    <div className="group flex flex-col rounded-[var(--radius)] border border-border bg-surface p-5 shadow-[var(--shadow-sm)] transition-all duration-300 hover:-translate-y-0.5 hover:border-border-strong hover:shadow-[var(--shadow-md)]">
+      <div className="flex items-start gap-3.5">
+        <ScoreDonut score={lead.score ?? 0} tier={tier} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h3 className="truncate font-display text-base font-semibold leading-tight text-foreground">
+              {lead.name}
+            </h3>
+            <Badge tone={tier}>{TIER_LABEL[tier]}</Badge>
+          </div>
+          <p className="mt-1 truncate text-xs text-muted">
+            {(lead.category ?? "—").replace(/_/g, " ")}
             {lead.city ? ` · ${lead.city}` : ""}
-            {lead.countryCode ? ` · ${lead.countryCode}` : ""}
+            {flag ? ` · ${flag}` : ""}
           </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <span
-            className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${TIER_CLASS[tier]}`}
-          >
-            {TIER_LABEL[tier]}
-          </span>
-          <span className="text-lg font-bold tabular-nums" title="Digital Presence Score">
-            {lead.score ?? "—"}
-          </span>
         </div>
       </div>
 
       {signals && (
-        <div className="mt-3 flex flex-wrap gap-1.5">
+        <div className="mt-4 flex flex-wrap gap-1.5">
           {(Object.keys(SIGNAL_LABEL) as (keyof Signals)[])
             .filter((k) => signals[k])
             .map((k) => (
               <span
                 key={k}
-                className="rounded-md bg-surface-2 px-2 py-0.5 text-[11px] font-medium text-muted"
+                className="rounded-md border border-border bg-surface-2 px-2 py-0.5 text-[11px] font-medium text-muted"
               >
                 {SIGNAL_LABEL[k]}
               </span>
@@ -60,11 +55,18 @@ export function LeadCard({ lead, action }: { lead: Lead; action?: React.ReactNod
         </div>
       )}
 
-      <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
+      <div className="mt-auto flex items-center justify-between gap-2 border-t border-border pt-3.5">
         <span
-          className={`text-[11px] font-medium ${lead.emailable ? "text-brand" : "text-faint"}`}
+          className={`inline-flex items-center gap-1.5 text-[11px] font-semibold ${
+            lead.emailable ? "text-brand" : "text-faint"
+          }`}
         >
-          {lead.emailable ? "✓ Abordável por email" : "Fora do escopo compliant"}
+          <span
+            className={`inline-block h-1.5 w-1.5 rounded-full ${
+              lead.emailable ? "bg-brand" : "bg-faint"
+            }`}
+          />
+          {lead.emailable ? "Abordável por email" : "Fora do escopo compliant"}
         </span>
         {action}
       </div>

@@ -45,28 +45,40 @@ export default function PlansPage() {
 
   return (
     <>
-      <PageHeader title="Planos" subtitle="Escale a operação — compliant by design em todos" />
+      <PageHeader
+        eyebrow="Assinatura"
+        title="Planos"
+        subtitle="Escale a operação — compliant by design em todos"
+      />
       {err && <p className="mb-4 text-sm text-hot">{err}</p>}
 
       <div className="grid gap-4 md:grid-cols-3">
         {Object.values(PLANS).map((plan) => {
           const isCurrent = current === plan.id;
+          const featured = plan.id === "pro";
           return (
             <div
               key={plan.id}
-              className={`flex flex-col rounded-2xl border bg-surface p-6 ${
-                plan.id === "pro" ? "border-brand" : "border-border"
+              className={`relative flex flex-col rounded-[var(--radius)] bg-surface p-6 shadow-[var(--shadow-sm)] ${
+                featured
+                  ? "border-2 border-brand shadow-[var(--shadow-md)]"
+                  : "border border-border"
               }`}
             >
-              <h2 className="text-lg font-bold">{plan.name}</h2>
+              {featured && (
+                <span className="absolute -top-2.5 left-6 rounded-full bg-brand px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-brand-fg">
+                  Popular
+                </span>
+              )}
+              <h2 className="font-display text-xl font-bold">{plan.name}</h2>
               <div className="mt-2 flex items-baseline gap-1">
-                <span className="text-3xl font-bold tabular-nums">€{plan.price}</span>
+                <span className="font-display text-4xl font-bold tabular-nums">€{plan.price}</span>
                 <span className="text-sm text-muted">/mês</span>
               </div>
-              <ul className="mt-5 flex-1 space-y-2 text-sm text-muted">
+              <ul className="mt-6 flex-1 space-y-2.5 text-sm text-ink-soft">
                 {plan.features.map((f) => (
-                  <li key={f} className="flex gap-2">
-                    <span className="text-brand">✓</span>
+                  <li key={f} className="flex gap-2.5">
+                    <span className="mt-0.5 text-brand">✓</span>
                     {f}
                   </li>
                 ))}

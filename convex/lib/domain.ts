@@ -271,6 +271,86 @@ export function planLimit(plan: Plan, kind: "leads" | "sites"): number {
   return kind === "leads" ? PLANS[plan].leadsPerMonth : PLANS[plan].sitesPerMonth;
 }
 
+/** Category options for the discovery UI — value is the Places search term, label is pt-BR. */
+export const CATEGORY_OPTIONS: { value: string; label: string }[] = [
+  { value: "restaurant", label: "Restaurante" },
+  { value: "cafe", label: "Café" },
+  { value: "bar", label: "Bar" },
+  { value: "pub", label: "Pub" },
+  { value: "pizza restaurant", label: "Pizzaria" },
+  { value: "bakery", label: "Padaria" },
+  { value: "pastry shop", label: "Confeitaria" },
+  { value: "ice cream shop", label: "Sorveteria" },
+  { value: "barber shop", label: "Barbearia" },
+  { value: "hair salon", label: "Cabeleireiro" },
+  { value: "beauty salon", label: "Salão de beleza" },
+  { value: "nail salon", label: "Manicure / unhas" },
+  { value: "spa", label: "Spa / estética" },
+  { value: "tattoo studio", label: "Estúdio de tatuagem" },
+  { value: "gym", label: "Academia" },
+  { value: "personal trainer", label: "Personal trainer" },
+  { value: "yoga studio", label: "Estúdio de yoga" },
+  { value: "dentist", label: "Dentista" },
+  { value: "doctor", label: "Clínica médica" },
+  { value: "physiotherapist", label: "Fisioterapia" },
+  { value: "veterinarian", label: "Veterinário" },
+  { value: "pharmacy", label: "Farmácia" },
+  { value: "optician", label: "Óptica" },
+  { value: "pet store", label: "Petshop" },
+  { value: "florist", label: "Floricultura" },
+  { value: "hotel", label: "Hotel" },
+  { value: "bed and breakfast", label: "Pousada / B&B" },
+  { value: "real estate agency", label: "Imobiliária" },
+  { value: "lawyer", label: "Advogado" },
+  { value: "accountant", label: "Contador" },
+  { value: "car repair", label: "Mecânica" },
+  { value: "car wash", label: "Lava-rápido" },
+  { value: "driving school", label: "Autoescola" },
+  { value: "plumber", label: "Encanador" },
+  { value: "electrician", label: "Eletricista" },
+  { value: "locksmith", label: "Chaveiro" },
+  { value: "photographer", label: "Fotógrafo" },
+  { value: "jewelry store", label: "Joalheria" },
+  { value: "clothing store", label: "Loja de roupas" },
+  { value: "furniture store", label: "Loja de móveis" },
+  { value: "laundry", label: "Lavanderia" },
+  { value: "language school", label: "Escola de idiomas" },
+];
+
+/** Main cities per launch market for the discovery UI. */
+export const CITIES_BY_COUNTRY: Record<string, string[]> = {
+  GB: [
+    "London", "Birmingham", "Manchester", "Leeds", "Liverpool", "Sheffield", "Bristol",
+    "Newcastle", "Nottingham", "Leicester", "Coventry", "Bradford", "Cardiff", "Belfast",
+    "Brighton", "Kingston upon Hull", "Plymouth", "Stoke-on-Trent", "Wolverhampton", "Derby",
+    "Southampton", "Portsmouth", "Reading", "Glasgow", "Edinburgh", "Aberdeen", "Dundee",
+    "Swansea", "Norwich", "Oxford", "Cambridge", "York", "Milton Keynes", "Bournemouth",
+    "Ipswich", "Exeter",
+  ],
+  NL: [
+    "Amsterdam", "Rotterdam", "The Hague", "Utrecht", "Eindhoven", "Groningen", "Tilburg",
+    "Almere", "Breda", "Nijmegen", "Enschede", "Haarlem", "Arnhem", "Amersfoort", "Zaanstad",
+    "'s-Hertogenbosch", "Zwolle", "Leiden", "Maastricht", "Dordrecht", "Ede", "Alphen aan den Rijn",
+    "Leeuwarden", "Alkmaar", "Delft", "Venlo", "Deventer", "Helmond", "Hilversum", "Apeldoorn",
+  ],
+  IE: [
+    "Dublin", "Cork", "Limerick", "Galway", "Waterford", "Drogheda", "Dundalk", "Swords",
+    "Bray", "Navan", "Kilkenny", "Ennis", "Carlow", "Tralee", "Newbridge", "Portlaoise",
+    "Naas", "Athlone", "Mullingar", "Wexford", "Letterkenny", "Sligo", "Clonmel", "Greystones",
+  ],
+  SE: [
+    "Stockholm", "Gothenburg", "Malmö", "Uppsala", "Västerås", "Örebro", "Linköping",
+    "Helsingborg", "Jönköping", "Norrköping", "Lund", "Umeå", "Gävle", "Borås", "Södertälje",
+    "Eskilstuna", "Halmstad", "Växjö", "Karlstad", "Sundsvall", "Östersund", "Trollhättan",
+    "Luleå", "Kalmar",
+  ],
+  NO: [
+    "Oslo", "Bergen", "Trondheim", "Stavanger", "Drammen", "Fredrikstad", "Kristiansand",
+    "Sandnes", "Tromsø", "Sarpsborg", "Skien", "Ålesund", "Sandefjord", "Haugesund", "Tønsberg",
+    "Moss", "Porsgrunn", "Bodø", "Arendal", "Hamar", "Larvik", "Halden", "Lillehammer", "Molde",
+  ],
+};
+
 export const STARTER_CATEGORIES = [
   "restaurant",
   "cafe",

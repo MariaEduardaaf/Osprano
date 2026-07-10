@@ -10,7 +10,11 @@ export default function SitesPage() {
 
   return (
     <>
-      <PageHeader title="Meus Projetos" subtitle="Previews gerados e sites publicados" />
+      <PageHeader
+        eyebrow="White-label"
+        title="Meus Projetos"
+        subtitle="Previews gerados e sites publicados"
+      />
 
       {sites === undefined ? (
         <p className="text-sm text-faint">Carregando…</p>

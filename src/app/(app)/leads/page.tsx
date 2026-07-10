@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useAction, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
-import { MARKETS, LAUNCH_MARKETS } from "@convex/lib/domain";
+import { MARKETS, LAUNCH_MARKETS, CATEGORY_OPTIONS, CITIES_BY_COUNTRY } from "@convex/lib/domain";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { LeadCard } from "@/components/lead-card";
 import { GeneratePreviewButton } from "@/components/generate-preview-button";
@@ -36,17 +36,21 @@ export default function LeadsPage() {
   return (
     <>
       <PageHeader
+        eyebrow="Descoberta"
         title="Buscar Leads"
         subtitle="Encontre negócios locais com presença digital fraca, por categoria e cidade"
       />
 
       <form
         onSubmit={onSearch}
-        className="mb-6 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface p-4"
+        className="mb-6 flex flex-wrap items-center gap-2 rounded-[var(--radius)] border border-border bg-surface p-3 shadow-[var(--shadow-sm)]"
       >
         <select
           value={country}
-          onChange={(e) => setCountry(e.target.value)}
+          onChange={(e) => {
+            setCountry(e.target.value);
+            setCity("");
+          }}
           className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm"
         >
           {LAUNCH_MARKETS.map((code) => (
@@ -55,28 +59,52 @@ export default function LeadsPage() {
             </option>
           ))}
         </select>
-        <input
+        <select
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          placeholder="Categoria (ex.: restaurant, barber)"
           className="min-w-40 flex-1 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm"
-        />
-        <input
+        >
+          <option value="">Categoria…</option>
+          {CATEGORY_OPTIONS.map((c) => (
+            <option key={c.value} value={c.value}>
+              {c.label}
+            </option>
+          ))}
+        </select>
+        <select
           value={city}
           onChange={(e) => setCity(e.target.value)}
-          placeholder="Cidade"
-          className="min-w-32 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm"
-        />
+          className="min-w-40 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm"
+        >
+          <option value="">Cidade…</option>
+          {(CITIES_BY_COUNTRY[country] ?? []).map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
         <button
           type="submit"
           disabled={busy || !category.trim() || !city.trim()}
-          className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-fg disabled:opacity-50"
+          className="rounded-lg bg-brand px-5 py-2 text-sm font-semibold text-brand-fg shadow-[var(--shadow-sm)] transition-colors hover:bg-brand-hover disabled:opacity-40"
         >
           {busy ? "Buscando…" : "Buscar"}
         </button>
       </form>
 
-      {msg && <p className="mb-4 text-sm text-muted">{msg}</p>}
+      {msg && (
+        <p className="mb-4 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-muted">
+          {msg}
+        </p>
+      )}
+
+      {leads !== undefined && leads.length > 0 && (
+        <div className="mb-4 flex items-center gap-4 font-mono text-[11px] uppercase tracking-wider text-faint">
+          <span className="text-foreground">{leads.length} leads</span>
+          <span>{leads.filter((l) => l.emailable).length} abordáveis</span>
+          <span>{leads.filter((l) => l.signals?.noSite || l.signals?.socialOnly).length} sem site</span>
+        </div>
+      )}
 
       {leads === undefined ? (
         <p className="text-sm text-faint">Carregando…</p>

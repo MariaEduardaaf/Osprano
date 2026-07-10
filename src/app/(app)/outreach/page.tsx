@@ -12,6 +12,7 @@ export default function OutreachPage() {
   return (
     <>
       <PageHeader
+        eyebrow="Abordagem"
         title="Outreach"
         subtitle="Abordagem por email escrita pela IA — compliant by design"
       />
