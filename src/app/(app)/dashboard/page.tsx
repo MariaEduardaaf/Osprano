@@ -5,8 +5,32 @@ import { api } from "@convex/_generated/api";
 import { PageHeader, StatCard } from "@/components/ui";
 import { PIPELINE_STAGES } from "@convex/lib/domain";
 
+function eventLabel(type: string, meta: { to?: string; channel?: string } | null): string {
+  switch (type) {
+    case "preview_open":
+      return "abriu o preview 👀";
+    case "email_sent":
+      return meta?.channel === "whatsapp" ? "recebeu WhatsApp" : "abordado por email";
+    case "reply":
+      return "respondeu";
+    case "stage_change":
+      return meta?.to ? `moveu para ${meta.to}` : "mudou de estágio";
+    default:
+      return type;
+  }
+}
+
+function ago(at: number): string {
+  const s = Math.round((Date.now() - at) / 1000);
+  if (s < 60) return "agora";
+  if (s < 3600) return `${Math.floor(s / 60)}min`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h`;
+  return `${Math.floor(s / 86400)}d`;
+}
+
 export default function DashboardPage() {
   const stats = useQuery(api.leads.stats);
+  const activity = useQuery(api.events.recent);
 
   return (
     <>
@@ -41,6 +65,29 @@ export default function DashboardPage() {
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="mt-8 rounded-xl border border-border bg-surface p-6">
+        <h2 className="text-sm font-semibold">Atividade recente</h2>
+        {activity === undefined ? (
+          <p className="mt-3 text-sm text-faint">Carregando…</p>
+        ) : activity.length === 0 ? (
+          <p className="mt-3 text-sm text-faint">
+            Sem atividade ainda. Aberturas de preview aparecem aqui — o sinal de compra.
+          </p>
+        ) : (
+          <ul className="mt-3 divide-y divide-border">
+            {activity.map((e) => (
+              <li key={e._id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
+                <span className="truncate">
+                  <span className="font-medium">{e.leadName ?? "Lead"}</span>{" "}
+                  <span className="text-muted">{eventLabel(e.type, e.meta)}</span>
+                </span>
+                <span className="shrink-0 text-xs tabular-nums text-faint">{ago(e.at)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </>
   );

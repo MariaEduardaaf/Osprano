@@ -9,6 +9,7 @@
  */
 
 import type * as billing from "../billing.js";
+import type * as events from "../events.js";
 import type * as foursquare from "../foursquare.js";
 import type * as http from "../http.js";
 import type * as leads from "../leads.js";
@@ -33,6 +34,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   billing: typeof billing;
+  events: typeof events;
   foursquare: typeof foursquare;
   http: typeof http;
   leads: typeof leads;
