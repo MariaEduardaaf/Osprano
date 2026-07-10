@@ -1,4 +1,4 @@
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { requireOrgId } from "./model/tenant";
 
@@ -31,6 +31,33 @@ export const generate = mutation({
 
     const token = crypto.randomUUID().replace(/-/g, "");
     await ctx.db.insert("previews", { orgId, leadId, token, content, openCount: 0 });
+    return token;
+  },
+});
+
+/** Ensure a preview exists for a lead (used by the outreach flow). Returns its token. */
+export const ensureForLead = internalMutation({
+  args: { leadId: v.id("leads") },
+  handler: async (ctx, { leadId }) => {
+    const existing = await ctx.db
+      .query("previews")
+      .withIndex("by_lead", (q) => q.eq("leadId", leadId))
+      .first();
+    if (existing) return existing.token;
+
+    const lead = await ctx.db.get(leadId);
+    if (!lead) throw new Error("Lead não encontrado");
+    const content = {
+      name: lead.name,
+      category: lead.category ?? null,
+      city: lead.city ?? null,
+      phone: lead.phone ?? null,
+      rating: lead.rating ?? null,
+      reviewsCount: lead.reviewsCount ?? null,
+      countryCode: lead.countryCode,
+    };
+    const token = crypto.randomUUID().replace(/-/g, "");
+    await ctx.db.insert("previews", { orgId: lead.orgId, leadId, token, content, openCount: 0 });
     return token;
   },
 });

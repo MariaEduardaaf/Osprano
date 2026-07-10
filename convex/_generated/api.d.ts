@@ -11,7 +11,9 @@
 import type * as leads from "../leads.js";
 import type * as lib_domain from "../lib/domain.js";
 import type * as lib_enrich from "../lib/enrich.js";
+import type * as lib_outreachAi from "../lib/outreachAi.js";
 import type * as model_tenant from "../model/tenant.js";
+import type * as outreach from "../outreach.js";
 import type * as places from "../places.js";
 import type * as previews from "../previews.js";
 import type * as scoring from "../scoring.js";
@@ -26,7 +28,9 @@ declare const fullApi: ApiFromModules<{
   leads: typeof leads;
   "lib/domain": typeof lib_domain;
   "lib/enrich": typeof lib_enrich;
+  "lib/outreachAi": typeof lib_outreachAi;
   "model/tenant": typeof model_tenant;
+  outreach: typeof outreach;
   places: typeof places;
   previews: typeof previews;
   scoring: typeof scoring;
