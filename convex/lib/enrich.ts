@@ -19,7 +19,7 @@ export async function checkHttps(url: string): Promise<boolean> {
   try {
     const res = await fetchWithTimeout(`https://${host}`, 7000, {
       redirect: "follow",
-      headers: { "user-agent": "Mozilla/5.0 (compatible; sitescout/1.0)" },
+      headers: { "user-agent": "Mozilla/5.0 (compatible; osprano/1.0)" },
     });
     return res.status > 0;
   } catch {
@@ -47,7 +47,7 @@ export async function extractEmail(url: string): Promise<string | null> {
   const host = url.replace(/^https?:\/\//, "");
   try {
     const res = await fetchWithTimeout(`https://${host}`, 8000, {
-      headers: { "user-agent": "Mozilla/5.0 (compatible; sitescout/1.0)" },
+      headers: { "user-agent": "Mozilla/5.0 (compatible; osprano/1.0)" },
     });
     if (!res.ok) return null;
     const html = (await res.text()).slice(0, 500_000);

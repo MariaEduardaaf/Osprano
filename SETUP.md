@@ -1,4 +1,4 @@
-# sitescout — setup
+# Osprano — setup
 
 Concorrente do LeadSite para o **mercado europeu**. Acha negócios locais com presença
 digital fraca, pontua a dor (Digital Presence Score) e aborda por **email, compliant by design**.

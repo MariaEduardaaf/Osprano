@@ -15,7 +15,7 @@ const display = Bricolage_Grotesque({
 const DEMO = process.env.NEXT_PUBLIC_DEMO === "1";
 
 export const metadata: Metadata = {
-  title: "sitescout — ache a dor, feche o site",
+  title: "Osprano — ache a dor, feche o site",
   description:
     "Encontre negócios locais com presença digital fraca, pontue a dor e aborde por email — compliant by design.",
 };

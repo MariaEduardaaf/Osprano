@@ -33,7 +33,7 @@ export default async function Home() {
             <circle cx="12" cy="12" r="5" stroke="var(--brand)" strokeWidth="1.5" opacity="0.7" />
             <circle cx="12" cy="12" r="1.8" fill="var(--brand)" />
           </svg>
-          <span className="font-display text-lg font-bold tracking-tight">sitescout</span>
+          <span className="font-display text-lg font-bold tracking-tight">Osprano</span>
         </div>
         <Link
           href={DEMO || userId ? "/dashboard" : "/sign-in"}

@@ -2,7 +2,7 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 /**
- * sitescout — data model (V1)
+ * Osprano — data model (V1)
  *
  * Multi-tenant by `orgId` (MVP: orgId === Clerk user subject; org support later).
  *

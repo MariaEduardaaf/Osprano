@@ -90,7 +90,7 @@ export function Sidebar() {
         <Logo />
         <div>
           <span className="font-display text-lg font-bold tracking-tight text-foreground">
-            sitescout
+            Osprano
           </span>
           <span className="-mt-0.5 block font-mono text-[9px] font-medium uppercase tracking-[0.13em] text-brand/55">
             compliant by design
