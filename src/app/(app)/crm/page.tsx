@@ -5,6 +5,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Doc } from "@convex/_generated/dataModel";
 import { PageHeader } from "@/components/ui";
+import { WhatsAppFollowup } from "@/components/whatsapp-followup";
 import { PIPELINE_STAGES, type Stage } from "@convex/lib/domain";
 
 const COLUMNS = PIPELINE_STAGES.filter((s) => s.id !== "lost");
@@ -103,6 +104,11 @@ export default function CrmPage() {
                             </a>
                           )}
                         </div>
+                        {(lead.stage === "replied" || lead.stage === "converted") && (
+                          <div className="mt-2 border-t border-border pt-2">
+                            <WhatsAppFollowup leadId={lead._id} phone={lead.phone} />
+                          </div>
+                        )}
                       </div>
                     ))
                   )}

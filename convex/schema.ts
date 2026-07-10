@@ -119,7 +119,7 @@ export default defineSchema({
   outreach: defineTable({
     orgId: v.string(),
     leadId: v.id("leads"),
-    channel: v.union(v.literal("email")), // WhatsApp only post-opt-in, later
+    channel: v.union(v.literal("email"), v.literal("whatsapp")), // WhatsApp only post-opt-in
     subject: v.optional(v.string()),
     body: v.optional(v.string()),
     status: v.union(

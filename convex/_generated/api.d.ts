@@ -22,6 +22,7 @@ import type * as outreach from "../outreach.js";
 import type * as places from "../places.js";
 import type * as previews from "../previews.js";
 import type * as scoring from "../scoring.js";
+import type * as whatsapp from "../whatsapp.js";
 import type * as workspaces from "../workspaces.js";
 
 import type {
@@ -45,6 +46,7 @@ declare const fullApi: ApiFromModules<{
   places: typeof places;
   previews: typeof previews;
   scoring: typeof scoring;
+  whatsapp: typeof whatsapp;
   workspaces: typeof workspaces;
 }>;
 
