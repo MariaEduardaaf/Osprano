@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAction, useQuery } from "convex/react";
+import { MdCheck } from "react-icons/md";
 import { api } from "@convex/_generated/api";
 import { PageHeader } from "@/components/ui";
 import { PLANS } from "@convex/lib/domain";
@@ -77,8 +78,8 @@ export default function PlansPage() {
               </div>
               <ul className="mt-6 flex-1 space-y-2.5 text-sm text-ink-soft">
                 {plan.features.map((f) => (
-                  <li key={f} className="flex gap-2.5">
-                    <span className="mt-0.5 text-brand">✓</span>
+                  <li key={f} className="flex items-start gap-2">
+                    <MdCheck size={17} className="mt-0.5 shrink-0 text-brand" />
                     {f}
                   </li>
                 ))}

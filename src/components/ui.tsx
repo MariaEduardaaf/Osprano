@@ -34,16 +34,21 @@ export function StatCard({
   value,
   hint,
   accent,
+  icon,
 }: {
   label: string;
   value: ReactNode;
   hint?: string;
   accent?: boolean;
+  icon?: ReactNode;
 }) {
   return (
     <div className="rounded-[var(--radius)] border border-border bg-surface p-5 shadow-[var(--shadow-sm)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)]">
-      <div className="font-mono text-[11px] font-medium uppercase tracking-wider text-faint">
-        {label}
+      <div className="flex items-center justify-between">
+        <div className="font-mono text-[11px] font-medium uppercase tracking-wider text-faint">
+          {label}
+        </div>
+        {icon && <span className={accent ? "text-brand" : "text-faint"}>{icon}</span>}
       </div>
       <div
         className={`mt-3 font-display text-[2.5rem] font-semibold leading-none tabular-nums ${

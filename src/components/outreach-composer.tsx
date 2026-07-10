@@ -1,6 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import {
+  MdOutlineAutoAwesome,
+  MdOutlineContentCopy,
+  MdOutlineCheck,
+  MdOutlineSend,
+} from "react-icons/md";
 import { useAction, useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
@@ -44,8 +50,9 @@ export function OutreachComposer({ leadId, hasEmail }: { leadId: Id<"leads">; ha
           })
         }
         disabled={busy === "draft"}
-        className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-brand-fg disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-brand-fg disabled:opacity-50"
       >
+        <MdOutlineAutoAwesome size={14} />
         {busy === "draft" ? "Escrevendo…" : "Escrever com IA"}
       </button>
     );
@@ -73,8 +80,9 @@ export function OutreachComposer({ leadId, hasEmail }: { leadId: Id<"leads">; ha
               setMsg("Copiado — envie do seu email.");
             })
           }
-          className="rounded-md border border-border px-3 py-1.5 text-xs font-semibold hover:bg-surface"
+          className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-semibold hover:bg-surface"
         >
+          <MdOutlineContentCopy size={14} />
           Copiar
         </button>
         <button
@@ -83,8 +91,9 @@ export function OutreachComposer({ leadId, hasEmail }: { leadId: Id<"leads">; ha
             setMsg("Marcado como enviado.");
           })}
           disabled={busy === "mark"}
-          className="rounded-md border border-border px-3 py-1.5 text-xs font-semibold hover:bg-surface disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-semibold hover:bg-surface disabled:opacity-50"
         >
+          <MdOutlineCheck size={14} />
           Marcar enviado
         </button>
         {hasEmail && (
@@ -94,8 +103,9 @@ export function OutreachComposer({ leadId, hasEmail }: { leadId: Id<"leads">; ha
               setMsg("Enviado via Resend.");
             })}
             disabled={busy === "send"}
-            className="rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-brand-fg disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-brand-fg disabled:opacity-50"
           >
+            <MdOutlineSend size={14} />
             {busy === "send" ? "Enviando…" : "Enviar via Resend"}
           </button>
         )}

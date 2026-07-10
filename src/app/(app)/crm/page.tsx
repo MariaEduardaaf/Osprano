@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Doc } from "@convex/_generated/dataModel";
+import { MdOutlineCall } from "react-icons/md";
 import { PageHeader } from "@/components/ui";
 import { WhatsAppFollowup } from "@/components/whatsapp-followup";
 import { PIPELINE_STAGES, type Stage } from "@convex/lib/domain";
@@ -129,8 +130,9 @@ export default function CrmPage() {
                           {lead.phone && (
                             <a
                               href={`tel:${lead.phone}`}
-                              className="rounded-md border border-border px-2.5 py-1 text-[11px] font-semibold hover:bg-surface-2"
+                              className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-[11px] font-semibold hover:bg-surface-2"
                             >
+                              <MdOutlineCall size={13} />
                               Ligar
                             </a>
                           )}

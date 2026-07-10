@@ -1,3 +1,5 @@
+import { MdCall, MdOutlineChat } from "react-icons/md";
+
 export interface PreviewContent {
   name: string;
   category: string | null;
@@ -32,8 +34,9 @@ export function PreviewSite({ content }: { content: PreviewContent }) {
           {phone && (
             <a
               href={`tel:${phone}`}
-              className="rounded-full bg-[#f4f1e9] px-4 py-2 text-sm font-semibold text-[#0e0d0a] transition-transform hover:scale-105"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#f4f1e9] px-4 py-2 text-sm font-semibold text-[#0e0d0a] transition-transform hover:scale-105"
             >
+              <MdCall size={16} />
               Ligar
             </a>
           )}
@@ -69,14 +72,16 @@ export function PreviewSite({ content }: { content: PreviewContent }) {
               <>
                 <a
                   href={`tel:${phone}`}
-                  className="rounded-xl bg-[#f4f1e9] px-7 py-3.5 text-sm font-semibold text-[#0e0d0a] transition-transform hover:scale-[1.03]"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#f4f1e9] px-7 py-3.5 text-sm font-semibold text-[#0e0d0a] transition-transform hover:scale-[1.03]"
                 >
+                  <MdCall size={17} />
                   Ligar agora
                 </a>
                 <a
                   href={waLink(phone)}
-                  className="rounded-xl border border-white/25 px-7 py-3.5 text-sm font-semibold text-[#f4f1e9] transition-colors hover:bg-white/10"
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/25 px-7 py-3.5 text-sm font-semibold text-[#f4f1e9] transition-colors hover:bg-white/10"
                 >
+                  <MdOutlineChat size={17} />
                   WhatsApp
                 </a>
               </>

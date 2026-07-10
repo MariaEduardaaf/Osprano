@@ -2,6 +2,17 @@
 
 import { useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
+import type { ReactNode } from "react";
+import {
+  MdOutlineTravelExplore,
+  MdOutlineWebAsset,
+  MdOutlineMarkEmailRead,
+  MdOutlineCheckCircle,
+  MdOutlineVisibility,
+  MdOutlineSend,
+  MdOutlineChat,
+  MdOutlineSwapHoriz,
+} from "react-icons/md";
 import { PageHeader, StatCard } from "@/components/ui";
 import { ChartCard, Donut, VBars, HBars } from "@/components/charts";
 import { PIPELINE_STAGES, MARKETS } from "@convex/lib/domain";
@@ -32,6 +43,13 @@ function eventDot(type: string): string {
   if (type === "preview_open") return "var(--warm)";
   if (type === "email_sent" || type === "reply") return "var(--brand)";
   return "var(--faint)";
+}
+
+function eventIcon(type: string, meta: { channel?: string } | null): ReactNode {
+  if (type === "preview_open") return <MdOutlineVisibility size={15} />;
+  if (type === "email_sent") return meta?.channel === "whatsapp" ? <MdOutlineChat size={15} /> : <MdOutlineSend size={15} />;
+  if (type === "reply") return <MdOutlineChat size={15} />;
+  return <MdOutlineSwapHoriz size={15} />;
 }
 
 function eventLabel(type: string, meta: { to?: string; channel?: string } | null): string {
@@ -94,10 +112,10 @@ export default function DashboardPage() {
       <PageHeader eyebrow="Visão geral" title="Dashboard" subtitle="A saúde da sua operação num relance" />
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard label="Leads" value={stats?.total ?? "—"} hint="na base" />
-        <StatCard label="Sem site / social" value={stats?.noSite ?? "—"} hint="maior intenção" />
-        <StatCard label="Abordáveis" value={stats?.emailable ?? "—"} hint="opt-out + incorporados" />
-        <StatCard label="Convertidos" value={stats?.byStage.converted ?? "—"} hint="fechados" accent />
+        <StatCard label="Leads" value={stats?.total ?? "—"} hint="na base" icon={<MdOutlineTravelExplore size={18} />} />
+        <StatCard label="Sem site / social" value={stats?.noSite ?? "—"} hint="maior intenção" icon={<MdOutlineWebAsset size={18} />} />
+        <StatCard label="Abordáveis" value={stats?.emailable ?? "—"} hint="opt-out + incorporados" icon={<MdOutlineMarkEmailRead size={18} />} />
+        <StatCard label="Convertidos" value={stats?.byStage.converted ?? "—"} hint="fechados" accent icon={<MdOutlineCheckCircle size={18} />} />
       </div>
 
       {/* Funnel rates */}
@@ -214,8 +232,10 @@ export default function DashboardPage() {
           ) : (
             <ul className="space-y-3.5">
               {activity.map((e) => (
-                <li key={e._id} className="flex items-start gap-3">
-                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: eventDot(e.type) }} />
+                <li key={e._id} className="flex items-start gap-2.5">
+                  <span className="mt-0.5 shrink-0" style={{ color: eventDot(e.type) }}>
+                    {eventIcon(e.type, e.meta)}
+                  </span>
                   <span className="min-w-0 flex-1 text-sm leading-snug">
                     <span className="font-medium text-foreground">{e.leadName ?? "Lead"}</span>{" "}
                     <span className="text-muted">{eventLabel(e.type, e.meta)}</span>

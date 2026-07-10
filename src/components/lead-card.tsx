@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { MdOutlineCheckCircle, MdOutlineBlock } from "react-icons/md";
 import type { Doc } from "@convex/_generated/dataModel";
 import { type Signals, MARKETS } from "@convex/lib/domain";
 import { ScoreDonut, Badge } from "./ui";
@@ -61,11 +62,7 @@ export function LeadCard({ lead, action }: { lead: Lead; action?: ReactNode }) {
             lead.emailable ? "text-brand" : "text-faint"
           }`}
         >
-          <span
-            className={`inline-block h-1.5 w-1.5 rounded-full ${
-              lead.emailable ? "bg-brand" : "bg-faint"
-            }`}
-          />
+          {lead.emailable ? <MdOutlineCheckCircle size={14} /> : <MdOutlineBlock size={14} />}
           {lead.emailable ? "Abordável por email" : "Fora do escopo compliant"}
         </span>
         {action}

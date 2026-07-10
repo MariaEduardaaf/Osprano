@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "convex/react";
+import { MdOpenInNew } from "react-icons/md";
 import { api } from "@convex/_generated/api";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { PublishButton } from "@/components/publish-button";
@@ -51,9 +52,9 @@ export default function SitesPage() {
                   href={`/p/${s.token}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-xs font-medium text-muted hover:text-foreground hover:underline"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-muted hover:text-foreground hover:underline"
                 >
-                  Preview ↗
+                  Preview <MdOpenInNew size={13} />
                 </a>
                 <PublishButton leadId={s.leadId} slug={s.slug} />
               </div>

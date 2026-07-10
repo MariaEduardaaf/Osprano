@@ -10,6 +10,7 @@ import {
   MdOutlineViewKanban,
   MdOutlineForwardToInbox,
   MdOutlineLanguage,
+  MdOutlineSettings,
 } from "react-icons/md";
 import type { IconType } from "react-icons";
 
@@ -20,6 +21,24 @@ const NAV: { href: string; label: string; Icon: IconType }[] = [
   { href: "/outreach", label: "Outreach", Icon: MdOutlineForwardToInbox },
   { href: "/sites", label: "Meus Projetos", Icon: MdOutlineLanguage },
 ];
+
+function NavItem({ href, label, Icon }: { href: string; label: string; Icon: IconType }) {
+  const pathname = usePathname();
+  const active = pathname === href || pathname.startsWith(`${href}/`);
+  return (
+    <Link
+      href={href}
+      className={`relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+        active
+          ? "bg-surface-2 text-foreground shadow-[var(--shadow-sm)] before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-full before:bg-brand"
+          : "text-muted hover:bg-surface-2/60 hover:text-foreground"
+      }`}
+    >
+      <Icon size={19} className={active ? "text-brand" : "text-faint"} />
+      {label}
+    </Link>
+  );
+}
 
 function Logo() {
   return (
@@ -65,7 +84,6 @@ function UsageFooter() {
 }
 
 export function Sidebar() {
-  const pathname = usePathname();
   return (
     <nav className="flex h-full w-60 shrink-0 flex-col gap-1 border-r border-border bg-surface px-3.5 py-5">
       <div className="mb-7 flex items-center gap-2.5 px-1.5">
@@ -80,23 +98,13 @@ export function Sidebar() {
         </div>
       </div>
 
-      {NAV.map((item) => {
-        const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-              active
-                ? "bg-surface-2 text-foreground shadow-[var(--shadow-sm)] before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-full before:bg-brand"
-                : "text-muted hover:bg-surface-2/60 hover:text-foreground"
-            }`}
-          >
-            <item.Icon size={19} className={active ? "text-brand" : "text-faint"} />
-            {item.label}
-          </Link>
-        );
-      })}
+      {NAV.map((item) => (
+        <NavItem key={item.href} href={item.href} label={item.label} Icon={item.Icon} />
+      ))}
+
+      <div className="mt-2 border-t border-border pt-2">
+        <NavItem href="/settings" label="Settings" Icon={MdOutlineSettings} />
+      </div>
 
       <UsageFooter />
     </nav>

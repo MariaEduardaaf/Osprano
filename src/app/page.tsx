@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
+import { MdOutlineTravelExplore, MdOutlineForwardToInbox, MdOutlineLanguage } from "react-icons/md";
+import type { IconType } from "react-icons";
 import { MARKETS, LAUNCH_MARKETS } from "@convex/lib/domain";
 
 const DEMO = process.env.NEXT_PUBLIC_DEMO === "1";
 
-const STEPS = [
-  { n: "01", t: "Ache a dor", d: "Negócios locais com presença digital fraca, pontuados pela dor." },
-  { n: "02", t: "Aborde", d: "A IA escreve o email — compliant, só onde é legal." },
-  { n: "03", t: "Feche o site", d: "Preview rastreado: você sabe na hora que abriram." },
+const STEPS: { n: string; t: string; d: string; Icon: IconType }[] = [
+  { n: "01", t: "Ache a dor", d: "Negócios locais com presença digital fraca, pontuados pela dor.", Icon: MdOutlineTravelExplore },
+  { n: "02", t: "Aborde", d: "A IA escreve o email — compliant, só onde é legal.", Icon: MdOutlineForwardToInbox },
+  { n: "03", t: "Feche o site", d: "Preview rastreado: você sabe na hora que abriram.", Icon: MdOutlineLanguage },
 ];
 
 export default async function Home() {
@@ -93,8 +95,11 @@ export default async function Home() {
         <div className="mt-20 grid gap-px overflow-hidden rounded-[var(--radius)] border border-border bg-border sm:grid-cols-3">
           {STEPS.map((s) => (
             <div key={s.n} className="bg-surface p-6">
-              <div className="font-mono text-xs font-semibold text-brand">{s.n}</div>
-              <h3 className="mt-3 font-display text-xl font-semibold">{s.t}</h3>
+              <div className="flex items-center justify-between">
+                <s.Icon size={24} className="text-brand" />
+                <span className="font-mono text-xs font-semibold text-brand">{s.n}</span>
+              </div>
+              <h3 className="mt-4 font-display text-xl font-semibold">{s.t}</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted">{s.d}</p>
             </div>
           ))}

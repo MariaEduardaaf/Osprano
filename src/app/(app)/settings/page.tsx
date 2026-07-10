@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useQuery, useAction } from "convex/react";
+import { MdOpenInNew } from "react-icons/md";
 import { api } from "@convex/_generated/api";
 import { PageHeader } from "@/components/ui";
 
@@ -83,8 +84,9 @@ export default function SettingsPage() {
                 }
               }}
               disabled={busy}
-              className="mt-4 rounded-lg border border-border px-4 py-2 text-sm font-semibold hover:bg-surface-2 disabled:opacity-50"
+              className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm font-semibold hover:bg-surface-2 disabled:opacity-50"
             >
+              <MdOpenInNew size={16} />
               {busy ? "Abrindo…" : "Abrir portal de billing"}
             </button>
             {err && <p className="mt-2 text-sm text-hot">{err}</p>}

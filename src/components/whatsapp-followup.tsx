@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { MdOutlineChat, MdOutlineSend, MdOpenInNew } from "react-icons/md";
 import { useAction } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
@@ -16,8 +17,9 @@ export function WhatsAppFollowup({ leadId, phone }: { leadId: Id<"leads">; phone
     return (
       <button
         onClick={() => setOpen(true)}
-        className="w-full rounded-md border border-border py-1.5 text-[11px] font-semibold text-muted hover:bg-surface-2"
+        className="flex w-full items-center justify-center gap-1.5 rounded-md border border-border py-1.5 text-[11px] font-semibold text-muted hover:bg-surface-2"
       >
+        <MdOutlineChat size={14} />
         WhatsApp follow-up
       </button>
     );
@@ -47,8 +49,9 @@ export function WhatsAppFollowup({ leadId, phone }: { leadId: Id<"leads">; phone
             }
           }}
           disabled={busy || !message.trim()}
-          className="rounded-md bg-brand px-2.5 py-1 text-[11px] font-semibold text-brand-fg disabled:opacity-50"
+          className="inline-flex items-center gap-1 rounded-md bg-brand px-2.5 py-1 text-[11px] font-semibold text-brand-fg disabled:opacity-50"
         >
+          <MdOutlineSend size={13} />
           {busy ? "…" : "Enviar"}
         </button>
         {phone && (
@@ -56,9 +59,10 @@ export function WhatsAppFollowup({ leadId, phone }: { leadId: Id<"leads">; phone
             href={`https://wa.me/${phone.replace(/[^0-9]/g, "")}`}
             target="_blank"
             rel="noreferrer"
-            className="rounded-md border border-border px-2.5 py-1 text-[11px] font-semibold hover:bg-surface-2"
+            className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-[11px] font-semibold hover:bg-surface-2"
           >
-            Abrir wa.me
+            <MdOpenInNew size={13} />
+            wa.me
           </a>
         )}
       </div>
