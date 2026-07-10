@@ -32,7 +32,7 @@ export default function OutreachPage() {
                 <div className="min-w-0">
                   <h3 className="truncate font-semibold">{lead.name}</h3>
                   <p className="truncate text-xs text-muted">
-                    {lead.category ?? "—"}
+                    {(lead.category ?? "—").replace(/_/g, " ")}
                     {lead.city ? ` · ${lead.city}` : ""} · Score {lead.score ?? "—"} ·{" "}
                     {lead.stage}
                   </p>

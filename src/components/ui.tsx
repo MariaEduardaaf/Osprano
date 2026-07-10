@@ -19,7 +19,7 @@ export function PageHeader({
             {eyebrow}
           </div>
         )}
-        <h1 className="font-display text-[1.9rem] font-semibold leading-none tracking-tight text-foreground">
+        <h1 className="font-display text-[2rem] font-bold leading-none tracking-[-0.03em] text-foreground">
           {title}
         </h1>
         {subtitle && <p className="mt-2.5 max-w-xl text-sm leading-relaxed text-muted">{subtitle}</p>}

@@ -21,7 +21,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <UserButton />
           )}
         </header>
-        <main className="flex-1 overflow-auto p-8">{children}</main>
+        <main className="flex-1 overflow-auto p-8">
+          <div className="animate-rise">{children}</div>
+        </main>
       </div>
     </div>
   );

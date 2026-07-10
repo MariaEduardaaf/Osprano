@@ -43,32 +43,36 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    /* warm ink neutrals */
-    --background: #100f0b;
-    --surface: #1a1813;
-    --surface-2: #232019;
-    --elevated: #211e17;
-    --border: #2e2a20;
-    --border-strong: #3b362b;
-    --foreground: #f3efe6;
-    --ink-soft: #d9d4c8;
-    --muted: #a49d8f;
-    --faint: #6f695b;
+    /* warm ink neutrals — deeper ground, clearly-elevated surfaces */
+    --background: #0a0906;
+    --surface: #16140e;
+    --surface-2: #211e16;
+    --elevated: #1b1811;
+    --border: #2c281e;
+    --border-strong: #3d3728;
+    --foreground: #f4f0e7;
+    --ink-soft: #ddd7c9;
+    --muted: #a8a192;
+    --faint: #746d5d;
 
-    --brand: #47c193;
-    --brand-hover: #5ed2a6;
-    --brand-fg: #08150f;
-    --brand-soft: color-mix(in srgb, #47c193 14%, transparent);
+    /* brand: deeper spruce (less minty) */
+    --brand: #34b083;
+    --brand-hover: #43c191;
+    --brand-fg: #06130d;
+    --brand-soft: color-mix(in srgb, #34b083 15%, transparent);
 
     --hot: #f0724a;
     --warm: #e2ac4c;
     --cold: #8b8578;
     --danger: #ef6f5c;
 
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-    --shadow-md: 0 8px 24px -8px rgba(0, 0, 0, 0.55), 0 2px 8px -2px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 28px 60px -14px rgba(0, 0, 0, 0.7), 0 8px 18px -8px rgba(0, 0, 0, 0.5);
-    --ring: 0 0 0 3px color-mix(in srgb, var(--brand) 35%, transparent);
+    /* real shadow + a subtle top highlight so surfaces read "lit from above" */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    --shadow-md: 0 12px 32px -10px rgba(0, 0, 0, 0.65), 0 2px 8px -2px rgba(0, 0, 0, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    --shadow-lg: 0 32px 64px -16px rgba(0, 0, 0, 0.75), 0 10px 22px -10px rgba(0, 0, 0, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    --ring: 0 0 0 3px color-mix(in srgb, var(--brand) 40%, transparent);
   }
 }
 
@@ -112,12 +116,18 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   font-feature-settings: "cv01", "ss01";
-  /* faint warm grain for depth */
-  background-image: radial-gradient(
-    120% 120% at 100% 0%,
-    color-mix(in srgb, var(--brand) 5%, transparent) 0%,
-    transparent 42%
-  );
+  /* faint layered glow for depth */
+  background-image:
+    radial-gradient(
+      95% 85% at 100% -8%,
+      color-mix(in srgb, var(--brand) 9%, transparent),
+      transparent 46%
+    ),
+    radial-gradient(
+      75% 65% at -5% 0%,
+      color-mix(in srgb, var(--warm) 5%, transparent),
+      transparent 42%
+    );
   background-attachment: fixed;
 }
 

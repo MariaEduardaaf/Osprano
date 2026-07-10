@@ -66,7 +66,7 @@ export function Sidebar() {
           <span className="font-display text-lg font-bold tracking-tight text-foreground">
             sitescout
           </span>
-          <span className="-mt-0.5 block font-mono text-[9px] font-medium uppercase tracking-[0.14em] text-brand">
+          <span className="-mt-0.5 block font-mono text-[9px] font-medium uppercase tracking-[0.13em] text-brand/55">
             compliant by design
           </span>
         </div>
@@ -80,8 +80,8 @@ export function Sidebar() {
             href={item.href}
             className={`relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
               active
-                ? "bg-brand-soft text-foreground before:absolute before:left-0 before:top-1/2 before:h-4 before:w-[3px] before:-translate-y-1/2 before:rounded-full before:bg-brand"
-                : "text-muted hover:bg-surface-2 hover:text-foreground"
+                ? "bg-surface-2 text-foreground shadow-[var(--shadow-sm)] before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-full before:bg-brand"
+                : "text-muted hover:bg-surface-2/60 hover:text-foreground"
             }`}
           >
             <svg
