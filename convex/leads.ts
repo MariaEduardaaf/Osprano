@@ -95,6 +95,38 @@ export const stats = query({
   },
 });
 
+/** Aggregates for the dashboard charts. */
+export const analytics = query({
+  args: {},
+  handler: async (ctx) => {
+    const orgId = await requireOrgId(ctx);
+    const leads = await ctx.db
+      .query("leads")
+      .withIndex("by_org", (q) => q.eq("orgId", orgId))
+      .collect();
+
+    const tiers = { hot: 0, warm: 0, cold: 0 };
+    const scoreBuckets = [0, 0, 0, 0, 0]; // 0-19, 20-39, 40-59, 60-79, 80-100
+    const byCountry: Record<string, number> = {};
+    const signals = { noSite: 0, socialOnly: 0, noHttps: 0, notMobile: 0, slow: 0, sparseProfile: 0 };
+
+    for (const l of leads) {
+      const t = l.tier;
+      if (t === "hot" || t === "warm" || t === "cold") tiers[t] += 1;
+      const b = Math.min(4, Math.max(0, Math.floor((l.score ?? 0) / 20)));
+      scoreBuckets[b] += 1;
+      byCountry[l.countryCode] = (byCountry[l.countryCode] ?? 0) + 1;
+      const s = l.signals;
+      if (s) {
+        (Object.keys(signals) as (keyof typeof signals)[]).forEach((k) => {
+          if (s[k]) signals[k] += 1;
+        });
+      }
+    }
+    return { total: leads.length, tiers, scoreBuckets, byCountry, signals };
+  },
+});
+
 export const setStage = mutation({
   args: { id: v.id("leads"), stage: stageArg },
   handler: async (ctx, args) => {
