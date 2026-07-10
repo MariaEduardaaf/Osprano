@@ -7,6 +7,8 @@ import "./globals.css";
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
+const DEMO = process.env.NEXT_PUBLIC_DEMO === "1";
+
 export const metadata: Metadata = {
   title: "sitescout — ache a dor, feche o site",
   description:
@@ -14,16 +16,17 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return (
-    <ClerkProvider>
-      <html
-        lang="pt-BR"
-        className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-      >
-        <body className="min-h-full">
-          <ConvexClientProvider>{children}</ConvexClientProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+  const tree = (
+    <html
+      lang="pt-BR"
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+    >
+      <body className="min-h-full">
+        <ConvexClientProvider>{children}</ConvexClientProvider>
+      </body>
+    </html>
   );
+
+  // Demo mode (dev only) runs without Clerk.
+  return DEMO ? tree : <ClerkProvider>{tree}</ClerkProvider>;
 }

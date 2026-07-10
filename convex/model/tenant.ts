@@ -7,8 +7,8 @@ import type { QueryCtx, MutationCtx, ActionCtx } from "../_generated/server";
  */
 export async function requireOrgId(ctx: QueryCtx | MutationCtx | ActionCtx): Promise<string> {
   const identity = await ctx.auth.getUserIdentity();
-  if (!identity) {
-    throw new Error("Não autenticado");
-  }
-  return identity.subject;
+  if (identity) return identity.subject;
+  // Demo mode (dev only): a shared, unauthenticated "demo" workspace.
+  if (process.env.DEMO_MODE === "1") return "demo";
+  throw new Error("Não autenticado");
 }

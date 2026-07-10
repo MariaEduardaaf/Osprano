@@ -2,8 +2,10 @@ import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { MARKETS, LAUNCH_MARKETS } from "@convex/lib/domain";
 
+const DEMO = process.env.NEXT_PUBLIC_DEMO === "1";
+
 export default async function Home() {
-  const { userId } = await auth();
+  const userId = DEMO ? null : (await auth()).userId;
   return (
     <div className="mx-auto flex min-h-dvh max-w-3xl flex-col justify-center px-6 py-20">
       <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">sitescout</span>
@@ -17,7 +19,14 @@ export default async function Home() {
       </p>
 
       <div className="mt-8 flex flex-wrap gap-3">
-        {userId ? (
+        {DEMO ? (
+          <Link
+            href="/dashboard"
+            className="rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-brand-fg"
+          >
+            Entrar no app (demo) →
+          </Link>
+        ) : userId ? (
           <Link
             href="/dashboard"
             className="rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-brand-fg"

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
 import { Sidebar } from "@/components/sidebar";
 
+const DEMO = process.env.NEXT_PUBLIC_DEMO === "1";
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-dvh">
@@ -11,7 +13,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <Link href="/settings" className="text-sm font-medium text-muted hover:text-foreground">
             Settings
           </Link>
-          <UserButton />
+          {DEMO ? (
+            <span className="rounded-full bg-surface-2 px-3 py-1 text-xs font-semibold text-muted">
+              modo demo
+            </span>
+          ) : (
+            <UserButton />
+          )}
         </header>
         <main className="flex-1 overflow-auto p-8">{children}</main>
       </div>

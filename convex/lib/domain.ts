@@ -180,12 +180,12 @@ export interface Signals {
 }
 
 export const SCORE_WEIGHTS: Record<keyof Signals, number> = {
-  noSite: 45,
-  socialOnly: 35,
+  noSite: 55,
+  socialOnly: 50,
   noHttps: 15,
   notMobile: 20,
   slow: 15,
-  sparseProfile: 10,
+  sparseProfile: 20,
 };
 
 export function computeScore(signals: Signals): number {

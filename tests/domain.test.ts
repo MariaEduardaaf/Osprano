@@ -50,8 +50,10 @@ test("computeScore: no signals = 0", () => {
   assert.equal(computeScore(NONE), 0);
 });
 
-test("computeScore: noSite weighs 45", () => {
-  assert.equal(computeScore({ ...NONE, noSite: true }), 45);
+test("computeScore: noSite is the heaviest single signal", () => {
+  assert.equal(computeScore({ ...NONE, noSite: true }), 55);
+  // no-site + a secondary signal reaches the "hot" tier
+  assert.equal(tierFromScore(computeScore({ ...NONE, noSite: true, sparseProfile: true })), "hot");
 });
 
 test("computeScore: caps at 100", () => {

@@ -15,11 +15,16 @@ const isProtected = createRouteMatcher([
   "/settings(.*)",
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
+const clerkProxy = clerkMiddleware(async (auth, req) => {
   if (isProtected(req)) {
     await auth.protect();
   }
 });
+
+// Demo mode (dev only): pass everything through, no auth.
+function demoProxy() {}
+
+export default process.env.NEXT_PUBLIC_DEMO === "1" ? demoProxy : clerkProxy;
 
 export const config = {
   matcher: [
