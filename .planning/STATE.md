@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 03-03-PLAN.md
-last_updated: "2026-07-11T05:15:23.961Z"
+stopped_at: Completed 03-04-PLAN.md
+last_updated: "2026-07-11T05:23:30.305Z"
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 11
-  completed_plans: 10
+  completed_plans: 11
 ---
 
 # Project State
@@ -23,8 +23,8 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 
 ## Current Position
 
-Phase: 3 (Tracking, Composer e Localização) — EXECUTING
-Plan: 1 of 4
+Phase: 3 (Tracking, Composer e Localização) — COMPLETE
+Plan: 4 of 4
 
 ## Performance Metrics
 
@@ -55,6 +55,7 @@ Plan: 1 of 4
 | Phase 3 P01 | 1min | 1 tasks | 1 files |
 | Phase 03 P02 | 6min | 2 tasks | 3 files |
 | Phase 03 P03 | 6min | 2 tasks | 2 files |
+| Phase 03 P04 | 7min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -79,6 +80,8 @@ Recent decisions affecting current work:
 - [Phase 3]: 03-02: mapa countryCode->locale independente do LANG de outreachAi.ts (formatos incompatíveis: nomes de idioma vs. códigos de locale)
 - [Phase 3]: 03-03: repliedAt entra na frente da cadeia de fallback de activityAt na outbox, senão itens marcados respondeu ficam presos no horário de abertura/envio
 - [Phase 3]: 03-03: updateDraft não chama withOptOutFooter — rodapé é responsabilidade exclusiva de upsertDraft/send, evita duplicar lógica de compliance
+- [Phase 03]: 03-04: hidratação do composer via key-remount (não useRef+useEffect) — react-hooks/set-state-in-effect e react-hooks/refs são 'error' no React Compiler deste projeto
+- [Phase 03]: 03-04: markReplied (Respondeu) nunca altera stage do lead — só o status do outreach
 
 ### Pending Todos
 
@@ -95,6 +98,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-11T05:15:23.959Z
-Stopped at: Completed 03-03-PLAN.md
+Last session: 2026-07-11T05:23:30.301Z
+Stopped at: Completed 03-04-PLAN.md
 Resume file: None
