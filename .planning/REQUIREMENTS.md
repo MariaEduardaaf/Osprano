@@ -16,7 +16,7 @@ Bloqueadores de produção identificados pela auditoria de 2026-07-11. Cada um m
 ### Tracking & Funil
 
 - [x] **TRCK-01**: Abertura do preview pelo próprio vendedor (sessão autenticada do mesmo workspace) não incrementa `openCount`, não gera evento `preview_open` e não move o lead de `base` para `approached` — só abertura real do prospect conta. (`convex/previews.ts:115-141`, `src/components/preview-tracker.tsx`)
-- [ ] **TRCK-02**: Usuário pode marcar um outreach como "respondeu" manualmente (no detalhe do lead e/ou na outbox), gravando status `replied` real com timestamp — a coluna "Respondeu" deixa de ser exclusiva do demo. (`convex/outreach.ts`, `src/app/(app)/outreach/page.tsx`, `src/components/crm/lead-detail.tsx`)
+- [x] **TRCK-02**: Usuário pode marcar um outreach como "respondeu" manualmente (no detalhe do lead e/ou na outbox), gravando status `replied` real com timestamp — a coluna "Respondeu" deixa de ser exclusiva do demo. (`convex/outreach.ts`, `src/app/(app)/outreach/page.tsx`, `src/components/crm/lead-detail.tsx`)
 
 ### Compliance de Email
 
@@ -34,7 +34,7 @@ Bloqueadores de produção identificados pela auditoria de 2026-07-11. Cada um m
 
 ### Outreach UX
 
-- [ ] **OUTR-01**: O que o usuário vê no composer é o que sai — edições de assunto/corpo são persistidas (mutation de update) e o envio via Resend usa o conteúdo atualizado. (`src/components/outreach-composer.tsx`, `convex/outreach.ts:165-166`)
+- [x] **OUTR-01**: O que o usuário vê no composer é o que sai — edições de assunto/corpo são persistidas (mutation de update) e o envio via Resend usa o conteúdo atualizado. (`src/components/outreach-composer.tsx`, `convex/outreach.ts:165-166`)
 
 ### Localização
 
@@ -80,13 +80,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BILL-02 | Phase 1 | Complete |
 | BILL-03 | Phase 1 | Complete |
 | TRCK-01 | Phase 3 | Complete |
-| TRCK-02 | Phase 3 | Pending |
+| TRCK-02 | Phase 3 | Complete |
 | COMP-01 | Phase 2 | Complete |
 | COMP-02 | Phase 2 | Complete |
 | COMP-03 | Phase 2 | Complete |
 | COMP-04 | Phase 2 | Complete |
 | SEC-01 | Phase 1 | Complete |
-| OUTR-01 | Phase 3 | Pending |
+| OUTR-01 | Phase 3 | Complete |
 | L10N-01 | Phase 3 | Complete |
 
 **Coverage:**
