@@ -21,6 +21,15 @@ export async function stripePost(
   return data;
 }
 
+/** Mapeia um price_id do Stripe para o plano interno. Inverso de billing.ts:priceFor.
+ *  Price desconhecido → undefined (falha segura: applySubscription mantém o plano atual). */
+export function planForPrice(priceId: string | undefined): "pro" | "agency" | undefined {
+  if (!priceId) return undefined;
+  if (priceId === process.env.STRIPE_PRICE_PRO) return "pro";
+  if (priceId === process.env.STRIPE_PRICE_AGENCY) return "agency";
+  return undefined;
+}
+
 /** Verify a Stripe webhook signature using Web Crypto (HMAC-SHA256). */
 export async function verifyStripeSignature(
   payload: string,
