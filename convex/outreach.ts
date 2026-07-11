@@ -208,6 +208,24 @@ export const markReplied = mutation({
   },
 });
 
+/** OUTR-01: persiste o que o usuário editou no composer, antes de send/markSent/copy.
+    NÃO injeta rodapé de opt-out — o send (Fase 2) re-garante footer/headers de forma
+    idempotente, então uma edição do usuário nunca remove a garantia de compliance. */
+export const updateDraft = mutation({
+  args: { leadId: v.id("leads"), subject: v.string(), body: v.string() },
+  handler: async (ctx, { leadId, subject, body }) => {
+    const orgId = await requireOrgId(ctx);
+    const lead = await ctx.db.get(leadId);
+    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    const row = await ctx.db
+      .query("outreach")
+      .withIndex("by_lead", (q) => q.eq("leadId", leadId))
+      .first();
+    if (!row) throw new Error("Nenhum rascunho encontrado para este lead.");
+    await ctx.db.patch(row._id, { subject, body });
+  },
+});
+
 /** Registrar supressão manual ("respondeu stop"). Org-scoped. UI na Fase 3. */
 export const suppress = mutation({
   args: { leadId: v.id("leads") },
