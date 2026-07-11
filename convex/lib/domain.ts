@@ -60,6 +60,16 @@ export function isEmailable(input: {
   return false; // unknown/unknown → not defensible
 }
 
+/** Forma canônica para casar supressão (Convex não tem índice case-insensitive). */
+export function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+/** Gate de WhatsApp (COMP-04): só há opt-in se houver timestamp registrado. */
+export function hasWaOptIn(lead: { waOptInAt?: number | null }): boolean {
+  return typeof lead.waOptInAt === "number" && lead.waOptInAt > 0;
+}
+
 /** Incorporation-marker suffixes in the business name, per launch market. */
 const INCORPORATED_SUFFIXES: Record<string, string[]> = {
   GB: ["ltd", "limited", "llp", "plc"],

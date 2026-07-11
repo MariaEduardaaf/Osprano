@@ -2,7 +2,7 @@ import type { Doc } from "../_generated/dataModel";
 import type { Signals } from "./domain";
 
 /** Outreach language per launch market. */
-const LANG: Record<string, string> = {
+export const LANG: Record<string, string> = {
   GB: "English",
   IE: "English",
   NL: "Dutch",
