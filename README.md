@@ -96,6 +96,7 @@ O jeito mais rápido de ver a aplicação **preenchida**, sem configurar auth ne
 ```bash
 # no deployment Convex
 npx convex env set DEMO_MODE 1
+npx convex env set CONVEX_ENV development   # obrigatório: o demo é default-deny (só liga fora de produção)
 npx convex run demo:seed          # 48 negócios europeus + previews + caixa de saída
 
 # no .env.local
@@ -106,6 +107,11 @@ pnpm dev
 
 No modo demo a auth é ignorada (org "demo") e a descoberta real (Places) fica desativada —
 tudo roda em cima do seed.
+
+> **Segurança:** o modo demo é inerte em produção — em qualquer deployment sem
+> `CONVEX_ENV=development` a auth permanece ativa (segurança por padrão, mesmo com
+> `DEMO_MODE=1` setado por engano). No Next, `NEXT_PUBLIC_DEMO=1` só tem efeito com
+> `NODE_ENV` de desenvolvimento.
 
 ---
 

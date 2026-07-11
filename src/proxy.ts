@@ -24,7 +24,9 @@ const clerkProxy = clerkMiddleware(async (auth, req) => {
 // Demo mode (dev only): pass everything through, no auth.
 function demoProxy() {}
 
-export default process.env.NEXT_PUBLIC_DEMO === "1" ? demoProxy : clerkProxy;
+export default process.env.NEXT_PUBLIC_DEMO === "1" && process.env.NODE_ENV !== "production"
+  ? demoProxy
+  : clerkProxy;
 
 export const config = {
   matcher: [

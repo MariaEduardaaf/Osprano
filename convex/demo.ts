@@ -2,6 +2,7 @@ import { mutation } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { computeScore, tierFromScore, isEmailable, type Signals } from "./lib/domain";
+import { isDemoEnabled } from "./model/tenant";
 
 const ORG = "demo";
 const NONE: Signals = {
@@ -130,7 +131,7 @@ async function clearOrg(ctx: MutationCtx): Promise<void> {
 export const seed = mutation({
   args: {},
   handler: async (ctx) => {
-    if (process.env.DEMO_MODE !== "1") throw new Error("DEMO_MODE desligado");
+    if (!isDemoEnabled()) throw new Error("DEMO_MODE desligado");
     await clearOrg(ctx);
 
     const now = Date.now();
