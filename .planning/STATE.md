@@ -2,15 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_plan: 4
 status: unknown
-stopped_at: Phase 3 context gathered
-last_updated: "2026-07-11T04:32:38.102Z"
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-07-11T05:01:53.926Z"
 progress:
   total_phases: 3
   completed_phases: 2
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 11
+  completed_plans: 8
 ---
 
 # Project State
@@ -20,14 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-11)
 
 **Core value:** O usuário prospecta e aborda negócios europeus sem risco legal — compliance garantido por código, contagem de plano/billing íntegra.
-**Current focus:** Phase 2 — Compliance de Email e WhatsApp
+**Current focus:** Phase 3 — Tracking, Composer e Localização
 
 ## Current Position
 
-Phase: 2 (Compliance de Email e WhatsApp) — EXECUTING
-Plan: 2 of 4
-Current Plan: 4
-Total Plans in Phase: 4
+Phase: 3 (Tracking, Composer e Localização) — EXECUTING
+Plan: 1 of 4
 
 ## Performance Metrics
 
@@ -55,6 +52,7 @@ Total Plans in Phase: 4
 | Phase 02 P03 | 3min | 1 tasks | 1 files |
 | Phase 02 P04 | 3min | 3 tasks | 4 files |
 | Phase 02 P02 | 6min | 3 tasks | 1 files |
+| Phase 3 P01 | 1min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -75,6 +73,7 @@ Recent decisions affecting current work:
 - [Phase 02]: 02-04: gate por estágio removido por completo em sendFollowup (não deixado como condição secundária) — só waOptInAt libera WhatsApp
 - [Phase 02]: 02-02: checagem de supressão duplicada em draft (evita gastar IA) e em send (defesa em profundidade, cobre body editado manualmente)
 - [Phase 02]: 02-02: unsubscribeToken gerado em upsertDraft e re-garantido via backfill on-demand em send (cobre rows legadas sem token)
+- [Phase 3]: 03-01: recordOpen ganhou guarda de self-open (identity.subject === preview.orgId) — só o servidor decide, PreviewTracker e modo demo intocados
 
 ### Pending Todos
 
@@ -91,6 +90,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-11T04:32:38.100Z
-Stopped at: Phase 3 context gathered
-Resume file: .planning/phases/03-tracking-composer-e-localiza-o/03-CONTEXT.md
+Last session: 2026-07-11T05:01:53.924Z
+Stopped at: Completed 03-01-PLAN.md
+Resume file: None

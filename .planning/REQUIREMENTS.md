@@ -15,7 +15,7 @@ Bloqueadores de produção identificados pela auditoria de 2026-07-11. Cada um m
 
 ### Tracking & Funil
 
-- [ ] **TRCK-01**: Abertura do preview pelo próprio vendedor (sessão autenticada do mesmo workspace) não incrementa `openCount`, não gera evento `preview_open` e não move o lead de `base` para `approached` — só abertura real do prospect conta. (`convex/previews.ts:115-141`, `src/components/preview-tracker.tsx`)
+- [x] **TRCK-01**: Abertura do preview pelo próprio vendedor (sessão autenticada do mesmo workspace) não incrementa `openCount`, não gera evento `preview_open` e não move o lead de `base` para `approached` — só abertura real do prospect conta. (`convex/previews.ts:115-141`, `src/components/preview-tracker.tsx`)
 - [ ] **TRCK-02**: Usuário pode marcar um outreach como "respondeu" manualmente (no detalhe do lead e/ou na outbox), gravando status `replied` real com timestamp — a coluna "Respondeu" deixa de ser exclusiva do demo. (`convex/outreach.ts`, `src/app/(app)/outreach/page.tsx`, `src/components/crm/lead-detail.tsx`)
 
 ### Compliance de Email
@@ -79,7 +79,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BILL-01 | Phase 1 | Complete |
 | BILL-02 | Phase 1 | Complete |
 | BILL-03 | Phase 1 | Complete |
-| TRCK-01 | Phase 3 | Pending |
+| TRCK-01 | Phase 3 | Complete |
 | TRCK-02 | Phase 3 | Pending |
 | COMP-01 | Phase 2 | Complete |
 | COMP-02 | Phase 2 | Complete |
