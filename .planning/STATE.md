@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 current_plan: 4
 status: unknown
-stopped_at: Completed 02-04-PLAN.md
-last_updated: "2026-07-11T04:23:59.975Z"
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-07-11T04:26:18.283Z"
 progress:
   total_phases: 3
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 7
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Project State
@@ -54,6 +54,7 @@ Total Plans in Phase: 4
 *Updated after each plan completion*
 | Phase 02 P03 | 3min | 1 tasks | 1 files |
 | Phase 02 P04 | 3min | 3 tasks | 4 files |
+| Phase 02 P02 | 6min | 3 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -72,6 +73,8 @@ Recent decisions affecting current work:
 - [Phase 01]: SEC-01: isDemoEnabled default-deny (CONVEX_ENV === "development"), não default-allow — env esquecida em prod real mantém demo OFF
 - [Phase 2]: 02-01: senderIdentityFrom precisa de trim() antes do match para tolerar espaço à direita em RESEND_FROM
 - [Phase 02]: 02-04: gate por estágio removido por completo em sendFollowup (não deixado como condição secundária) — só waOptInAt libera WhatsApp
+- [Phase 02]: 02-02: checagem de supressão duplicada em draft (evita gastar IA) e em send (defesa em profundidade, cobre body editado manualmente)
+- [Phase 02]: 02-02: unsubscribeToken gerado em upsertDraft e re-garantido via backfill on-demand em send (cobre rows legadas sem token)
 
 ### Pending Todos
 
@@ -88,6 +91,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-11T04:23:59.972Z
-Stopped at: Completed 02-04-PLAN.md
+Last session: 2026-07-11T04:26:18.281Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None

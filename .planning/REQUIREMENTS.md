@@ -20,9 +20,9 @@ Bloqueadores de produção identificados pela auditoria de 2026-07-11. Cada um m
 
 ### Compliance de Email
 
-- [ ] **COMP-01**: Existe tabela de supressão (email normalizado + escopo org/global + origem + timestamp) e tanto `outreach.draft` quanto `outreach.send` recusam endereços suprimidos. (`convex/schema.ts`, `convex/outreach.ts`)
+- [x] **COMP-01**: Existe tabela de supressão (email normalizado + escopo org/global + origem + timestamp) e tanto `outreach.draft` quanto `outreach.send` recusam endereços suprimidos. (`convex/schema.ts`, `convex/outreach.ts`)
 - [x] **COMP-02**: Existe endpoint HTTP público de unsubscribe (token por outreach/lead, sem auth) que grava na tabela de supressão e confirma ao prospect. (`convex/http.ts`)
-- [ ] **COMP-03**: Todo email enviado sai com rodapé de opt-out injetado por código (link do unsubscribe + identificação do remetente) e header `List-Unsubscribe` no payload do Resend — independente do que a IA gerar ou do fallback de parse. (`convex/outreach.ts:156-185`, `convex/lib/outreachAi.ts:82-88`)
+- [x] **COMP-03**: Todo email enviado sai com rodapé de opt-out injetado por código (link do unsubscribe + identificação do remetente) e header `List-Unsubscribe` no payload do Resend — independente do que a IA gerar ou do fallback de parse. (`convex/outreach.ts:156-185`, `convex/lib/outreachAi.ts:82-88`)
 
 ### Compliance de WhatsApp
 
@@ -81,9 +81,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BILL-03 | Phase 1 | Complete |
 | TRCK-01 | Phase 3 | Pending |
 | TRCK-02 | Phase 3 | Pending |
-| COMP-01 | Phase 2 | Pending |
+| COMP-01 | Phase 2 | Complete |
 | COMP-02 | Phase 2 | Complete |
-| COMP-03 | Phase 2 | Pending |
+| COMP-03 | Phase 2 | Complete |
 | COMP-04 | Phase 2 | Complete |
 | SEC-01 | Phase 1 | Complete |
 | OUTR-01 | Phase 3 | Pending |
