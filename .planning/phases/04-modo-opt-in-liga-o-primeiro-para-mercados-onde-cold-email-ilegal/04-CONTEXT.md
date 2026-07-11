@@ -42,10 +42,17 @@ Prospecção compliant em mercados opt-in (ES/IT/PT/DE/DK/CH): descoberta/score/
 - Action `outreach.callScript({ leadId })` — auth + ownership; exige telefone; persiste no lead (`callScript`, `callScriptPt`, `callScriptAt` opcionais no schema) para não regenerar à toa; regenerar disponível (sobrescreve). Requer `ANTHROPIC_API_KEY` (mesmo erro-padrão do draft).
 - UI: painel/expansão no card (ou modal simples) mostrando script e tradução lado a lado com botão copiar em cada um.
 
+### Ajustes incorporados pela pesquisa (04-RESEARCH.md)
+- `src/components/crm/lead-detail.tsx`: o banner de compliance que lê `!lead.emailable` direto passa a usar `canContactByEmail(lead)` — senão mostra "fora do escopo" depois do consentimento enquanto o composer funciona.
+- `convex/lib/compliance.ts`: `FOOTER_COPY` ganha os idiomas novos (es/it/pt/de/da) — o rodapé de opt-out dos emails destravados por consentimento deve sair no idioma do mercado, como os 4 atuais.
+- `legalReview: "pending"` aplica-se aos 6 mercados opt-in (não só ao PT novo) — DE/CH/DK/IT/ES já existiam no MARKETS mas só ficam "vivos" nesta fase.
+- `contactOptInNote` persiste no doc do lead (divergência deliberada do padrão waOptIn, que só registra a nota no evento).
+- FORA de escopo confirmado: mercados opt-in na criação manual de lead (create-lead-modal fica como está).
+
 ### Claude's Discretion
 - Copy exata do banner, do empty state e dos botões.
 - Modal vs painel expansível para o script.
-- Listas exatas de cidades por mercado novo.
+- Listas exatas de cidades por mercado novo (ponto de partida no 04-RESEARCH.md).
 - Seed do demo ganhar 2–3 leads de mercado opt-in (nice-to-have; se entrar, manter DEMO coerente).
 
 </decisions>
