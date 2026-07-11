@@ -76,24 +76,24 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BILL-01 | — | Pending |
-| BILL-02 | — | Pending |
-| BILL-03 | — | Pending |
-| TRCK-01 | — | Pending |
-| TRCK-02 | — | Pending |
-| COMP-01 | — | Pending |
-| COMP-02 | — | Pending |
-| COMP-03 | — | Pending |
-| COMP-04 | — | Pending |
-| SEC-01 | — | Pending |
-| OUTR-01 | — | Pending |
-| L10N-01 | — | Pending |
+| BILL-01 | Phase 1 | Pending |
+| BILL-02 | Phase 1 | Pending |
+| BILL-03 | Phase 1 | Pending |
+| TRCK-01 | Phase 3 | Pending |
+| TRCK-02 | Phase 3 | Pending |
+| COMP-01 | Phase 2 | Pending |
+| COMP-02 | Phase 2 | Pending |
+| COMP-03 | Phase 2 | Pending |
+| COMP-04 | Phase 2 | Pending |
+| SEC-01 | Phase 1 | Pending |
+| OUTR-01 | Phase 3 | Pending |
+| L10N-01 | Phase 3 | Pending |
 
 **Coverage:**
 - v1 requirements: 12 total
-- Mapped to phases: 0 (roadmap pendente)
-- Unmapped: 12 ⚠️
+- Mapped to phases: 12 (roadmap criado — see ROADMAP.md)
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-07-11*
-*Last updated: 2026-07-11 after initial definition*
+*Last updated: 2026-07-11 after roadmap creation (12/12 mapped to Phases 1-3)*
