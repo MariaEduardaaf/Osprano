@@ -93,6 +93,13 @@ export default defineSchema({
     // Pipeline / CRM
     stage: stage,
     stageUpdatedAt: v.number(),
+    // Descoberta → CRM: leads buscados começam saved=false (só na tela de Leads);
+    // "Enviar para CRM" marca saved=true. undefined (seed/legado) = já no CRM.
+    saved: v.optional(v.boolean()),
+
+    // Agenda (reunião marcada com o lead)
+    meetingAt: v.optional(v.number()),
+    meetingNote: v.optional(v.string()),
 
     fetchedAt: v.number(), // for the Google Places 30-day refresh policy
   })

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useAction, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
+import type { Id } from "@convex/_generated/dataModel";
 import { MARKETS, LAUNCH_MARKETS, CATEGORY_OPTIONS, CITIES_BY_COUNTRY } from "@convex/lib/domain";
-import { MdOutlineSearch } from "react-icons/md";
+import { MdOutlineSearch, MdOutlineSend } from "react-icons/md";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { LeadCard } from "@/components/lead-card";
 import { GeneratePreviewButton } from "@/components/generate-preview-button";
@@ -13,11 +14,35 @@ export default function LeadsPage() {
   const [country, setCountry] = useState("GB");
   const [category, setCategory] = useState("");
   const [city, setCity] = useState("");
+  const [limit, setLimit] = useState(20);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<Id<"leads">>>(new Set());
 
   const search = useAction(api.places.search);
+  const saveMany = useMutation(api.leads.saveMany);
   const leads = useQuery(api.leads.list, {});
+
+  const shown = leads ?? [];
+  const allSelected = shown.length > 0 && shown.every((l) => selected.has(l._id));
+
+  function toggle(id: Id<"leads">) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+  function toggleAll() {
+    setSelected(allSelected ? new Set() : new Set(shown.map((l) => l._id)));
+  }
+  async function sendToCrm() {
+    if (selected.size === 0) return;
+    const res = await saveMany({ ids: [...selected] });
+    setMsg(`${res.saved} lead(s) enviado(s) para o CRM.`);
+    setSelected(new Set());
+  }
 
   async function onSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -25,7 +50,12 @@ export default function LeadsPage() {
     setBusy(true);
     setMsg(null);
     try {
-      const res = await search({ countryCode: country, category: category.trim(), city: city.trim() });
+      const res = await search({
+        countryCode: country,
+        category: category.trim(),
+        city: city.trim(),
+        max: limit,
+      });
       setMsg(`Encontrados ${res.found} · adicionados ${res.inserted}. Pontuando em segundo plano…`);
     } catch (err) {
       setMsg(err instanceof Error ? err.message : "Falha na busca");
@@ -84,6 +114,24 @@ export default function LeadsPage() {
             </option>
           ))}
         </select>
+        <label className="flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2">
+          <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-faint">
+            Máx
+          </span>
+          <input
+            type="number"
+            min={1}
+            max={50}
+            value={limit}
+            onChange={(e) => {
+              const n = Math.round(Number(e.target.value));
+              setLimit(Number.isNaN(n) ? 1 : Math.min(50, Math.max(1, n)));
+            }}
+            className="w-12 bg-transparent text-sm font-semibold tabular-nums outline-none"
+            aria-label="Máximo de leads a buscar (1 a 50)"
+          />
+          <span className="text-xs text-faint">leads</span>
+        </label>
         <button
           type="submit"
           disabled={busy || !category.trim() || !city.trim()}
@@ -108,6 +156,28 @@ export default function LeadsPage() {
         </div>
       )}
 
+      {shown.length > 0 && (
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <label className="inline-flex cursor-pointer select-none items-center gap-2 text-sm font-medium text-muted">
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={toggleAll}
+              className="h-4 w-4 rounded border-border accent-[var(--brand)]"
+            />
+            Selecionar todos
+          </label>
+          <button
+            onClick={sendToCrm}
+            disabled={selected.size === 0}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-fg shadow-[var(--shadow-sm)] transition-colors hover:bg-brand-hover disabled:opacity-40"
+          >
+            <MdOutlineSend size={16} />
+            Enviar para CRM ({selected.size})
+          </button>
+        </div>
+      )}
+
       {leads === undefined ? (
         <p className="text-sm text-faint">Carregando…</p>
       ) : leads.length === 0 ? (
@@ -116,12 +186,15 @@ export default function LeadsPage() {
           negócio recebe um Digital Presence Score automaticamente.
         </EmptyState>
       ) : (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           {leads.map((lead) => (
             <LeadCard
               key={lead._id}
               lead={lead}
-              action={<GeneratePreviewButton leadId={lead._id} />}
+              selectable
+              selected={selected.has(lead._id)}
+              onToggle={() => toggle(lead._id)}
+              action={<GeneratePreviewButton leadId={lead._id} variant="primary" />}
             />
           ))}
         </div>

@@ -1,5 +1,6 @@
 import { mutation } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 import { computeScore, tierFromScore, isEmailable, type Signals } from "./lib/domain";
 
 const ORG = "demo";
@@ -225,6 +226,40 @@ export const seed = mutation({
     for (const l of ids.filter((x) => x.stage === "converted").slice(0, 3)) {
       await ctx.db.insert("events", { orgId: ORG, type: "stage_change", leadId: l.id, at: now - t * 900_000, meta: { to: "converted" } });
       t += 1;
+    }
+
+    // Outbox — abordagens em vários estágios (rascunho → enviado → abriu → respondeu)
+    const emailBody = (nm: string, ct: string) =>
+      `Olá, tudo bem?\n\nReparei que o ${nm}, aí em ${ct}, ainda não aparece com um site próprio no Google — e quem procura acaba indo pro concorrente que aparece.\n\nMontei uma prévia de site pra vocês, sem custo, só pra dar uma olhada: {link}\n\nSe fizer sentido, respondo com os próximos passos. Se não quiser mais receber, é só avisar que não escrevo de novo.\n\nAbraço.`;
+    const mkOutreach = async (
+      l: { id: Id<"leads">; name: string; city: string },
+      status: "draft" | "sent" | "opened" | "replied",
+      opts: { sentAt?: number; openedAt?: number } = {},
+    ) => {
+      await ctx.db.insert("outreach", {
+        orgId: ORG,
+        leadId: l.id,
+        channel: "email",
+        subject: `Uma prévia do site do ${l.name}`,
+        body: emailBody(l.name, l.city),
+        status,
+        sentAt: opts.sentAt,
+        openedAt: opts.openedAt,
+      });
+    };
+    const HOUR = 3600_000;
+    const drafts = ids.filter((l) => l.stage === "base").slice(0, 5);
+    const sent = ids.filter((l) => l.stage === "approached").slice(0, 6);
+    const opened = ids.filter((l) => l.stage === "scheduled" || l.stage === "followup").slice(0, 6);
+    const replied = ids.filter((l) => l.stage === "converted").slice(0, 3);
+    let ot = 1;
+    for (const l of drafts) await mkOutreach(l, "draft");
+    for (const l of sent) await mkOutreach(l, "sent", { sentAt: now - ot++ * 6 * HOUR });
+    for (const l of opened)
+      await mkOutreach(l, "opened", { sentAt: now - (ot + 24) * HOUR, openedAt: now - ot++ * 6 * HOUR });
+    for (const l of replied) {
+      await mkOutreach(l, "replied", { sentAt: now - (ot + 48) * HOUR, openedAt: now - (ot + 6) * HOUR });
+      await ctx.db.insert("events", { orgId: ORG, type: "reply", leadId: l.id, at: now - ot++ * 6 * HOUR });
     }
 
     return { seeded: NAMES.length };

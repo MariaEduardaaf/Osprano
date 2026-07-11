@@ -17,6 +17,59 @@ export const getForLead = query({
   },
 });
 
+/** Caixa de saída: leads que já têm abordagem, com status (rascunho → enviado → abriu → respondeu). */
+export const outbox = query({
+  args: {},
+  handler: async (ctx) => {
+    const orgId = await requireOrgId(ctx);
+    const rows = await ctx.db
+      .query("outreach")
+      .withIndex("by_org", (q) => q.eq("orgId", orgId))
+      .collect();
+
+    const items = [];
+    for (const row of rows) {
+      const lead = await ctx.db.get(row.leadId);
+      if (!lead) continue;
+
+      let status = row.status; // draft | sent | opened | replied | bounced
+      let openCount = 0;
+      let lastOpenedAt: number | null = null;
+      if (status === "sent" || status === "opened") {
+        const preview = await ctx.db
+          .query("previews")
+          .withIndex("by_lead", (q) => q.eq("leadId", row.leadId))
+          .first();
+        if (preview) {
+          openCount = preview.openCount;
+          lastOpenedAt = preview.lastOpenedAt ?? null;
+          if (status === "sent" && preview.openCount > 0) status = "opened";
+        }
+      }
+
+      items.push({
+        leadId: row.leadId,
+        name: lead.name,
+        category: lead.category ?? null,
+        city: lead.city ?? null,
+        score: lead.score ?? null,
+        tier: (lead.tier ?? "cold") as "hot" | "warm" | "cold",
+        emailable: lead.emailable ?? false,
+        status,
+        subject: row.subject ?? null,
+        previewToken: row.previewToken ?? null,
+        sentAt: row.sentAt ?? null,
+        openedAt: row.openedAt ?? lastOpenedAt,
+        openCount,
+        activityAt: row.openedAt ?? lastOpenedAt ?? row.sentAt ?? row._creationTime,
+      });
+    }
+
+    items.sort((a, b) => (b.activityAt ?? 0) - (a.activityAt ?? 0));
+    return items;
+  },
+});
+
 export const upsertDraft = internalMutation({
   args: {
     orgId: v.string(),

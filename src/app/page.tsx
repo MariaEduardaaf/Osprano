@@ -13,11 +13,13 @@ import {
   MdOutlineViewKanban,
   MdOutlineGppGood,
   MdArrowForward,
+  MdArrowOutward,
   MdCheck,
   MdStar,
 } from "react-icons/md";
 import { MARKETS, LAUNCH_MARKETS } from "@convex/lib/domain";
 import { ProductMockup } from "@/components/landing/mockup";
+import { Radar } from "@/components/landing/radar";
 import { RevenueCalculator } from "@/components/landing/calculator";
 import { Faq } from "@/components/landing/faq";
 import { Pricing } from "@/components/landing/pricing";
@@ -60,12 +62,14 @@ const TESTIMONIALS = [
 
 function Section({
   id,
+  index,
   eyebrow,
   title,
   subtitle,
   children,
 }: {
   id?: string;
+  index?: string;
   eyebrow?: string;
   title?: string;
   subtitle?: string;
@@ -74,18 +78,26 @@ function Section({
   return (
     <section id={id} className="mx-auto max-w-6xl px-6 py-20 sm:py-28">
       {(eyebrow || title) && (
-        <div className="mx-auto mb-14 max-w-2xl text-center">
-          {eyebrow && (
-            <div className="mb-3 font-mono text-xs font-semibold uppercase tracking-[0.2em] text-brand">
-              {eyebrow}
+        <div className="mb-14 border-t border-border pt-8">
+          <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+            <div className="max-w-2xl">
+              {eyebrow && (
+                <div className="mb-4 flex items-center gap-2.5 font-mono text-xs font-semibold uppercase tracking-[0.2em] text-brand">
+                  {index && <span className="tabular-nums text-faint">{index}</span>}
+                  <span className="h-1 w-1 rounded-full bg-brand" />
+                  {eyebrow}
+                </div>
+              )}
+              {title && (
+                <h2 className="text-balance font-display text-4xl font-bold tracking-tight sm:text-5xl">
+                  {title}
+                </h2>
+              )}
             </div>
-          )}
-          {title && (
-            <h2 className="text-balance font-display text-4xl font-bold tracking-tight sm:text-5xl">
-              {title}
-            </h2>
-          )}
-          {subtitle && <p className="mx-auto mt-4 max-w-xl text-lg text-muted">{subtitle}</p>}
+            {subtitle && (
+              <p className="max-w-sm text-base leading-relaxed text-muted md:text-right">{subtitle}</p>
+            )}
+          </div>
         </div>
       )}
       {children}
@@ -105,7 +117,7 @@ export default async function Home() {
         className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[900px]"
         style={{
           background:
-            "radial-gradient(55% 45% at 50% 0%, color-mix(in srgb, var(--brand) 18%, transparent), transparent 70%), radial-gradient(40% 30% at 85% 10%, color-mix(in srgb, var(--brand-deep) 14%, transparent), transparent 60%)",
+            "radial-gradient(50% 40% at 78% 8%, color-mix(in srgb, var(--brand) 20%, transparent), transparent 68%), radial-gradient(45% 35% at 10% 4%, color-mix(in srgb, var(--brand-deep) 12%, transparent), transparent 60%)",
         }}
       />
 
@@ -131,52 +143,53 @@ export default async function Home() {
         </div>
       </header>
 
-      {/* hero */}
-      <section className="mx-auto max-w-4xl px-6 pb-16 pt-20 text-center sm:pt-28">
-        <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-1.5 text-sm font-medium shadow-[var(--shadow-sm)]">
-          <MdOutlineGppGood size={16} className="text-brand" />
-          Compliant by design · Europa
+      {/* hero — asymmetric: copy left, live radar right */}
+      <section className="mx-auto grid max-w-6xl items-center gap-14 px-6 pb-20 pt-16 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10 lg:pb-28 lg:pt-24">
+        <div>
+          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-1.5 text-sm font-medium shadow-[var(--shadow-sm)]">
+            <MdOutlineGppGood size={16} className="text-brand" />
+            Compliant by design · Europa
+          </div>
+          <h1 className="mt-7 text-balance font-display text-5xl font-bold leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl">
+            Ache a dor. Aborde.{" "}
+            <span style={{ color: "var(--brand)" }}>Feche o site.</span>
+          </h1>
+          <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted">
+            O Osprano varre a Europa atrás de negócios com presença digital fraca, pontua a dor, e a
+            IA escreve a abordagem — <strong className="text-foreground">compliant</strong>. Você
+            fecha e transforma em receita recorrente.
+          </p>
+          <div className="mt-9 flex flex-wrap gap-3">
+            <Link
+              href={ctaHref}
+              className="inline-flex items-center gap-2 rounded-xl bg-brand px-7 py-3.5 text-sm font-semibold text-brand-fg shadow-[var(--shadow-md)] transition-transform hover:scale-[1.03]"
+            >
+              {ctaLabel}
+              <MdArrowForward size={18} />
+            </Link>
+            <a
+              href="#como"
+              className="rounded-xl border border-border-strong bg-surface px-7 py-3.5 text-sm font-semibold transition-colors hover:bg-surface-2"
+            >
+              Ver como funciona
+            </a>
+          </div>
+          <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted">
+            {["GDPR compliant", "Só mercados opt-out", "Sem instalar nada"].map((c) => (
+              <span key={c} className="inline-flex items-center gap-1.5">
+                <MdCheck size={16} className="text-brand" />
+                {c}
+              </span>
+            ))}
+          </div>
         </div>
-        <h1 className="mt-7 text-balance font-display text-5xl font-bold leading-[1.02] tracking-tight sm:text-7xl">
-          Ache a dor. Aborde.{" "}
-          <span style={{ color: "var(--brand)" }}>Feche o site.</span>
-        </h1>
-        <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted sm:text-xl">
-          O Osprano encontra negócios locais europeus com presença digital fraca, pontua a dor, e a
-          IA escreve a abordagem — <strong className="text-foreground">compliant</strong>. Você fecha
-          e transforma em receita recorrente.
-        </p>
-        <div className="mt-9 flex flex-wrap justify-center gap-3">
-          <Link
-            href={ctaHref}
-            className="inline-flex items-center gap-2 rounded-xl bg-brand px-7 py-3.5 text-sm font-semibold text-brand-fg shadow-[var(--shadow-md)] transition-transform hover:scale-[1.03]"
-          >
-            {ctaLabel}
-            <MdArrowForward size={18} />
-          </Link>
-          <a
-            href="#como"
-            className="rounded-xl border border-border-strong bg-surface px-7 py-3.5 text-sm font-semibold transition-colors hover:bg-surface-2"
-          >
-            Ver como funciona
-          </a>
-        </div>
-        <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-muted">
-          {["GDPR compliant", "Só mercados opt-out", "Sem instalar nada"].map((c) => (
-            <span key={c} className="inline-flex items-center gap-1.5">
-              <MdCheck size={16} className="text-brand" />
-              {c}
-            </span>
-          ))}
+
+        <div className="relative flex justify-center lg:justify-end">
+          <Radar />
         </div>
       </section>
 
-      {/* mockup */}
-      <div className="px-6 pb-8">
-        <ProductMockup />
-      </div>
-
-      {/* stats */}
+      {/* stats — instrument readouts */}
       <div className="border-y border-border bg-surface/40">
         <div className="mx-auto grid max-w-5xl grid-cols-2 gap-8 px-6 py-12 sm:grid-cols-4">
           {[
@@ -193,39 +206,65 @@ export default async function Home() {
         </div>
       </div>
 
-      {/* steps */}
+      {/* steps — connected timeline, not a card grid */}
       <Section
         id="como"
+        index="01"
         eyebrow="Passo a passo"
         title="Do primeiro lead ao cliente fechado."
-        subtitle="Seis passos, na ordem exata em que você trabalha no painel."
+        subtitle="Seis etapas, na ordem exata em que você trabalha no painel."
       >
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {STEPS.map((s, i) => (
-            <div
-              key={s.t}
-              className="rounded-[var(--radius)] border border-border bg-surface p-6 shadow-[var(--shadow-sm)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)]"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-soft text-brand">
-                  <s.icon size={20} />
+        <div className="relative mx-auto max-w-3xl">
+          {/* rail */}
+          <div className="absolute bottom-6 left-7 top-6 w-px bg-border sm:left-[31px]" aria-hidden />
+          <div className="space-y-7">
+            {STEPS.map((s, i) => (
+              <div key={s.t} className="relative flex gap-5 sm:gap-6">
+                <div className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-border bg-surface text-brand shadow-[var(--shadow-sm)]">
+                  <s.icon size={22} />
                 </div>
-                <span className="font-mono text-sm font-bold text-faint">0{i + 1}</span>
+                <div className="pt-1.5">
+                  <div className="flex items-center gap-2.5">
+                    <span className="font-mono text-xs font-bold tabular-nums text-faint">
+                      0{i + 1}
+                    </span>
+                    <h3 className="font-display text-lg font-semibold">{s.t}</h3>
+                  </div>
+                  <p className="mt-1.5 max-w-lg text-sm leading-relaxed text-muted">{s.d}</p>
+                </div>
               </div>
-              <h3 className="mt-4 font-display text-lg font-semibold">{s.t}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted">{s.d}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
+      </Section>
+
+      {/* product mockup */}
+      <Section
+        id="produto"
+        index="02"
+        eyebrow="O produto"
+        title="O painel por dentro."
+        subtitle="Leads pontuados de um lado, o site já gerado do outro — e a IA pronta pra escrever."
+      >
+        <ProductMockup />
       </Section>
 
       {/* compliant differentiator */}
       <Section>
         <div
-          className="overflow-hidden rounded-3xl p-8 text-white sm:p-14"
+          className="relative overflow-hidden rounded-3xl p-8 text-white sm:p-14"
           style={{ background: "linear-gradient(135deg, var(--brand-deep), var(--brand))" }}
         >
-          <div className="max-w-2xl">
+          {/* radar echo texture */}
+          <div
+            className="pointer-events-none absolute -right-20 -top-24 h-96 w-96 rounded-full opacity-20"
+            style={{
+              background:
+                "repeating-radial-gradient(circle, rgba(255,255,255,0.5) 0 1px, transparent 1px 32px)",
+            }}
+            aria-hidden
+          />
+          <div className="relative max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-wider">
               <MdOutlineGppGood size={14} /> O diferencial
             </div>
@@ -253,18 +292,25 @@ export default async function Home() {
         </div>
       </Section>
 
-      {/* features */}
+      {/* features — instrument panel grid (hairline dividers, not floating cards) */}
       <Section
         id="recursos"
+        index="03"
         eyebrow="Recursos"
         title="Cada tela, e para que ela serve."
         subtitle="Tudo dentro de um painel só — do achar a dor ao fechar com recorrência."
       >
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f) => (
-            <div key={f.t} className="rounded-[var(--radius)] border border-border bg-surface p-6 shadow-[var(--shadow-sm)]">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-soft text-brand">
-                <f.icon size={22} />
+            <div key={f.t} className="group bg-surface p-6 transition-colors hover:bg-surface-2">
+              <div className="flex items-center justify-between">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-soft text-brand">
+                  <f.icon size={22} />
+                </div>
+                <MdArrowOutward
+                  size={18}
+                  className="text-faint opacity-0 transition-opacity group-hover:opacity-100"
+                />
               </div>
               <h3 className="mt-4 font-display text-lg font-semibold">{f.t}</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted">{f.d}</p>
@@ -275,9 +321,10 @@ export default async function Home() {
 
       {/* calculator */}
       <Section
+        index="04"
         eyebrow="Modelo de receita"
-        title="Transforme uma venda única em receita todo mês."
-        subtitle="Cobre pela hospedagem e manutenção enquanto o Osprano faz o trabalho pesado. Ajuste e veja sua projeção."
+        title="Uma venda única vira receita todo mês."
+        subtitle="Cobre pela hospedagem e manutenção enquanto o Osprano faz o trabalho pesado. Ajuste e veja a projeção."
       >
         <div className="mx-auto max-w-3xl">
           <RevenueCalculator />
@@ -312,6 +359,7 @@ export default async function Home() {
       {/* pricing */}
       <Section
         id="precos"
+        index="05"
         eyebrow="Planos"
         title="Escolha o plano e comece a prospectar."
         subtitle="Sem cartão para começar. Sem fidelidade. Cancele quando quiser."
@@ -327,22 +375,32 @@ export default async function Home() {
       {/* final cta */}
       <div className="mx-auto max-w-6xl px-6 pb-24">
         <div
-          className="overflow-hidden rounded-3xl px-8 py-16 text-center text-white sm:py-20"
+          className="relative overflow-hidden rounded-3xl px-8 py-16 text-center text-white sm:py-20"
           style={{ background: "linear-gradient(135deg, var(--brand-deep), var(--brand))" }}
         >
-          <h2 className="mx-auto max-w-2xl text-balance font-display text-4xl font-bold tracking-tight sm:text-5xl">
-            Comece a achar a dor hoje.
-          </h2>
-          <p className="mx-auto mt-4 max-w-lg text-lg text-white/80">
-            Grátis para começar. Sem cartão. A primeira busca leva menos de um minuto.
-          </p>
-          <Link
-            href={ctaHref}
-            className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-8 py-4 text-sm font-semibold text-brand-deep transition-transform hover:scale-[1.03]"
-          >
-            {ctaLabel}
-            <MdArrowForward size={18} />
-          </Link>
+          <div
+            className="pointer-events-none absolute inset-0 opacity-20"
+            style={{
+              background:
+                "repeating-radial-gradient(circle at 50% 120%, rgba(255,255,255,0.4) 0 1px, transparent 1px 40px)",
+            }}
+            aria-hidden
+          />
+          <div className="relative">
+            <h2 className="mx-auto max-w-2xl text-balance font-display text-4xl font-bold tracking-tight sm:text-5xl">
+              Comece a achar a dor hoje.
+            </h2>
+            <p className="mx-auto mt-4 max-w-lg text-lg text-white/80">
+              Grátis para começar. Sem cartão. A primeira busca leva menos de um minuto.
+            </p>
+            <Link
+              href={ctaHref}
+              className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-8 py-4 text-sm font-semibold text-brand-deep transition-transform hover:scale-[1.03]"
+            >
+              {ctaLabel}
+              <MdArrowForward size={18} />
+            </Link>
+          </div>
         </div>
       </div>
 

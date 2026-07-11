@@ -14,6 +14,27 @@ function slugify(s: string): string {
   );
 }
 
+/** The preview site (if any) for a given lead — for the CRM detail Site tab. Authed. */
+export const getForLead = query({
+  args: { leadId: v.id("leads") },
+  handler: async (ctx, { leadId }) => {
+    const orgId = await requireOrgId(ctx);
+    const preview = await ctx.db
+      .query("previews")
+      .withIndex("by_lead", (q) => q.eq("leadId", leadId))
+      .first();
+    if (!preview || preview.orgId !== orgId) return null;
+    return {
+      token: preview.token,
+      content: preview.content ?? null,
+      published: preview.published ?? false,
+      slug: preview.slug ?? null,
+      openCount: preview.openCount,
+      lastOpenedAt: preview.lastOpenedAt ?? null,
+    };
+  },
+});
+
 /** Generate (or refresh) a tracked preview site for a lead. Authed. */
 export const generate = mutation({
   args: { leadId: v.id("leads") },
@@ -191,6 +212,9 @@ export const listSites = query({
           openCount: p.openCount,
           name: lead?.name ?? "—",
           city: lead?.city ?? null,
+          category: lead?.category ?? null,
+          score: lead?.score ?? null,
+          tier: (lead?.tier ?? "cold") as "hot" | "warm" | "cold",
         };
       }),
     );

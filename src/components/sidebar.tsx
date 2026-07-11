@@ -13,6 +13,7 @@ import {
   MdOutlineSettings,
 } from "react-icons/md";
 import type { IconType } from "react-icons";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const NAV: { href: string; label: string; Icon: IconType }[] = [
   { href: "/dashboard", label: "Dashboard", Icon: MdOutlineDashboard },
@@ -50,11 +51,28 @@ function Logo() {
   );
 }
 
+function SettingsButton() {
+  const pathname = usePathname();
+  const active = pathname === "/settings" || pathname.startsWith("/settings/");
+  return (
+    <Link
+      href="/settings"
+      aria-label="Configurações"
+      title="Configurações"
+      className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
+        active ? "bg-surface-2 text-brand" : "text-muted hover:bg-surface-2 hover:text-foreground"
+      }`}
+    >
+      <MdOutlineSettings size={19} />
+    </Link>
+  );
+}
+
 function UsageFooter() {
   const ws = useQuery(api.workspaces.current);
   const pct = ws ? Math.min(100, Math.round((ws.leadsUsed / Math.max(1, ws.limits.leads)) * 100)) : 0;
   return (
-    <div className="mt-auto space-y-3 border-t border-border pt-4">
+    <div className="space-y-3">
       {ws && (
         <div className="rounded-xl border border-border bg-surface-2 px-3 py-2.5">
           <div className="flex items-center justify-between text-[11px]">
@@ -102,11 +120,13 @@ export function Sidebar() {
         <NavItem key={item.href} href={item.href} label={item.label} Icon={item.Icon} />
       ))}
 
-      <div className="mt-2 border-t border-border pt-2">
-        <NavItem href="/settings" label="Settings" Icon={MdOutlineSettings} />
+      <div className="mt-auto flex flex-col gap-3 pt-4">
+        <UsageFooter />
+        <div className="flex items-center justify-between border-t border-border pt-3">
+          <ThemeToggle />
+          <SettingsButton />
+        </div>
       </div>
-
-      <UsageFooter />
     </nav>
   );
 }

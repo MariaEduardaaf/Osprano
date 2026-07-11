@@ -145,6 +145,32 @@ export const setStage = mutation({
   },
 });
 
+/** Marca uma reunião com o lead e move-o para "Agendado". */
+export const schedule = mutation({
+  args: { id: v.id("leads"), at: v.number(), note: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const orgId = await requireOrgId(ctx);
+    const lead = await ctx.db.get(args.id);
+    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    const now = Date.now();
+    await ctx.db.patch(args.id, {
+      stage: "scheduled",
+      stageUpdatedAt: now,
+      meetingAt: args.at,
+      meetingNote: args.note,
+    });
+    if (lead.stage !== "scheduled") {
+      await ctx.db.insert("events", {
+        orgId,
+        type: "stage_change",
+        leadId: args.id,
+        at: now,
+        meta: { from: lead.stage, to: "scheduled", meetingAt: args.at },
+      });
+    }
+  },
+});
+
 // ---------------------------------------------------------------------------
 // Internal API (used by the discovery + scoring pipeline)
 // ---------------------------------------------------------------------------
@@ -237,6 +263,7 @@ export const insertDiscovered = internalMutation({
       emailable,
       stage: "base",
       stageUpdatedAt: now,
+      saved: false, // discovered → sits on the Leads screen until "Enviar para CRM"
       fetchedAt: now,
     });
   },
@@ -328,7 +355,25 @@ export const create = mutation({
       }),
       stage: "base",
       stageUpdatedAt: now,
+      saved: true, // criado manualmente → já entra no CRM
       fetchedAt: now,
     });
+  },
+});
+
+/** Marca leads escolhidos na descoberta como "no CRM" (Enviar para CRM). */
+export const saveMany = mutation({
+  args: { ids: v.array(v.id("leads")) },
+  handler: async (ctx, { ids }) => {
+    const orgId = await requireOrgId(ctx);
+    let saved = 0;
+    for (const id of ids) {
+      const lead = await ctx.db.get(id);
+      if (!lead || lead.orgId !== orgId) continue;
+      if (lead.saved === true) continue;
+      await ctx.db.patch(id, { saved: true });
+      saved += 1;
+    }
+    return { saved };
   },
 });
