@@ -59,10 +59,13 @@ Plans:
   3. O usuário consegue marcar manualmente um outreach como "respondeu" (na outbox ou no detalhe do lead), gravando status `replied` com timestamp real, sem depender do seed demo
   4. Editar assunto/corpo no composer e enviar resulta no email realmente recebido pelo prospect refletindo as edições — não o rascunho original gerado pela IA
   5. O preview de site de um lead do mercado GB/IE aparece em inglês, NL em holandês, SE em sueco e NO em norueguês — nenhum texto em português aparece nessas renderizações
-**Plans**: TBD
+**Plans**: 4 plans (wave 1: 03-01, 03-02, 03-03 em paralelo · wave 2: 03-04)
 
 Plans:
-- [ ] 03-01: TBD
+- [ ] 03-01-PLAN.md — Guarda de self-open no recordOpen (TRCK-01)
+- [ ] 03-02-PLAN.md — Dicionário i18n do preview (en/nl/sv/no) + migração de preview-site (L10N-01)
+- [ ] 03-03-PLAN.md — Backend: repliedAt + markReplied + updateDraft + fix activityAt na outbox (TRCK-02, OUTR-01)
+- [ ] 03-04-PLAN.md — UI: composer persistente/pré-preenchido + botões respondeu/opt-out + ação na outbox (TRCK-02, OUTR-01)
 
 ## Progress
 
@@ -73,4 +76,4 @@ Phases execute in numeric order: 1 → 2 → 3
 |-------|----------------|--------|-----------|
 | 1. Integridade de Billing e Segurança do Modo Demo | 3/3 | Complete    | 2026-07-11 |
 | 2. Compliance de Email e WhatsApp | 4/4 | Complete    | 2026-07-11 |
-| 3. Tracking, Composer e Localização | 0/TBD | Not started | - |
+| 3. Tracking, Composer e Localização | 0/4 | Planned | - |
