@@ -32,11 +32,11 @@ Garantir que a contagem de quota do plano é íntegra (não negativável, cobra 
 - Sem re-fetch à API do Stripe no webhook (mantém o handler simples e rápido); tolerância de timestamp/constant-time é BILL-05 (v2, fora desta fase).
 
 ### SEC-01 — Guarda de ambiente do demo
-- Guarda `process.env.NODE_ENV !== "production"` nos TRÊS pontos:
-  1. `src/proxy.ts:27` — só usar `demoProxy` quando `NEXT_PUBLIC_DEMO === "1"` E não-produção (o proxy roda server-side; NODE_ENV é "production" em `next build`/`start`).
-  2. `convex/model/tenant.ts:12` — fallback `"demo"` só quando `DEMO_MODE === "1"` E não-produção (Convex define NODE_ENV="production" no deployment de produção e "development" no dev).
-  3. `convex/demo.ts:133` — `seed` só roda com `DEMO_MODE === "1"` E não-produção.
+**(Mecanismo corrigido pela pesquisa: o bundler do Convex substitui `process.env.NODE_ENV` pelo literal `"production"` em TODO deployment — dev, local e prod. Ver 01-RESEARCH.md, Pitfall 1. A guarda por NODE_ENV só vale no lado Next.)**
+- `src/proxy.ts:27` (Next) — só usar `demoProxy` quando `NEXT_PUBLIC_DEMO === "1"` E `process.env.NODE_ENV !== "production"` (o proxy roda server-side; NODE_ENV funciona normalmente no Next: "production" em `next build`/`start`).
+- Backend Convex (`convex/model/tenant.ts:12` e `convex/demo.ts:133`) — **default-deny com env dedicada**: demo só liga quando `DEMO_MODE === "1"` E `process.env.CONVEX_ENV === "development"`. Deployment que não se declarar explicitamente dev se comporta como produção — env esquecida = seguro por padrão (é o requisito de SEC-01).
 - Centralizar a checagem backend num helper (ex.: `isDemoEnabled()` em `convex/model/tenant.ts`) usado por tenant e demo.seed — uma fonte de verdade.
+- Passo operacional (não é task de código): setar `CONVEX_ENV=development` no deployment dev/local (`npx convex env set CONVEX_ENV development`) para o modo demo continuar funcionando; documentar no README (seção do modo demo, README.md:92-108).
 - Consequência aceita: demo público hospedado em produção deixa de funcionar; se a usuária quiser demo público no futuro, é um deployment dev/preview separado (ver Deferred).
 
 ### Testabilidade
