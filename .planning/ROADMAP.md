@@ -72,5 +72,5 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Integridade de Billing e Segurança do Modo Demo | 3/3 | Complete    | 2026-07-11 |
-| 2. Compliance de Email e WhatsApp | 1/4 | In Progress|  |
+| 2. Compliance de Email e WhatsApp | 3/4 | In Progress|  |
 | 3. Tracking, Composer e Localização | 0/TBD | Not started | - |

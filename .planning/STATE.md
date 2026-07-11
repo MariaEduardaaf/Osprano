@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_plan: 2
+current_plan: 4
 status: unknown
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-07-11T04:17:42.774Z"
+stopped_at: Completed 02-04-PLAN.md
+last_updated: "2026-07-11T04:23:59.975Z"
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 7
-  completed_plans: 4
+  completed_plans: 6
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 
 Phase: 2 (Compliance de Email e WhatsApp) — EXECUTING
 Plan: 2 of 4
-Current Plan: 2
+Current Plan: 4
 Total Plans in Phase: 4
 
 ## Performance Metrics
@@ -52,6 +52,8 @@ Total Plans in Phase: 4
 - Trend: -
 
 *Updated after each plan completion*
+| Phase 02 P03 | 3min | 1 tasks | 1 files |
+| Phase 02 P04 | 3min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -69,6 +71,7 @@ Recent decisions affecting current work:
 - [Phase 01]: clampDiscoveryCount: NaN/Infinity falls back to default 20, not floor 1 (Math.max(NaN,1) is NaN in JS)
 - [Phase 01]: SEC-01: isDemoEnabled default-deny (CONVEX_ENV === "development"), não default-allow — env esquecida em prod real mantém demo OFF
 - [Phase 2]: 02-01: senderIdentityFrom precisa de trim() antes do match para tolerar espaço à direita em RESEND_FROM
+- [Phase 02]: 02-04: gate por estágio removido por completo em sendFollowup (não deixado como condição secundária) — só waOptInAt libera WhatsApp
 
 ### Pending Todos
 
@@ -85,6 +88,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-11T04:17:42.770Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-07-11T04:23:59.972Z
+Stopped at: Completed 02-04-PLAN.md
 Resume file: None
