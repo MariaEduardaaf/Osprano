@@ -13,6 +13,7 @@ Este milestone leva o Osprano — SaaS de prospecção e venda de sites para o m
 - [x] **Phase 1: Integridade de Billing e Segurança do Modo Demo** - Quota não pode ficar negativa nem ser cobrada além do entregue; plano reflete o Stripe real; modo demo é inerte em produção (completed 2026-07-11)
 - [x] **Phase 2: Compliance de Email e WhatsApp** - Supressão, unsubscribe e opt-out garantidos por código; WhatsApp só com opt-in registrado (completed 2026-07-11)
 - [x] **Phase 3: Tracking, Composer e Localização** - Funil reflete abertura real do prospect, resposta manual funciona, composer é fonte de verdade do envio, preview localizado por mercado (completed 2026-07-11)
+- [ ] **Phase 4: Modo opt-in (ligação-primeiro)** - Prospecção compliant em mercados opt-in (ES/IT/PT/DE/DK/CH): aba "Ligação primeiro", script de ligação por IA, consentimento destrava email — guardrail server-side
 
 ## Phase Details
 
@@ -77,3 +78,20 @@ Phases execute in numeric order: 1 → 2 → 3
 | 1. Integridade de Billing e Segurança do Modo Demo | 3/3 | Complete    | 2026-07-11 |
 | 2. Compliance de Email e WhatsApp | 4/4 | Complete    | 2026-07-11 |
 | 3. Tracking, Composer e Localização | 4/4 | Complete    | 2026-07-11 |
+| 4. Modo opt-in (ligação-primeiro) | 0/? | Not started | — |
+
+### Phase 4: Modo opt-in (ligação-primeiro) para mercados onde cold email é ilegal
+
+**Goal**: Usuários conseguem prospectar mercados opt-in (ES/IT/PT/DE/DK/CH) de forma compliant: descoberta/score/preview funcionam igual, os leads aparecem numa aba própria "Ligação primeiro" com telefone e script de ligação por IA em destaque, e o email só destrava depois de um consentimento de contato registrado — com o guardrail garantido no servidor, nunca só na UI.
+**Depends on**: Phase 3
+**Requirements**: OPTIN-01, OPTIN-02, OPTIN-03, OPTIN-04, OPTIN-05, OPTIN-06
+**Success Criteria** (what must be TRUE):
+  1. Buscar leads na Espanha (ou IT/PT/DE/DK/CH) funciona — e TODO lead desses mercados nasce `emailable=false`, independente de forma jurídica ou tipo de inbox
+  2. A página de Leads tem as abas "Email primeiro" (mercados opt-out) e "Ligação primeiro" (mercados opt-in); na segunda, o card prioriza telefone e script de ligação e não exibe ação de cold email
+  3. O usuário gera um script de ligação por IA no idioma do mercado com tradução pt-BR lado a lado, citando a dor específica do lead
+  4. Registrar consentimento de contato (origem + timestamp + evento) destrava o composer de email para aquele lead; `outreach.draft`/`send` recusam lead de mercado opt-in sem consentimento — server-side
+  5. Mercados opt-in exibem aviso discreto "validação jurídica pendente" até a validação por país
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 4 to break down)

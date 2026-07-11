@@ -59,6 +59,10 @@ Plan: 4 of 4
 
 ## Accumulated Context
 
+### Roadmap Evolution
+
+- Phase 4 added: Modo opt-in (ligação-primeiro) para mercados opt-in (ES/IT/PT/DE/DK/CH) — aba Ligação primeiro, script de IA, consentimento destrava email (OPTIN-01..06)
+
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
