@@ -144,6 +144,7 @@ export default defineSchema({
     unsubscribeToken: v.optional(v.string()), // token dedicado do unsubscribe (NÃO reutilizar previewToken)
     sentAt: v.optional(v.number()),
     openedAt: v.optional(v.number()),
+    repliedAt: v.optional(v.number()), // TRCK-02: timestamp real da marcação manual de "respondeu"
   })
     .index("by_org", ["orgId"])
     .index("by_lead", ["leadId"])

@@ -65,7 +65,8 @@ export const outbox = query({
         sentAt: row.sentAt ?? null,
         openedAt: row.openedAt ?? lastOpenedAt,
         openCount,
-        activityAt: row.openedAt ?? lastOpenedAt ?? row.sentAt ?? row._creationTime,
+        repliedAt: row.repliedAt ?? null,
+        activityAt: row.repliedAt ?? row.openedAt ?? lastOpenedAt ?? row.sentAt ?? row._creationTime,
       });
     }
 
@@ -185,6 +186,25 @@ export const markSent = mutation({
       await ctx.db.patch(leadId, { stage: "approached", stageUpdatedAt: now });
     }
     await ctx.db.insert("events", { orgId, type: "email_sent", leadId, at: now });
+  },
+});
+
+/** TRCK-02: marca uma abordagem como "respondeu" manualmente (outbox / lead-detail). */
+export const markReplied = mutation({
+  args: { leadId: v.id("leads") },
+  handler: async (ctx, { leadId }) => {
+    const orgId = await requireOrgId(ctx);
+    const lead = await ctx.db.get(leadId);
+    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    const row = await ctx.db
+      .query("outreach")
+      .withIndex("by_lead", (q) => q.eq("leadId", leadId))
+      .first();
+    if (!row) throw new Error("Nenhuma abordagem encontrada para este lead.");
+    const now = Date.now();
+    await ctx.db.patch(row._id, { status: "replied", repliedAt: now });
+    await ctx.db.insert("events", { orgId, type: "reply", leadId, at: now });
+    return { repliedAt: now };
   },
 });
 
