@@ -1,19 +1,24 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 import {
   MdOutlineDashboard,
   MdOutlineTravelExplore,
   MdOutlineViewKanban,
   MdOutlineForwardToInbox,
+  MdOutlineLanguage,
   MdOutlineSearch,
+  MdOutlineGppGood,
+  MdOutlineVisibility,
+  MdCheck,
 } from "react-icons/md";
 
 /**
- * Laptop com as telas reais do produto rodando dentro — troca automática com
- * crossfade, abas clicáveis, pausa no hover. Motion imperativo no DOM
- * (data-attributes + CSS), auto-cycle desligado em prefers-reduced-motion.
- * Conteúdo das telas é decorativo (aria-hidden nas inativas); as abas contam a história.
+ * Laptop com as telas do produto rodando dentro — réplica fiel do app
+ * (sidebar com labels, bloco de plano, eyebrow+título) com animações internas
+ * que re-executam a cada troca de tela (barras crescem, cards em cascata,
+ * status trocando ao vivo). Ciclo automático com crossfade, abas com barra de
+ * progresso, pausa no hover; tudo desligado em prefers-reduced-motion.
  */
 
 const SCREENS = [
@@ -23,39 +28,93 @@ const SCREENS = [
   { id: "outreach", label: "Outreach", icon: MdOutlineForwardToInbox },
 ] as const;
 
-/* ---------- shell comum das telas (sidebar + topbar) ---------- */
+const d = (ms: number) => ({ "--d": `${ms}ms` }) as CSSProperties;
 
-function Shell({ active, title, children }: { active: number; title: string; children: React.ReactNode }) {
+/* ---------- shell fiel ao app (sidebar com labels + header de seção) ---------- */
+
+function Shell({
+  active,
+  eyebrow,
+  title,
+  subtitle,
+  children,
+}: {
+  active: number;
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex h-full w-full bg-background text-foreground">
-      <aside className="flex w-11 shrink-0 flex-col items-center gap-3 border-r border-border bg-surface py-3">
-        <span className="mb-1 flex h-5 w-5 items-center justify-center">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <aside className="flex w-[110px] shrink-0 flex-col border-r border-border bg-surface p-2">
+        <div className="mb-3 flex items-center gap-1.5 px-1 pt-1">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
             <circle cx="12" cy="12" r="9" stroke="var(--brand)" strokeWidth="2" opacity="0.4" />
             <circle cx="12" cy="12" r="3" fill="var(--brand)" />
           </svg>
-        </span>
-        {SCREENS.map((s, i) => (
-          <span
-            key={s.id}
-            className={`flex h-7 w-7 items-center justify-center rounded-lg ${
-              i === active ? "bg-brand-soft text-brand" : "text-faint"
-            }`}
-          >
-            <s.icon size={15} />
-          </span>
-        ))}
-        <span className="mt-auto h-5 w-5 rounded-full bg-gradient-to-br from-brand to-brand-deep" />
-      </aside>
-      <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex h-9 shrink-0 items-center justify-between border-b border-border bg-surface px-4">
-          <span className="text-[11px] font-semibold">{title}</span>
-          <span className="flex items-center gap-1.5 rounded-full border border-border bg-surface-2 px-2.5 py-1 text-[9px] text-faint">
-            <MdOutlineSearch size={10} />
-            buscar…
+          <span>
+            <span className="block font-display text-[9px] font-bold leading-none">Osprano</span>
+            <span className="block font-mono text-[4.5px] uppercase tracking-[0.14em] text-brand">
+              compliant by design
+            </span>
           </span>
         </div>
-        <div className="min-h-0 flex-1 overflow-hidden p-4">{children}</div>
+        <nav className="space-y-0.5">
+          {SCREENS.map((s, i) => (
+            <span
+              key={s.id}
+              className={`flex items-center gap-1.5 rounded-md px-1.5 py-[5px] text-[8px] font-semibold ${
+                i === active
+                  ? "border-l-2 border-brand bg-surface-2 text-foreground"
+                  : "border-l-2 border-transparent text-muted"
+              }`}
+            >
+              <s.icon size={10} className={i === active ? "text-brand" : "text-faint"} />
+              {s.label}
+            </span>
+          ))}
+          <span className="flex items-center gap-1.5 rounded-md border-l-2 border-transparent px-1.5 py-[5px] text-[8px] font-semibold text-muted">
+            <MdOutlineLanguage size={10} className="text-faint" />
+            Meus Projetos
+          </span>
+        </nav>
+        <div className="mt-auto space-y-1.5">
+          <div className="rounded-md border border-border bg-surface-2/60 p-1.5">
+            <div className="flex items-center justify-between font-mono text-[6px] text-muted">
+              <span className="font-bold">PRO</span>
+              <span className="tabular-nums">137/2000</span>
+            </div>
+            <div className="mt-1 h-[3px] overflow-hidden rounded-full bg-surface-2">
+              <span className="block h-full w-[7%] rounded-full bg-brand" />
+            </div>
+          </div>
+          <span className="block rounded-md bg-brand py-1 text-center text-[7px] font-bold text-brand-fg">
+            Gerenciar plano
+          </span>
+        </div>
+      </aside>
+
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden p-3.5">
+        <div className="mb-2.5 flex shrink-0 items-start justify-between">
+          <div>
+            <div className="font-mono text-[6px] font-semibold uppercase tracking-[0.2em] text-brand">
+              {eyebrow}
+            </div>
+            <div className="font-display text-[15px] font-bold leading-tight">{title}</div>
+            <div className="text-[7px] text-muted">{subtitle}</div>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="flex items-center gap-1 rounded-full border border-border bg-surface px-2 py-0.5 text-[7px] text-faint">
+              <MdOutlineSearch size={8} />
+              buscar…
+            </span>
+            <span className="rounded-full bg-surface-2 px-2 py-0.5 font-mono text-[6px] font-semibold text-muted">
+              modo demo
+            </span>
+          </div>
+        </div>
+        <div className="min-h-0 flex-1">{children}</div>
       </div>
     </div>
   );
@@ -65,62 +124,100 @@ function Shell({ active, title, children }: { active: number; title: string; chi
 
 function ScreenDashboard() {
   const kpis = [
-    { l: "LEADS", v: "48", d: "na base" },
-    { l: "SEM SITE", v: "22", d: "maior intenção" },
-    { l: "ABORDÁVEIS", v: "28", d: "opt-out + inc." },
-    { l: "CONVERTIDOS", v: "4", d: "fechados" },
+    { l: "LEADS", v: "48", s: "na base", icon: MdOutlineTravelExplore },
+    { l: "SEM SITE / SOCIAL", v: "22", s: "maior intenção", icon: MdOutlineLanguage },
+    { l: "ABORDÁVEIS", v: "28", s: "opt-out + incorporados", icon: MdOutlineForwardToInbox },
+    { l: "CONVERTIDOS", v: "4", s: "fechados", icon: MdCheck },
+  ];
+  const taxas = [
+    { l: "conversão", v: "8%", c: "var(--brand)" },
+    { l: "abordagem", v: "54%", c: "var(--brand)" },
+    { l: "agendamento", v: "19%", c: "var(--warm)" },
+    { l: "follow up", v: "23%", c: "var(--warm)" },
+    { l: "perdidos", v: "8%", c: "var(--hot)" },
   ];
   const funnel = [
-    { l: "Base", n: 22, w: "100%", c: "var(--cold)" },
-    { l: "Abordado", n: 9, w: "41%", c: "var(--brand)" },
-    { l: "Agendado", n: 5, w: "23%", c: "var(--warm)" },
-    { l: "Follow Up", n: 6, w: "27%", c: "var(--warm)" },
-    { l: "Convertido", n: 4, w: "18%", c: "var(--brand)" },
+    { l: "Base", n: 22, w: 100, c: "var(--cold)" },
+    { l: "Abordado", n: 9, w: 41, c: "var(--brand)" },
+    { l: "Agendado", n: 5, w: 23, c: "var(--warm)" },
+    { l: "Follow Up", n: 6, w: 27, c: "var(--warm)" },
+    { l: "Convertido", n: 4, w: 18, c: "var(--brand)" },
+    { l: "Perdido", n: 2, w: 9, c: "var(--faint)" },
   ];
   return (
-    <Shell active={0} title="Dashboard">
-      <div className="grid h-full grid-rows-[auto_1fr] gap-3">
-        <div className="grid grid-cols-4 gap-3">
-          {kpis.map((k) => (
-            <div key={k.l} className="rounded-xl border border-border bg-surface p-3">
-              <div className="font-mono text-[8px] uppercase tracking-wider text-faint">{k.l}</div>
-              <div className="mt-1 font-display text-2xl font-bold tabular-nums">{k.v}</div>
-              <div className="text-[9px] text-muted">{k.d}</div>
+    <Shell active={0} eyebrow="visão geral" title="Dashboard" subtitle="A saúde da sua operação num relance">
+      <div className="grid h-full grid-rows-[auto_auto_1fr] gap-2">
+        <div className="grid grid-cols-4 gap-2">
+          {kpis.map((k, i) => (
+            <div key={k.l} className="demo-pop rounded-lg border border-border bg-surface p-2" style={d(i * 80)}>
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-[5.5px] uppercase tracking-wider text-faint">{k.l}</span>
+                <k.icon size={9} className="text-faint" />
+              </div>
+              <div className="mt-0.5 font-display text-lg font-bold leading-none tabular-nums">{k.v}</div>
+              <div className="mt-0.5 text-[7px] text-muted">{k.s}</div>
             </div>
           ))}
         </div>
-        <div className="grid min-h-0 grid-cols-[1.5fr_1fr] gap-3">
-          <div className="flex flex-col rounded-xl border border-border bg-surface p-3">
-            <div className="mb-2 text-[11px] font-semibold">Funil de conversão</div>
-            <div className="flex flex-1 flex-col justify-between gap-1.5 pb-1">
-              {funnel.map((f) => (
-                <div key={f.l} className="flex items-center gap-2">
-                  <span className="w-16 shrink-0 text-[9px] text-muted">{f.l}</span>
-                  <span className="h-2.5 flex-1 overflow-hidden rounded-full bg-surface-2">
-                    <span className="block h-full rounded-full" style={{ width: f.w, background: f.c, opacity: 0.85 }} />
+        <div className="grid grid-cols-5 gap-2">
+          {taxas.map((t, i) => (
+            <div key={t.l} className="demo-pop rounded-lg border border-border bg-surface px-2 py-1.5" style={d(300 + i * 60)}>
+              <div className="flex items-center gap-1 text-[6px] text-muted">
+                <span className="h-1 w-1 rounded-full" style={{ background: t.c }} />
+                Taxa de {t.l}
+              </div>
+              <div className="font-display text-[13px] font-bold tabular-nums" style={{ color: t.c }}>
+                {t.v}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="grid min-h-0 grid-cols-[1.55fr_1fr] gap-2">
+          <div className="demo-pop flex flex-col rounded-lg border border-border bg-surface p-2.5" style={d(550)}>
+            <div className="mb-1.5 flex items-center justify-between">
+              <span className="text-[9px] font-semibold">Funil de conversão</span>
+              <span className="font-mono text-[6px] uppercase text-faint">48 leads</span>
+            </div>
+            <div className="flex flex-1 flex-col justify-between gap-1 pb-0.5">
+              {funnel.map((f, i) => (
+                <div key={f.l} className="flex items-center gap-1.5">
+                  <span className="w-12 shrink-0 text-[7.5px] text-muted">{f.l}</span>
+                  <span className="h-[7px] flex-1 overflow-hidden rounded-full bg-surface-2">
+                    <span
+                      className="demo-bar block h-full rounded-full"
+                      style={{ width: `${f.w}%`, background: f.c, opacity: 0.85, ...d(650 + i * 90) }}
+                    />
                   </span>
-                  <span className="w-5 text-right font-mono text-[9px] tabular-nums text-muted">{f.n}</span>
+                  <span className="w-4 text-right font-mono text-[7px] tabular-nums text-muted">{f.n}</span>
                 </div>
               ))}
             </div>
           </div>
-          <div className="flex flex-col items-center justify-center gap-2.5 rounded-xl border border-border bg-surface p-3">
+          <div className="demo-pop relative flex flex-col items-center justify-center gap-2 rounded-lg border border-border bg-surface p-2.5" style={d(650)}>
+            <span className="absolute left-2.5 top-2 text-[9px] font-semibold">Por temperatura</span>
             <div
-              className="flex h-24 w-24 items-center justify-center rounded-full"
+              className="mt-2 flex h-[72px] w-[72px] items-center justify-center rounded-full"
               style={{
                 background:
                   "conic-gradient(var(--hot) 0 135deg, var(--warm) 135deg 210deg, var(--cold) 210deg 360deg)",
               }}
             >
-              <span className="flex h-16 w-16 flex-col items-center justify-center rounded-full bg-surface">
-                <span className="font-display text-base font-bold leading-none">48</span>
-                <span className="mt-0.5 text-[7px] uppercase tracking-wider text-faint">leads</span>
+              <span className="flex h-12 w-12 flex-col items-center justify-center rounded-full bg-surface">
+                <span className="font-display text-[13px] font-bold leading-none">48</span>
+                <span className="mt-0.5 text-[5px] uppercase tracking-wider text-faint">leads</span>
               </span>
             </div>
-            <div className="flex gap-3 font-mono text-[8px] text-muted">
-              <span><span className="text-hot">●</span> 18 quentes</span>
+            <div className="flex gap-2.5 font-mono text-[7px] text-muted">
+              <span><span className="text-hot">●</span> Quente 18</span>
               <span><span className="text-warm">●</span> 10</span>
               <span><span className="text-cold">●</span> 20</span>
+            </div>
+            {/* atividade ao vivo */}
+            <div className="demo-toast absolute bottom-2 right-2 flex items-center gap-1 rounded-md border border-border bg-elevated px-1.5 py-1 shadow-[var(--shadow-md)]">
+              <MdOutlineVisibility size={8} className="text-brand" />
+              <span className="text-[6.5px]">
+                <b>The Oak &amp; Barrel</b> abriu o preview · agora
+              </span>
             </div>
           </div>
         </div>
@@ -131,47 +228,57 @@ function ScreenDashboard() {
 
 function ScreenLeads() {
   const rows = [
-    { s: 92, n: "The Oak & Barrel", m: "Restaurante · Manchester", t: "Quente", c: "var(--hot)", tag: "sem site" },
-    { s: 84, n: "The Grooming Room", m: "Barbearia · Stockholm", t: "Quente", c: "var(--hot)", tag: "só social" },
-    { s: 71, n: "FlexFit Studio", m: "Academia · Utrecht", t: "Quente", c: "var(--hot)", tag: "sem HTTPS" },
-    { s: 64, n: "Dublin Corner Café", m: "Café · Dublin", t: "Morno", c: "var(--warm)", tag: "lento" },
-    { s: 41, n: "Cork Barber Co", m: "Barbearia · Cork", t: "Frio", c: "var(--cold)", tag: "não-mobile" },
+    { s: 92, n: "The Oak & Barrel", m: "Restaurante · Manchester", t: "QUENTE", c: "var(--hot)", tag: "sem site", tel: "+44 161 496 0102" },
+    { s: 84, n: "The Grooming Room", m: "Barbearia · Stockholm", t: "QUENTE", c: "var(--hot)", tag: "só social", tel: "+46 8 555 1147" },
+    { s: 64, n: "Dublin Corner Café", m: "Café · Dublin", t: "MORNO", c: "var(--warm)", tag: "site lento", tel: "+353 1 475 8809" },
+    { s: 41, n: "Cork Barber Co", m: "Barbearia · Cork", t: "FRIO", c: "var(--cold)", tag: "não-mobile", tel: "+353 21 427 3311" },
   ];
   return (
-    <Shell active={1} title="Leads · descoberta">
-      <div className="grid h-full grid-rows-[auto_1fr] gap-3">
-        <div className="flex items-center gap-2">
-          {["🇬🇧 Reino Unido", "Manchester", "Restaurantes"].map((f) => (
-            <span key={f} className="rounded-lg border border-border bg-surface px-2.5 py-1 text-[9px] text-muted">
+    <Shell active={1} eyebrow="descoberta" title="Leads" subtitle="Busque por país, cidade e categoria — rankeado pela dor">
+      <div className="grid h-full grid-rows-[auto_1fr] gap-2">
+        <div className="demo-pop flex items-center gap-1.5" style={d(0)}>
+          {["🇬🇧 Reino Unido", "Manchester", "Restaurantes", "1–50"].map((f) => (
+            <span key={f} className="rounded-md border border-border bg-surface px-2 py-1 text-[7.5px] text-muted">
               {f}
             </span>
           ))}
-          <span className="ml-auto rounded-lg bg-brand px-3 py-1 text-[9px] font-semibold text-brand-fg">
-            Buscar 50
+          <span className="ml-auto rounded-md bg-brand px-2.5 py-1 text-[7.5px] font-bold text-brand-fg">
+            Buscar leads
           </span>
         </div>
-        <div className="grid min-h-0 grid-rows-5 gap-2.5">
-          {rows.map((r) => (
-            <div key={r.n} className="flex items-center gap-3 rounded-xl border border-border bg-surface px-3">
-              <span
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg font-display text-sm font-bold tabular-nums"
-                style={{ color: r.c, background: `color-mix(in srgb, ${r.c} 12%, transparent)` }}
-              >
-                {r.s}
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-[11px] font-semibold">{r.n}</div>
-                <div className="truncate text-[9px] text-muted">{r.m}</div>
+        <div className="grid min-h-0 grid-cols-2 grid-rows-2 gap-2">
+          {rows.map((r, i) => (
+            <div key={r.n} className="demo-pop flex flex-col rounded-lg border border-border bg-surface p-2.5" style={d(150 + i * 110)}>
+              <div className="flex items-start justify-between">
+                <span
+                  className="flex h-8 w-8 items-center justify-center rounded-md font-display text-[12px] font-bold tabular-nums"
+                  style={{ color: r.c, background: `color-mix(in srgb, ${r.c} 12%, transparent)` }}
+                >
+                  {r.s}
+                </span>
+                <span
+                  className="rounded-full px-1.5 py-0.5 font-mono text-[6px] font-bold"
+                  style={{ color: r.c, background: `color-mix(in srgb, ${r.c} 12%, transparent)` }}
+                >
+                  {r.t}
+                </span>
               </div>
-              <span className="rounded-full border border-border bg-surface-2 px-2 py-0.5 font-mono text-[8px] uppercase text-muted">
-                {r.tag}
-              </span>
-              <span
-                className="rounded-full px-2 py-0.5 font-mono text-[8px] font-semibold uppercase"
-                style={{ color: r.c, background: `color-mix(in srgb, ${r.c} 12%, transparent)` }}
-              >
-                {r.t}
-              </span>
+              <div className="mt-1.5 text-[9.5px] font-semibold leading-tight">{r.n}</div>
+              <div className="text-[7px] text-muted">{r.m}</div>
+              <div className="mt-1 flex items-center gap-1.5">
+                <span className="rounded border border-border bg-surface-2 px-1.5 py-0.5 font-mono text-[6px] uppercase text-muted">
+                  {r.tag}
+                </span>
+                <span className="font-mono text-[6px] text-faint">{r.tel}</span>
+              </div>
+              <div className="mt-auto flex items-center gap-1.5 pt-1.5">
+                <span className="rounded-md border border-border px-2 py-[3px] text-[6.5px] font-semibold text-muted">
+                  Gerar preview
+                </span>
+                <span className="rounded-md bg-brand px-2 py-[3px] text-[6.5px] font-bold text-brand-fg">
+                  Enviar pro CRM
+                </span>
+              </div>
             </div>
           ))}
         </div>
@@ -181,31 +288,31 @@ function ScreenLeads() {
 }
 
 function ScreenCrm() {
-  const cols: { l: string; cards: { n: string; s: number; c: string }[] }[] = [
-    { l: "Base", cards: [{ n: "Green Grocer", s: 58, c: "var(--warm)" }, { n: "Olive & Thyme", s: 73, c: "var(--hot)" }] },
-    { l: "Abordado", cards: [{ n: "The Oak & Barrel", s: 92, c: "var(--hot)" }, { n: "Amsterdam Ink", s: 67, c: "var(--warm)" }] },
-    { l: "Agendado", cards: [{ n: "PetCare Clinic", s: 81, c: "var(--hot)" }] },
-    { l: "Follow Up", cards: [{ n: "Klippet Nordic", s: 76, c: "var(--hot)" }] },
-    { l: "Convertido", cards: [{ n: "The Bruncherie", s: 88, c: "var(--hot)" }] },
+  const cols: { l: string; n: number; cards: { n: string; s: number; c: string }[] }[] = [
+    { l: "Base", n: 22, cards: [{ n: "Green Grocer", s: 58, c: "var(--warm)" }, { n: "Olive & Thyme", s: 73, c: "var(--hot)" }] },
+    { l: "Abordado", n: 9, cards: [{ n: "The Oak & Barrel", s: 92, c: "var(--hot)" }, { n: "Amsterdam Ink", s: 67, c: "var(--warm)" }] },
+    { l: "Agendado", n: 5, cards: [{ n: "PetCare Clinic", s: 81, c: "var(--hot)" }] },
+    { l: "Follow Up", n: 6, cards: [{ n: "Klippet Nordic", s: 76, c: "var(--hot)" }] },
+    { l: "Convertido", n: 4, cards: [{ n: "The Bruncherie", s: 88, c: "var(--hot)" }] },
   ];
   return (
-    <Shell active={2} title="CRM · funil">
-      <div className="grid h-full grid-cols-5 gap-2.5">
-        {cols.map((col) => (
-          <div key={col.l} className="flex min-h-0 flex-col rounded-xl border border-border bg-surface-2/60 p-2">
-            <div className="mb-2 flex items-center justify-between px-1">
-              <span className="font-mono text-[8px] font-semibold uppercase tracking-wider text-muted">{col.l}</span>
-              <span className="font-mono text-[8px] tabular-nums text-faint">{col.cards.length}</span>
+    <Shell active={2} eyebrow="pipeline" title="CRM" subtitle="Arraste pelo funil — de Base a Convertido">
+      <div className="grid h-full grid-cols-5 gap-1.5">
+        {cols.map((col, i) => (
+          <div key={col.l} className="demo-pop flex min-h-0 flex-col rounded-lg border border-border bg-surface-2/60 p-1.5" style={d(i * 90)}>
+            <div className="mb-1.5 flex items-center justify-between px-0.5">
+              <span className="font-mono text-[7px] font-semibold uppercase tracking-wider text-muted">{col.l}</span>
+              <span className="rounded bg-surface px-1 font-mono text-[7px] tabular-nums text-faint">{col.n}</span>
             </div>
-            <div className="space-y-2">
-              {col.cards.map((card) => (
-                <div key={card.n} className="rounded-lg border border-border bg-surface p-2.5 shadow-[var(--shadow-sm)]">
-                  <div className="truncate text-[9px] font-semibold">{card.n}</div>
+            <div className="space-y-1.5">
+              {col.cards.map((card, j) => (
+                <div key={card.n} className="demo-pop rounded-md border border-border bg-surface p-2 shadow-[var(--shadow-sm)]" style={d(250 + i * 90 + j * 120)}>
+                  <div className="truncate text-[8px] font-semibold">{card.n}</div>
                   <div className="mt-1.5 flex items-center justify-between gap-1.5">
-                    <span className="h-1.5 min-w-0 flex-1 rounded-full bg-surface-2">
-                      <span className="block h-full rounded-full" style={{ width: `${card.s}%`, background: card.c }} />
+                    <span className="h-[5px] min-w-0 flex-1 overflow-hidden rounded-full bg-surface-2">
+                      <span className="demo-bar block h-full rounded-full" style={{ width: `${card.s}%`, background: card.c, ...d(500 + i * 90) }} />
                     </span>
-                    <span className="font-mono text-[8px] font-bold tabular-nums" style={{ color: card.c }}>
+                    <span className="font-mono text-[7px] font-bold tabular-nums" style={{ color: card.c }}>
                       {card.s}
                     </span>
                   </div>
@@ -221,40 +328,64 @@ function ScreenCrm() {
 
 function ScreenOutreach() {
   const rows = [
-    { n: "The Grooming Room", s: "Respondeu", c: "var(--brand)", t: "há 12 min", strong: true },
-    { n: "The Oak & Barrel", s: "Abriu", c: "var(--warm)", t: "há 1 h", strong: true },
-    { n: "FlexFit Studio", s: "Enviado", c: "var(--cold)", t: "há 3 h", strong: false },
-    { n: "Dublin Corner Café", s: "Rascunho", c: "var(--faint)", t: "ontem", strong: false },
+    { n: "The Grooming Room", swap: true, t: "há 12 min" },
+    { n: "The Oak & Barrel", s: "ABRIU", c: "var(--warm)", t: "há 1 h" },
+    { n: "FlexFit Studio", s: "ENVIADO", c: "var(--cold)", t: "há 3 h" },
+    { n: "Dublin Corner Café", s: "RASCUNHO", c: "var(--faint)", t: "ontem" },
   ];
   return (
-    <Shell active={3} title="Outreach · caixa de saída">
-      <div className="grid h-full grid-rows-[1fr_auto] gap-3">
-        <div className="grid min-h-0 grid-rows-4 gap-2.5">
-          {rows.map((r) => (
-            <div key={r.n} className="flex items-center gap-3 rounded-xl border border-border bg-surface px-3">
-              <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: r.c }} />
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-[11px] font-semibold">{r.n}</div>
-                <div className="truncate text-[9px] text-muted">Quick note about your website…</div>
-              </div>
+    <Shell active={3} eyebrow="caixa de saída" title="Outreach" subtitle="Rascunho → enviado → abriu → respondeu">
+      <div className="grid h-full grid-rows-[1fr_auto] gap-2">
+        <div className="grid min-h-0 grid-rows-4 gap-2">
+          {rows.map((r, i) => (
+            <div key={r.n} className="demo-pop flex items-center gap-2.5 rounded-lg border border-border bg-surface px-2.5" style={d(i * 110)}>
               <span
-                className="rounded-full px-2 py-0.5 font-mono text-[8px] font-semibold uppercase"
-                style={{
-                  color: r.c,
-                  background: `color-mix(in srgb, ${r.c} ${r.strong ? 14 : 8}%, transparent)`,
-                }}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-display text-[9px] font-bold text-brand"
+                style={{ background: "var(--brand-soft)" }}
               >
-                {r.s}
+                {r.n[0]}
               </span>
-              <span className="font-mono text-[8px] text-faint">{r.t}</span>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[9.5px] font-semibold">{r.n}</div>
+                <div className="truncate text-[7px] text-muted">Quick note about your website — preview inside…</div>
+              </div>
+              {r.swap ? (
+                <span className="relative inline-flex h-4 w-16 shrink-0 items-center justify-center">
+                  <span
+                    className="demo-swap-a absolute inset-0 inline-flex items-center justify-center rounded-full font-mono text-[6.5px] font-bold"
+                    style={{ color: "var(--warm)", background: "color-mix(in srgb, var(--warm) 14%, transparent)" }}
+                  >
+                    ABRIU
+                  </span>
+                  <span
+                    className="demo-swap-b absolute inset-0 inline-flex items-center justify-center rounded-full font-mono text-[6.5px] font-bold"
+                    style={{ color: "var(--brand)", background: "color-mix(in srgb, var(--brand) 14%, transparent)" }}
+                  >
+                    RESPONDEU ✓
+                  </span>
+                </span>
+              ) : (
+                <span
+                  className="shrink-0 rounded-full px-2 py-0.5 font-mono text-[6.5px] font-bold"
+                  style={{ color: r.c, background: `color-mix(in srgb, ${r.c} 12%, transparent)` }}
+                >
+                  {r.s}
+                </span>
+              )}
+              <span className="shrink-0 font-mono text-[6.5px] text-faint">{r.t}</span>
             </div>
           ))}
         </div>
-        <div className="rounded-xl border border-border bg-surface p-3">
-          <div className="flex items-center gap-1.5 text-[9px] text-muted">
-            <span className="text-brand">✦</span> IA escreveu citando a dor:
-            <span className="truncate italic">&ldquo;your site shows as not secure on mobile&rdquo;</span>
-            <span className="ml-auto shrink-0 rounded-lg bg-brand px-2.5 py-1 text-[8px] font-semibold text-brand-fg">
+        <div className="demo-pop rounded-lg border border-border bg-surface p-2.5" style={d(500)}>
+          <div className="flex items-center gap-1.5 text-[8px] text-muted">
+            <span className="text-brand">✦</span>
+            <span className="min-w-0 truncate">
+              IA citou a dor: <i>&ldquo;your site shows as not secure on mobile&rdquo;</i> + link do preview
+            </span>
+            <span className="ml-auto flex shrink-0 items-center gap-1 rounded-md border border-border px-2 py-[3px] text-[6.5px] font-semibold">
+              <MdOutlineGppGood size={8} className="text-brand" /> opt-out incluído
+            </span>
+            <span className="shrink-0 rounded-md bg-brand px-2.5 py-[3px] text-[7px] font-bold text-brand-fg">
               Enviar
             </span>
           </div>
@@ -321,7 +452,7 @@ export function LaptopShowcase() {
   }, []);
 
   return (
-    <div ref={rootRef} className="mx-auto max-w-4xl">
+    <div ref={rootRef} className="laptop-root mx-auto max-w-4xl">
       {/* laptop */}
       <div style={{ perspective: "1800px" }}>
         <div className="relative mx-auto w-full" style={{ transform: "rotateX(3deg)" }}>
@@ -370,7 +501,7 @@ export function LaptopShowcase() {
         </div>
       </div>
 
-      {/* abas */}
+      {/* abas com progresso do ciclo */}
       <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5" role="group" aria-label="Telas do produto">
         {SCREENS.map((s, k) => (
           <button
@@ -379,10 +510,11 @@ export function LaptopShowcase() {
             data-tab
             data-active={k === 0 ? "true" : "false"}
             aria-pressed={k === 0}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3.5 py-1.5 text-xs font-semibold text-muted transition-all duration-300 hover:text-foreground data-[active=true]:border-brand/40 data-[active=true]:bg-brand-soft data-[active=true]:text-brand"
+            className="relative inline-flex items-center gap-1.5 overflow-hidden rounded-full border border-border bg-surface px-3.5 py-1.5 text-xs font-semibold text-muted transition-all duration-300 hover:text-foreground data-[active=true]:border-brand/40 data-[active=true]:bg-brand-soft data-[active=true]:text-brand"
           >
             <s.icon size={13} />
             {s.label}
+            <span className="tab-progress absolute bottom-0 left-0 h-[2px] w-full rounded-full bg-brand/50" aria-hidden />
           </button>
         ))}
       </div>

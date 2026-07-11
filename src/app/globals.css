@@ -410,6 +410,82 @@ select {
   pointer-events: auto;
 }
 
+/* Animações internas das telas — replay a cada ativação do painel
+   (o seletor volta a casar quando data-active vira true → a animation reinicia) */
+@keyframes demo-grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes demo-pop {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+}
+@keyframes demo-swap-a {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  55%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes demo-swap-b {
+  0%,
+  45% {
+    opacity: 0;
+  }
+  55%,
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes demo-toast {
+  0%,
+  30% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  40%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+.laptop-panel[data-active="true"] .demo-bar {
+  transform-origin: left;
+  animation: demo-grow 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--d, 0.15s);
+}
+.laptop-panel[data-active="true"] .demo-pop {
+  animation: demo-pop 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--d, 0s);
+}
+.laptop-panel[data-active="true"] .demo-swap-a {
+  animation: demo-swap-a 4s both;
+}
+.laptop-panel[data-active="true"] .demo-swap-b {
+  animation: demo-swap-b 4s both;
+}
+.laptop-panel[data-active="true"] .demo-toast {
+  animation: demo-toast 3.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Progresso da aba ativa — acompanha o dwell de 4.2s; pausa junto com o hover */
+.tab-progress {
+  transform-origin: left;
+  transform: scaleX(0);
+}
+[data-tab][data-active="true"] .tab-progress {
+  animation: demo-grow 4.2s linear both;
+}
+.laptop-root:hover .tab-progress {
+  animation-play-state: paused;
+}
+
 /* Rail da timeline com pulso de energia descendo (transform-only, GPU) */
 @keyframes rail-pulse {
   0% {
@@ -449,6 +525,17 @@ select {
   }
   .laptop-panel {
     transition: none;
+  }
+  .laptop-panel[data-active="true"] .demo-bar,
+  .laptop-panel[data-active="true"] .demo-pop,
+  .laptop-panel[data-active="true"] .demo-swap-a,
+  .laptop-panel[data-active="true"] .demo-swap-b,
+  .laptop-panel[data-active="true"] .demo-toast,
+  [data-tab][data-active="true"] .tab-progress {
+    animation: none;
+  }
+  .tab-progress {
+    transform: none;
   }
   * {
     scroll-behavior: auto !important;
