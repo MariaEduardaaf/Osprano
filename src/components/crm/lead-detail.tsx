@@ -13,6 +13,8 @@ import {
   MdOutlineWarningAmber,
   MdStar,
   MdKeyboardArrowDown,
+  MdOutlineReply,
+  MdBlock,
 } from "react-icons/md";
 import { PIPELINE_STAGES, MARKETS, type Stage } from "@convex/lib/domain";
 import { OutreachComposer } from "@/components/outreach-composer";
@@ -268,6 +270,23 @@ function InfoTab({ lead, status, onStage }: { lead: Doc<"leads">; status: "open"
 /* ------------------------------------------------------------------ Abordagem */
 
 function ApproachTab({ lead }: { lead: Doc<"leads"> }) {
+  const markReplied = useMutation(api.outreach.markReplied);
+  const suppress = useMutation(api.outreach.suppress);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  async function run(kind: string, fn: () => Promise<void>) {
+    setBusy(kind);
+    setMsg(null);
+    try {
+      await fn();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Falha");
+    } finally {
+      setBusy(null);
+    }
+  }
+
   return (
     <div className="space-y-4">
       {!lead.emailable && (
@@ -280,6 +299,39 @@ function ApproachTab({ lead }: { lead: Doc<"leads"> }) {
         </div>
       )}
       <OutreachComposer leadId={lead._id} hasEmail={!!lead.email} />
+
+      <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
+        <button
+          onClick={() =>
+            run("replied", async () => {
+              await markReplied({ leadId: lead._id });
+              setMsg("Marcado como respondeu.");
+            })
+          }
+          disabled={busy === "replied"}
+          className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-semibold hover:bg-surface-2 disabled:opacity-50"
+        >
+          <MdOutlineReply size={14} />
+          Respondeu
+        </button>
+        {lead.email && (
+          <button
+            onClick={() =>
+              run("optout", async () => {
+                if (!window.confirm("Registrar opt-out deste contato? Ele deixará de receber emails desta org.")) return;
+                await suppress({ leadId: lead._id });
+                setMsg("Opt-out registrado.");
+              })
+            }
+            disabled={busy === "optout"}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-semibold text-muted hover:bg-surface-2 disabled:opacity-50"
+          >
+            <MdBlock size={14} />
+            Pediu opt-out
+          </button>
+        )}
+      </div>
+      {msg && <p className="text-xs text-muted">{msg}</p>}
     </div>
   );
 }
