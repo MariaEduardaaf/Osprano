@@ -254,11 +254,176 @@ select {
   animation: blip-in 5s ease-out infinite;
 }
 
+/* ============================================================
+   Landing motion system — reveals, atmosphere, texture
+   (JS só marca data-inview; todo o visual vive aqui)
+   ============================================================ */
+
+/* Scroll reveals — escondidos só quando o usuário aceita motion */
+@media (prefers-reduced-motion: no-preference) {
+  [data-reveal] {
+    opacity: 0;
+    transition:
+      opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: var(--reveal-delay, 0s);
+    will-change: opacity, transform;
+  }
+  [data-reveal="up"] {
+    transform: translateY(28px);
+  }
+  [data-reveal="left"] {
+    transform: translateX(-28px);
+  }
+  [data-reveal="right"] {
+    transform: translateX(28px);
+  }
+  [data-reveal="scale"] {
+    transform: scale(0.94);
+  }
+  [data-reveal][data-inview="true"] {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Coreografia de entrada do hero (above the fold: anima no load, não no scroll) */
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.hero-rise {
+  animation: hero-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--rise-delay, 0s);
+}
+
+/* Aurora — camadas de luz que derivam lentamente atrás do hero */
+@keyframes aurora-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(4%, -3%, 0) scale(1.08);
+  }
+}
+.animate-aurora {
+  animation: aurora-drift 16s ease-in-out infinite;
+}
+.animate-aurora-slow {
+  animation: aurora-drift 26s ease-in-out infinite reverse;
+}
+
+/* Grão fotográfico — mata o "flat de IA" sem pesar (SVG turbulence inline) */
+.bg-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
+
+/* Marquee de telemetria (faixa contínua; par duplicado no markup) */
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.animate-marquee {
+  animation: marquee 36s linear infinite;
+}
+
+/* Flutuação sutil para elementos "vivos" */
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+.animate-float {
+  animation: float-y 7s ease-in-out infinite;
+}
+
+/* Borda-gradiente viva (shimmer) para o CTA final */
+@keyframes border-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+.gradient-border {
+  position: relative;
+}
+.gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    110deg,
+    color-mix(in srgb, var(--brand) 55%, transparent),
+    color-mix(in srgb, var(--brand) 8%, transparent) 30%,
+    color-mix(in srgb, var(--brand) 55%, transparent) 60%,
+    color-mix(in srgb, var(--brand) 8%, transparent) 85%,
+    color-mix(in srgb, var(--brand) 55%, transparent)
+  );
+  background-size: 200% 100%;
+  animation: border-shimmer 5s linear infinite;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Rail da timeline com pulso de energia descendo (transform-only, GPU) */
+@keyframes rail-pulse {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(1200%);
+  }
+}
+.rail-pulse::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 56px;
+  background: linear-gradient(to bottom, transparent, var(--brand), transparent);
+  animation: rail-pulse 4.5s ease-in-out infinite;
+  will-change: transform;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-rise,
   .animate-pulse-ring,
   .animate-radar-spin,
-  .animate-blip {
+  .animate-blip,
+  .animate-aurora,
+  .animate-aurora-slow,
+  .animate-marquee,
+  .animate-float,
+  .hero-rise {
+    animation: none;
+  }
+  .gradient-border::before,
+  .rail-pulse::after {
     animation: none;
   }
   * {

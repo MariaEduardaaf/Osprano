@@ -15,7 +15,6 @@ import {
   MdArrowForward,
   MdArrowOutward,
   MdCheck,
-  MdStar,
 } from "react-icons/md";
 import { MARKETS, LAUNCH_MARKETS } from "@convex/lib/domain";
 import { ProductMockup } from "@/components/landing/mockup";
@@ -23,6 +22,22 @@ import { Radar } from "@/components/landing/radar";
 import { RevenueCalculator } from "@/components/landing/calculator";
 import { Faq } from "@/components/landing/faq";
 import { Pricing } from "@/components/landing/pricing";
+import { Reveal, CountUp, Tilt } from "@/components/landing/motion";
+
+const SCAN_FEED = [
+  "restaurantes · Manchester",
+  "cafés · Amsterdam",
+  "barbearias · Dublin",
+  "academias · Stockholm",
+  "spas · Oslo",
+  "clínicas · Utrecht",
+  "padarias · Cork",
+  "floriculturas · Gothenburg",
+  "pubs · Bristol",
+  "salões · Rotterdam",
+  "estúdios · Bergen",
+  "oficinas · Galway",
+];
 
 const DEMO = process.env.NEXT_PUBLIC_DEMO === "1";
 
@@ -78,7 +93,7 @@ function Section({
   return (
     <section id={id} className="mx-auto max-w-6xl px-6 py-20 sm:py-28">
       {(eyebrow || title) && (
-        <div className="mb-14 border-t border-border pt-8">
+        <Reveal variant="up" className="mb-14 border-t border-border pt-8">
           <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
             <div className="max-w-2xl">
               {eyebrow && (
@@ -98,7 +113,7 @@ function Section({
               <p className="max-w-sm text-base leading-relaxed text-muted md:text-right">{subtitle}</p>
             )}
           </div>
-        </div>
+        </Reveal>
       )}
       {children}
     </section>
@@ -112,14 +127,35 @@ export default async function Home() {
 
   return (
     <div className="relative overflow-hidden">
-      {/* atmosphere */}
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[900px]"
-        style={{
-          background:
-            "radial-gradient(50% 40% at 78% 8%, color-mix(in srgb, var(--brand) 20%, transparent), transparent 68%), radial-gradient(45% 35% at 10% 4%, color-mix(in srgb, var(--brand-deep) 12%, transparent), transparent 60%)",
-        }}
-      />
+      {/* atmosphere — auroras que derivam + grão fotográfico por cima de tudo */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[980px] overflow-hidden" aria-hidden>
+        <div
+          className="animate-aurora absolute -top-40 right-[-10%] h-[720px] w-[860px] rounded-full"
+          style={{
+            background:
+              "radial-gradient(closest-side, color-mix(in srgb, var(--brand) 22%, transparent), transparent 70%)",
+            filter: "blur(40px)",
+          }}
+        />
+        <div
+          className="animate-aurora-slow absolute -top-24 left-[-14%] h-[560px] w-[700px] rounded-full"
+          style={{
+            background:
+              "radial-gradient(closest-side, color-mix(in srgb, var(--brand-deep) 16%, transparent), transparent 68%)",
+            filter: "blur(48px)",
+          }}
+        />
+        {/* linhas de latitude — textura de instrumento */}
+        <div
+          className="absolute inset-0 opacity-[0.35]"
+          style={{
+            background:
+              "repeating-linear-gradient(to bottom, transparent 0 79px, color-mix(in srgb, var(--border) 55%, transparent) 79px 80px)",
+            maskImage: "linear-gradient(to bottom, black, transparent 75%)",
+          }}
+        />
+      </div>
+      <div className="bg-grain pointer-events-none fixed inset-0 z-[60] opacity-[0.05] mix-blend-overlay" aria-hidden />
 
       {/* nav */}
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/70 backdrop-blur-lg">
@@ -144,28 +180,58 @@ export default async function Home() {
       </header>
 
       {/* hero — asymmetric: copy left, live radar right */}
-      <section className="mx-auto grid max-w-6xl items-center gap-14 px-6 pb-20 pt-16 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10 lg:pb-28 lg:pt-24">
+      <section className="mx-auto grid max-w-6xl items-center gap-14 px-6 pb-20 pt-16 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10 lg:pb-24 lg:pt-24">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-1.5 text-sm font-medium shadow-[var(--shadow-sm)]">
-            <MdOutlineGppGood size={16} className="text-brand" />
+          <div
+            className="hero-rise inline-flex items-center gap-2 rounded-full border border-border bg-surface/80 px-4 py-1.5 text-sm font-medium shadow-[var(--shadow-sm)] backdrop-blur"
+            style={{ "--rise-delay": "0ms" } as React.CSSProperties}
+          >
+            <span className="relative flex h-2 w-2">
+              <span className="animate-pulse-ring absolute inline-flex h-full w-full rounded-full bg-brand" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-brand" />
+            </span>
             Compliant by design · Europa
           </div>
           <h1 className="mt-7 text-balance font-display text-5xl font-bold leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl">
-            Ache a dor. Aborde.{" "}
-            <span style={{ color: "var(--brand)" }}>Feche o site.</span>
+            <span className="hero-rise block" style={{ "--rise-delay": "90ms" } as React.CSSProperties}>
+              Ache a dor.
+            </span>
+            <span className="hero-rise block" style={{ "--rise-delay": "200ms" } as React.CSSProperties}>
+              Aborde.
+            </span>
+            <span
+              className="hero-rise block"
+              style={
+                {
+                  "--rise-delay": "310ms",
+                  background: "linear-gradient(100deg, var(--brand), var(--brand-hover) 55%, var(--brand))",
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  color: "transparent",
+                } as React.CSSProperties
+              }
+            >
+              Feche o site.
+            </span>
           </h1>
-          <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted">
+          <p
+            className="hero-rise mt-6 max-w-xl text-lg leading-relaxed text-muted"
+            style={{ "--rise-delay": "440ms" } as React.CSSProperties}
+          >
             O Osprano varre a Europa atrás de negócios com presença digital fraca, pontua a dor, e a
             IA escreve a abordagem — <strong className="text-foreground">compliant</strong>. Você
             fecha e transforma em receita recorrente.
           </p>
-          <div className="mt-9 flex flex-wrap gap-3">
+          <div
+            className="hero-rise mt-9 flex flex-wrap gap-3"
+            style={{ "--rise-delay": "560ms" } as React.CSSProperties}
+          >
             <Link
               href={ctaHref}
-              className="inline-flex items-center gap-2 rounded-xl bg-brand px-7 py-3.5 text-sm font-semibold text-brand-fg shadow-[var(--shadow-md)] transition-transform hover:scale-[1.03]"
+              className="group inline-flex items-center gap-2 rounded-xl bg-brand px-7 py-3.5 text-sm font-semibold text-brand-fg shadow-[var(--shadow-md)] transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-lg)]"
             >
               {ctaLabel}
-              <MdArrowForward size={18} />
+              <MdArrowForward size={18} className="transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
             <a
               href="#como"
@@ -174,7 +240,10 @@ export default async function Home() {
               Ver como funciona
             </a>
           </div>
-          <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted">
+          <div
+            className="hero-rise mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted"
+            style={{ "--rise-delay": "680ms" } as React.CSSProperties}
+          >
             {["GDPR compliant", "Só mercados opt-out", "Sem instalar nada"].map((c) => (
               <span key={c} className="inline-flex items-center gap-1.5">
                 <MdCheck size={16} className="text-brand" />
@@ -184,26 +253,58 @@ export default async function Home() {
           </div>
         </div>
 
-        <div className="relative flex justify-center lg:justify-end">
-          <Radar />
+        <div
+          className="hero-rise relative flex justify-center lg:justify-end"
+          style={{ "--rise-delay": "260ms" } as React.CSSProperties}
+        >
+          <div className="animate-float w-full max-w-[440px]">
+            <Radar />
+          </div>
         </div>
       </section>
 
-      {/* stats — instrument readouts */}
-      <div className="border-y border-border bg-surface/40">
-        <div className="mx-auto grid max-w-5xl grid-cols-2 gap-8 px-6 py-12 sm:grid-cols-4">
-          {[
-            { v: "5", l: "mercados opt-out da UE" },
-            { v: "0–100", l: "Digital Presence Score" },
-            { v: "GDPR", l: "compliant em cada email" },
-            { v: "MRR", l: "hospedagem white-label" },
-          ].map((s) => (
-            <div key={s.l} className="text-center">
-              <div className="font-display text-3xl font-bold tabular-nums sm:text-4xl">{s.v}</div>
-              <div className="mt-1 text-sm text-muted">{s.l}</div>
-            </div>
-          ))}
+      {/* telemetria — faixa contínua do que o radar está varrendo agora */}
+      <div className="relative border-y border-border bg-surface/40">
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-gradient-to-r from-background to-transparent" aria-hidden />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-gradient-to-l from-background to-transparent" aria-hidden />
+        <div className="overflow-hidden py-3.5">
+          <div className="animate-marquee flex w-max items-center">
+            {[0, 1].map((dup) => (
+              <div key={dup} className="flex items-center" aria-hidden={dup === 1}>
+                {SCAN_FEED.map((item) => (
+                  <span
+                    key={`${dup}-${item}`}
+                    className="inline-flex items-center gap-2.5 whitespace-nowrap px-6 font-mono text-[11px] uppercase tracking-[0.18em] text-muted"
+                  >
+                    <span className="h-1 w-1 rounded-full bg-brand/70" />
+                    varrendo {item}
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
+      </div>
+
+      {/* readouts — medidores com count-up, não "stats de template" */}
+      <div className="mx-auto max-w-6xl px-6">
+        <Reveal variant="up">
+          <div className="grid grid-cols-2 divide-border sm:grid-cols-4 sm:divide-x">
+            {[
+              { n: 5, suffix: "", l: "mercados opt-out da UE" },
+              { n: 100, prefix: "0–", suffix: "", l: "Digital Presence Score" },
+              { n: 48, suffix: "", l: "negócios na primeira varredura" },
+              { n: 100, suffix: "%", l: "dos emails com opt-out" },
+            ].map((s, i) => (
+              <div key={s.l} className="px-6 py-12 text-center">
+                <div className="font-display text-4xl font-bold tabular-nums sm:text-5xl">
+                  <CountUp end={s.n} prefix={s.prefix ?? ""} suffix={s.suffix} duration={1400 + i * 250} />
+                </div>
+                <div className="mt-2 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">{s.l}</div>
+              </div>
+            ))}
+          </div>
+        </Reveal>
       </div>
 
       {/* steps — connected timeline, not a card grid */}
@@ -215,24 +316,33 @@ export default async function Home() {
         subtitle="Seis etapas, na ordem exata em que você trabalha no painel."
       >
         <div className="relative mx-auto max-w-3xl">
-          {/* rail */}
-          <div className="absolute bottom-6 left-7 top-6 w-px bg-border sm:left-[31px]" aria-hidden />
+          {/* rail com pulso de energia */}
+          <div className="rail-pulse absolute bottom-6 left-7 top-6 w-px overflow-hidden bg-border sm:left-[31px]" aria-hidden />
           <div className="space-y-7">
             {STEPS.map((s, i) => (
-              <div key={s.t} className="relative flex gap-5 sm:gap-6">
-                <div className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-border bg-surface text-brand shadow-[var(--shadow-sm)]">
-                  <s.icon size={22} />
-                </div>
-                <div className="pt-1.5">
-                  <div className="flex items-center gap-2.5">
-                    <span className="font-mono text-xs font-bold tabular-nums text-faint">
-                      0{i + 1}
-                    </span>
-                    <h3 className="font-display text-lg font-semibold">{s.t}</h3>
+              <Reveal key={s.t} variant="up" delay={i * 70}>
+                <div className="group relative flex gap-5 sm:gap-6">
+                  {/* numeral fantasma — editorial, dá escala sem poluir */}
+                  <span
+                    className="pointer-events-none absolute -top-3 right-0 select-none font-display text-7xl font-bold tabular-nums text-foreground opacity-[0.045] transition-opacity duration-500 group-hover:opacity-[0.09] sm:text-8xl"
+                    aria-hidden
+                  >
+                    0{i + 1}
+                  </span>
+                  <div className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-border bg-surface text-brand shadow-[var(--shadow-sm)] transition-all duration-300 group-hover:border-brand/40 group-hover:shadow-[0_0_24px_-6px_var(--brand)]">
+                    <s.icon size={22} />
                   </div>
-                  <p className="mt-1.5 max-w-lg text-sm leading-relaxed text-muted">{s.d}</p>
+                  <div className="pt-1.5">
+                    <div className="flex items-center gap-2.5">
+                      <span className="font-mono text-xs font-bold tabular-nums text-faint">
+                        0{i + 1}
+                      </span>
+                      <h3 className="font-display text-lg font-semibold">{s.t}</h3>
+                    </div>
+                    <p className="mt-1.5 max-w-lg text-sm leading-relaxed text-muted">{s.d}</p>
+                  </div>
                 </div>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -246,15 +356,21 @@ export default async function Home() {
         title="O painel por dentro."
         subtitle="Leads pontuados de um lado, o site já gerado do outro — e a IA pronta pra escrever."
       >
-        <ProductMockup />
+        <Reveal variant="scale">
+          <Tilt className="rounded-2xl">
+            <ProductMockup />
+          </Tilt>
+        </Reveal>
       </Section>
 
       {/* compliant differentiator */}
       <Section>
+        <Reveal variant="up">
         <div
           className="relative overflow-hidden rounded-3xl p-8 text-white sm:p-14"
           style={{ background: "linear-gradient(135deg, var(--brand-deep), var(--brand))" }}
         >
+          <div className="bg-grain pointer-events-none absolute inset-0 opacity-[0.12] mix-blend-overlay" aria-hidden />
           {/* radar echo texture */}
           <div
             className="pointer-events-none absolute -right-20 -top-24 h-96 w-96 rounded-full opacity-20"
@@ -282,7 +398,7 @@ export default async function Home() {
                 ["GDPR-safe", "Base legal + opt-out em cada envio"],
                 ["A armadilha do autônomo", "Só incorporados / inbox de função"],
               ].map(([t, d]) => (
-                <div key={t} className="rounded-xl bg-white/10 p-4">
+                <div key={t} className="rounded-xl bg-white/10 p-4 backdrop-blur-sm transition-colors duration-300 hover:bg-white/15">
                   <div className="font-semibold">{t}</div>
                   <div className="mt-1 text-sm text-white/70">{d}</div>
                 </div>
@@ -290,6 +406,7 @@ export default async function Home() {
             </div>
           </div>
         </div>
+        </Reveal>
       </Section>
 
       {/* features — instrument panel grid (hairline dividers, not floating cards) */}
@@ -300,23 +417,34 @@ export default async function Home() {
         title="Cada tela, e para que ela serve."
         subtitle="Tudo dentro de um painel só — do achar a dor ao fechar com recorrência."
       >
-        <div className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((f) => (
-            <div key={f.t} className="group bg-surface p-6 transition-colors hover:bg-surface-2">
-              <div className="flex items-center justify-between">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-soft text-brand">
-                  <f.icon size={22} />
-                </div>
-                <MdArrowOutward
-                  size={18}
-                  className="text-faint opacity-0 transition-opacity group-hover:opacity-100"
+        <Reveal variant="up">
+          <div className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map((f) => (
+              <div key={f.t} className="group relative overflow-hidden bg-surface p-6 transition-colors duration-300 hover:bg-surface-2">
+                {/* halo que acende no hover */}
+                <div
+                  className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+                  style={{
+                    background:
+                      "radial-gradient(closest-side, color-mix(in srgb, var(--brand) 16%, transparent), transparent 70%)",
+                  }}
+                  aria-hidden
                 />
+                <div className="relative flex items-center justify-between">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-soft text-brand transition-transform duration-300 group-hover:scale-110">
+                    <f.icon size={22} />
+                  </div>
+                  <MdArrowOutward
+                    size={18}
+                    className="-translate-x-1 translate-y-1 text-faint opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:translate-y-0 group-hover:opacity-100"
+                  />
+                </div>
+                <h3 className="relative mt-4 font-display text-lg font-semibold">{f.t}</h3>
+                <p className="relative mt-2 text-sm leading-relaxed text-muted">{f.d}</p>
               </div>
-              <h3 className="mt-4 font-display text-lg font-semibold">{f.t}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted">{f.d}</p>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </Reveal>
       </Section>
 
       {/* calculator */}
@@ -326,32 +454,34 @@ export default async function Home() {
         title="Uma venda única vira receita todo mês."
         subtitle="Cobre pela hospedagem e manutenção enquanto o Osprano faz o trabalho pesado. Ajuste e veja a projeção."
       >
-        <div className="mx-auto max-w-3xl">
+        <Reveal variant="up" className="mx-auto max-w-3xl">
           <RevenueCalculator />
-        </div>
+        </Reveal>
       </Section>
 
-      {/* testimonials */}
+      {/* testimonials — pull-quotes editoriais, sem estrelinha de template */}
       <Section title="Quem prospecta com o Osprano, fecha mais.">
-        <div className="grid gap-4 md:grid-cols-3">
-          {TESTIMONIALS.map((t) => (
-            <div key={t.name} className="flex flex-col rounded-[var(--radius)] border border-border bg-surface p-6 shadow-[var(--shadow-sm)]">
-              <div className="flex gap-0.5 text-warm">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <MdStar key={i} size={16} />
-                ))}
-              </div>
-              <p className="mt-4 flex-1 text-sm leading-relaxed text-ink-soft">&quot;{t.quote}&quot;</p>
-              <div className="mt-5 flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand font-display text-sm font-bold text-brand-fg">
-                  {t.name[0]}
-                </div>
-                <div>
-                  <div className="text-sm font-semibold">{t.name}</div>
-                  <div className="text-xs text-muted">{t.role}</div>
-                </div>
-              </div>
-            </div>
+        <div className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-3">
+          {TESTIMONIALS.map((t, i) => (
+            <Reveal key={t.name} variant="up" delay={i * 100} className="bg-surface">
+              <figure className="flex h-full flex-col p-7 sm:p-8">
+                <span className="font-display text-6xl font-bold leading-none text-brand/25" aria-hidden>
+                  &ldquo;
+                </span>
+                <blockquote className="mt-2 flex-1 text-balance font-display text-lg font-medium leading-snug text-foreground">
+                  {t.quote}
+                </blockquote>
+                <figcaption className="mt-7 flex items-center gap-3 border-t border-border pt-5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-soft font-display text-sm font-bold text-brand">
+                    {t.name[0]}
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold">{t.name}</div>
+                    <div className="font-mono text-[11px] uppercase tracking-wider text-muted">{t.role}</div>
+                  </div>
+                </figcaption>
+              </figure>
+            </Reveal>
           ))}
         </div>
       </Section>
@@ -364,44 +494,67 @@ export default async function Home() {
         title="Escolha o plano e comece a prospectar."
         subtitle="Sem cartão para começar. Sem fidelidade. Cancele quando quiser."
       >
-        <Pricing />
+        <Reveal variant="up">
+          <Pricing />
+        </Reveal>
       </Section>
 
       {/* faq */}
       <Section id="faq" title="Perguntas frequentes.">
-        <Faq />
+        <Reveal variant="up">
+          <Faq />
+        </Reveal>
       </Section>
 
-      {/* final cta */}
+      {/* final cta — painel-radar assinatura (não repete o gradiente do diferencial) */}
       <div className="mx-auto max-w-6xl px-6 pb-24">
-        <div
-          className="relative overflow-hidden rounded-3xl px-8 py-16 text-center text-white sm:py-20"
-          style={{ background: "linear-gradient(135deg, var(--brand-deep), var(--brand))" }}
-        >
-          <div
-            className="pointer-events-none absolute inset-0 opacity-20"
-            style={{
-              background:
-                "repeating-radial-gradient(circle at 50% 120%, rgba(255,255,255,0.4) 0 1px, transparent 1px 40px)",
-            }}
-            aria-hidden
-          />
-          <div className="relative">
-            <h2 className="mx-auto max-w-2xl text-balance font-display text-4xl font-bold tracking-tight sm:text-5xl">
-              Comece a achar a dor hoje.
-            </h2>
-            <p className="mx-auto mt-4 max-w-lg text-lg text-white/80">
-              Grátis para começar. Sem cartão. A primeira busca leva menos de um minuto.
-            </p>
-            <Link
-              href={ctaHref}
-              className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-8 py-4 text-sm font-semibold text-brand-deep transition-transform hover:scale-[1.03]"
-            >
-              {ctaLabel}
-              <MdArrowForward size={18} />
-            </Link>
+        <Reveal variant="scale">
+          <div className="gradient-border relative overflow-hidden rounded-3xl border border-border bg-surface px-8 py-20 text-center shadow-[var(--shadow-lg)] sm:py-24">
+            {/* eco do radar do hero — fecha o círculo da narrativa */}
+            <div className="pointer-events-none absolute inset-0" aria-hidden>
+              {[34, 58, 82, 106].map((size) => (
+                <div
+                  key={size}
+                  className="absolute left-1/2 top-full -translate-x-1/2 -translate-y-1/2 rounded-full border"
+                  style={{
+                    width: `${size}%`,
+                    aspectRatio: "1",
+                    borderColor: "color-mix(in srgb, var(--brand) 14%, transparent)",
+                  }}
+                />
+              ))}
+              <div
+                className="absolute inset-0"
+                style={{
+                  background:
+                    "radial-gradient(60% 90% at 50% 115%, color-mix(in srgb, var(--brand) 16%, transparent), transparent 70%)",
+                }}
+              />
+            </div>
+            <div className="relative">
+              <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-surface-2 px-4 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-pulse-ring absolute h-full w-full rounded-full bg-brand" />
+                  <span className="relative h-1.5 w-1.5 rounded-full bg-brand" />
+                </span>
+                radar ligado · 5 mercados
+              </div>
+              <h2 className="mx-auto max-w-2xl text-balance font-display text-4xl font-bold tracking-tight sm:text-6xl">
+                Comece a achar a dor <span style={{ color: "var(--brand)" }}>hoje</span>.
+              </h2>
+              <p className="mx-auto mt-5 max-w-lg text-lg text-muted">
+                Grátis para começar. Sem cartão. A primeira busca leva menos de um minuto.
+              </p>
+              <Link
+                href={ctaHref}
+                className="group mt-9 inline-flex items-center gap-2 rounded-xl bg-brand px-9 py-4 text-sm font-semibold text-brand-fg shadow-[var(--shadow-md)] transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-lg)]"
+              >
+                {ctaLabel}
+                <MdArrowForward size={18} className="transition-transform duration-300 group-hover:translate-x-1" />
+              </Link>
+            </div>
           </div>
-        </div>
+        </Reveal>
       </div>
 
       {/* footer */}
