@@ -267,12 +267,16 @@ export default function CrmPage() {
                             )}
                           </div>
 
-                          {(lead.stage === "scheduled" || lead.stage === "converted") && (
+                          {lead.phone && (
                             <div
                               className="mt-2 border-t border-border pt-2"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              <WhatsAppFollowup leadId={lead._id} phone={lead.phone} />
+                              <WhatsAppFollowup
+                                leadId={lead._id}
+                                phone={lead.phone}
+                                optInAt={lead.waOptInAt}
+                              />
                             </div>
                           )}
                         </div>
