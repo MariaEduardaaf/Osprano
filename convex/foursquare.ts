@@ -2,7 +2,7 @@ import { action } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { requireOrgId } from "./model/tenant";
-import { isLaunchMarket, MARKETS } from "./lib/domain";
+import { isLaunchMarket, MARKETS, clampDiscoveryCount } from "./lib/domain";
 
 interface FsqPlace {
   fsq_id?: string;
@@ -40,50 +40,67 @@ export const search = action({
     const key = process.env.FSQ_API_KEY;
     if (!key) throw new Error("FSQ_API_KEY não configurada no deployment Convex.");
 
+    const want = clampDiscoveryCount(args.max);
+
     await ctx.runMutation(internal.workspaces.reserve, {
       orgId,
       kind: "leads",
-      count: Math.min(args.max ?? 20, 50),
+      count: want,
     });
 
-    const params = new URLSearchParams({
-      query: args.category,
-      near: `${args.city}, ${country}`,
-      limit: String(Math.min(args.max ?? 20, 50)),
-      fields: "fsq_id,name,location,tel,website,email,categories",
-    });
-    const res = await fetch(`https://api.foursquare.com/v3/places/search?${params.toString()}`, {
-      headers: { accept: "application/json", authorization: key },
-    });
-    if (!res.ok) {
-      const body = await res.text();
-      throw new Error(`Foursquare ${res.status}: ${body.slice(0, 240)}`);
-    }
-
-    const data = (await res.json()) as { results?: FsqPlace[] };
-    const results = data.results ?? [];
+    let found = 0;
     let inserted = 0;
-
-    for (const p of results) {
-      const placeId = p.fsq_id ?? p.fsq_place_id;
-      if (!placeId || !p.name) continue;
-      const leadId = await ctx.runMutation(internal.leads.insertDiscovered, {
-        orgId,
-        source: "fsq",
-        placeId,
-        name: p.name,
-        category: p.categories?.[0]?.name ?? args.category,
-        address: p.location?.formatted_address,
-        city: p.location?.locality ?? args.city,
-        countryCode: country,
-        phone: p.tel,
-        website: p.website,
-        email: p.email,
+    try {
+      const params = new URLSearchParams({
+        query: args.category,
+        near: `${args.city}, ${country}`,
+        limit: String(want),
+        fields: "fsq_id,name,location,tel,website,email,categories",
       });
-      inserted += 1;
-      await ctx.scheduler.runAfter(0, internal.scoring.scoreLead, { leadId });
+      const res = await fetch(`https://api.foursquare.com/v3/places/search?${params.toString()}`, {
+        headers: { accept: "application/json", authorization: key },
+      });
+      if (!res.ok) {
+        const body = await res.text();
+        throw new Error(`Foursquare ${res.status}: ${body.slice(0, 240)}`);
+      }
+
+      const data = (await res.json()) as { results?: FsqPlace[] };
+      const results = data.results ?? [];
+      found = results.length;
+
+      for (const p of results) {
+        const placeId = p.fsq_id ?? p.fsq_place_id;
+        if (!placeId || !p.name) continue;
+        const leadId = await ctx.runMutation(internal.leads.insertDiscovered, {
+          orgId,
+          source: "fsq",
+          placeId,
+          name: p.name,
+          category: p.categories?.[0]?.name ?? args.category,
+          address: p.location?.formatted_address,
+          city: p.location?.locality ?? args.city,
+          countryCode: country,
+          phone: p.tel,
+          website: p.website,
+          email: p.email,
+        });
+        inserted += 1;
+        await ctx.scheduler.runAfter(0, internal.scoring.scoreLead, { leadId });
+      }
+    } catch (err) {
+      const toRefund = want - inserted;
+      if (toRefund > 0) {
+        await ctx.runMutation(internal.workspaces.refund, { orgId, kind: "leads", count: toRefund });
+      }
+      throw err;
     }
 
-    return { found: results.length, inserted };
+    const leftover = want - inserted;
+    if (leftover > 0) {
+      await ctx.runMutation(internal.workspaces.refund, { orgId, kind: "leads", count: leftover });
+    }
+
+    return { found, inserted };
   },
 });
