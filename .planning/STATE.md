@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 03-01-PLAN.md
-last_updated: "2026-07-11T05:01:53.926Z"
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-07-11T05:03:20.777Z"
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 11
-  completed_plans: 8
+  completed_plans: 9
 ---
 
 # Project State
@@ -53,6 +53,7 @@ Plan: 1 of 4
 | Phase 02 P04 | 3min | 3 tasks | 4 files |
 | Phase 02 P02 | 6min | 3 tasks | 1 files |
 | Phase 3 P01 | 1min | 1 tasks | 1 files |
+| Phase 03 P02 | 6min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -74,6 +75,7 @@ Recent decisions affecting current work:
 - [Phase 02]: 02-02: checagem de supressão duplicada em draft (evita gastar IA) e em send (defesa em profundidade, cobre body editado manualmente)
 - [Phase 02]: 02-02: unsubscribeToken gerado em upsertDraft e re-garantido via backfill on-demand em send (cobre rows legadas sem token)
 - [Phase 3]: 03-01: recordOpen ganhou guarda de self-open (identity.subject === preview.orgId) — só o servidor decide, PreviewTracker e modo demo intocados
+- [Phase 3]: 03-02: mapa countryCode->locale independente do LANG de outreachAi.ts (formatos incompatíveis: nomes de idioma vs. códigos de locale)
 
 ### Pending Todos
 
@@ -90,6 +92,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-11T05:01:53.924Z
-Stopped at: Completed 03-01-PLAN.md
+Last session: 2026-07-11T05:03:20.774Z
+Stopped at: Completed 03-02-PLAN.md
 Resume file: None

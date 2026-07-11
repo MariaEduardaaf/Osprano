@@ -38,7 +38,7 @@ Bloqueadores de produção identificados pela auditoria de 2026-07-11. Cada um m
 
 ### Localização
 
-- [ ] **L10N-01**: O preview de site renderiza no idioma do mercado do lead (EN para GB/IE, NL para NL, SV para SE, NO para NO) — nenhum copy em português hardcoded; strings centralizadas por locale. (`src/components/preview-site.tsx`, mapa de idiomas existente em `convex/lib/outreachAi.ts:5-11`)
+- [x] **L10N-01**: O preview de site renderiza no idioma do mercado do lead (EN para GB/IE, NL para NL, SV para SE, NO para NO) — nenhum copy em português hardcoded; strings centralizadas por locale. (`src/components/preview-site.tsx`, mapa de idiomas existente em `convex/lib/outreachAi.ts:5-11`)
 
 ## v2 Requirements
 
@@ -87,7 +87,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | COMP-04 | Phase 2 | Complete |
 | SEC-01 | Phase 1 | Complete |
 | OUTR-01 | Phase 3 | Pending |
-| L10N-01 | Phase 3 | Pending |
+| L10N-01 | Phase 3 | Complete |
 
 **Coverage:**
 - v1 requirements: 12 total
