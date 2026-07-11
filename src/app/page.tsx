@@ -24,6 +24,7 @@ import { Faq } from "@/components/landing/faq";
 import { Pricing } from "@/components/landing/pricing";
 import { Reveal, CountUp, Tilt } from "@/components/landing/motion";
 import { LandingHeader } from "@/components/landing/header";
+import { LaptopShowcase } from "@/components/landing/laptop";
 
 const SCAN_FEED = [
   "restaurantes · Manchester",
@@ -401,6 +402,10 @@ export default async function Home() {
         title="Cada tela, e para que ela serve."
         subtitle="Tudo dentro de um painel só — do achar a dor ao fechar com recorrência."
       >
+        <Reveal variant="scale" className="mb-16">
+          <LaptopShowcase />
+        </Reveal>
+
         <Reveal variant="up">
           <div className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map((f) => (

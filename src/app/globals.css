@@ -395,6 +395,21 @@ select {
   pointer-events: none;
 }
 
+/* Painéis do laptop — crossfade entre telas do produto */
+.laptop-panel {
+  opacity: 0;
+  transform: scale(0.985);
+  transition:
+    opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+.laptop-panel[data-active="true"] {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
 /* Rail da timeline com pulso de energia descendo (transform-only, GPU) */
 @keyframes rail-pulse {
   0% {
@@ -431,6 +446,9 @@ select {
   .gradient-border::before,
   .rail-pulse::after {
     animation: none;
+  }
+  .laptop-panel {
+    transition: none;
   }
   * {
     scroll-behavior: auto !important;
