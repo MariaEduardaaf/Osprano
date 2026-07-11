@@ -1,7 +1,7 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { verifyStripeSignature } from "./lib/stripe";
+import { verifyStripeSignature, planForPrice } from "./lib/stripe";
 
 interface StripeObj {
   customer?: string;
@@ -9,6 +9,7 @@ interface StripeObj {
   id?: string;
   status?: string;
   metadata?: { plan?: "pro" | "agency" };
+  items?: { data?: { price?: { id?: string } }[] };
 }
 
 const http = httpRouter();
@@ -44,9 +45,10 @@ http.route({
       obj.customer
     ) {
       const status = event.type.endsWith("deleted") ? "canceled" : (obj.status ?? "active");
+      const derivedPlan = planForPrice(obj.items?.data?.[0]?.price?.id);
       await ctx.runMutation(internal.workspaces.applySubscription, {
         customerId: obj.customer,
-        plan: obj.metadata?.plan,
+        plan: derivedPlan,
         subscriptionId: obj.id,
         status,
       });
