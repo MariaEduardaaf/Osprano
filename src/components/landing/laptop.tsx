@@ -438,66 +438,154 @@ export function LaptopShowcase() {
       }
     };
 
+    // abertura 3D da tampa quando o showcase entra em vista
+    const opener = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          root.dataset.open = "true";
+          opener.disconnect();
+        }
+      },
+      { threshold: 0.35 },
+    );
+    opener.observe(root);
+
+    // tilt 3D seguindo o mouse (desligado em touch/reduced-motion)
+    const tilt = root.querySelector<HTMLElement>("[data-tilt]");
+    const fine =
+      window.matchMedia("(pointer: fine)").matches &&
+      !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const onMove = (e: MouseEvent) => {
+      if (!tilt) return;
+      const r = root.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width - 0.5;
+      const py = (e.clientY - r.top) / r.height - 0.5;
+      tilt.style.transform = `rotateX(${(3 - py * 7).toFixed(2)}deg) rotateY(${(px * 9).toFixed(2)}deg)`;
+    };
+    const onEnter = () => {
+      stop();
+      if (tilt && fine) tilt.style.transition = "transform 140ms ease-out";
+    };
+    const onLeave = () => {
+      start();
+      if (tilt && fine) {
+        tilt.style.transition = "transform 600ms cubic-bezier(0.22, 1, 0.36, 1)";
+        tilt.style.transform = "rotateX(3deg) rotateY(0deg)";
+      }
+    };
+
     tabs.forEach((t) => t.addEventListener("click", onClick));
-    root.addEventListener("mouseenter", stop);
-    root.addEventListener("mouseleave", start);
+    root.addEventListener("mouseenter", onEnter);
+    root.addEventListener("mouseleave", onLeave);
+    if (fine) root.addEventListener("mousemove", onMove);
     show(0);
     start();
     return () => {
       stop();
+      opener.disconnect();
       tabs.forEach((t) => t.removeEventListener("click", onClick));
-      root.removeEventListener("mouseenter", stop);
-      root.removeEventListener("mouseleave", start);
+      root.removeEventListener("mouseenter", onEnter);
+      root.removeEventListener("mouseleave", onLeave);
+      root.removeEventListener("mousemove", onMove);
     };
   }, []);
 
   return (
     <div ref={rootRef} className="laptop-root mx-auto max-w-4xl">
-      {/* laptop */}
-      <div style={{ perspective: "1800px" }}>
-        <div className="relative mx-auto w-full" style={{ transform: "rotateX(3deg)" }}>
-          {/* tampa/tela */}
-          <div className="relative rounded-[20px] rounded-b-none border border-border-strong/60 bg-[#0c0e13] p-2 pb-0 shadow-[var(--shadow-lg)] sm:p-3 sm:pb-0">
-            <span className="absolute left-1/2 top-[5px] h-1 w-1 -translate-x-1/2 rounded-full bg-white/20" aria-hidden />
-            <div className="relative mt-1.5 aspect-[16/10] overflow-hidden rounded-t-[10px] border border-black/40 bg-background">
-              {PANELS.map((Panel, k) => (
-                <div
-                  key={k}
-                  data-panel
-                  data-active={k === 0 ? "true" : "false"}
-                  aria-hidden={k !== 0}
-                  className="laptop-panel absolute inset-0"
-                >
-                  <Panel />
-                </div>
-              ))}
-              {/* reflexo de vidro */}
-              <div
-                className="pointer-events-none absolute inset-0 z-10"
-                style={{
-                  background:
-                    "linear-gradient(115deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.02) 28%, transparent 42%)",
-                }}
-                aria-hidden
-              />
-            </div>
-          </div>
-          {/* base/teclado */}
-          <div className="relative mx-[-3%]" aria-hidden>
-            <div className="h-3 rounded-b-[16px] rounded-t-[3px] border border-t-0 border-border-strong/50 bg-gradient-to-b from-surface-2 to-surface shadow-[0_18px_40px_-18px_rgba(10,20,50,0.5)]">
-              <span className="mx-auto block h-1.5 w-20 rounded-b-lg bg-black/10" />
-            </div>
-          </div>
-          {/* sombra de contato */}
+      {/* palco: luz atrás do laptop pra ele descolar do fundo da página */}
+      <div className="relative">
+        <div className="pointer-events-none absolute -inset-x-24 -bottom-10 -top-24" aria-hidden>
           <div
-            className="mx-auto mt-3 h-4 w-3/4 rounded-full opacity-60"
+            className="absolute inset-0"
             style={{
               background:
-                "radial-gradient(50% 100% at 50% 0%, color-mix(in srgb, var(--brand-deep) 22%, transparent), transparent 75%)",
-              filter: "blur(6px)",
+                "radial-gradient(55% 65% at 50% 42%, color-mix(in srgb, var(--brand) 34%, transparent), transparent 72%)",
+              filter: "blur(30px)",
             }}
-            aria-hidden
           />
+          <div
+            className="animate-aurora absolute left-1/2 top-1/2 h-[70%] w-[60%] -translate-x-1/2 -translate-y-1/2 rounded-full"
+            style={{
+              background:
+                "radial-gradient(closest-side, color-mix(in srgb, var(--brand-deep) 30%, transparent), transparent 70%)",
+              filter: "blur(46px)",
+            }}
+          />
+        </div>
+
+        {/* laptop */}
+        <div style={{ perspective: "1600px" }}>
+          <div
+            data-tilt
+            className="relative mx-auto w-full will-change-transform"
+            style={{ transform: "rotateX(3deg)", transformStyle: "preserve-3d" }}
+          >
+            {/* tampa/tela — abre em 3D a partir da dobradiça */}
+            <div className="laptop-lid relative z-10">
+              <div
+                className="relative rounded-[20px] rounded-b-none border border-white/10 p-2 pb-0 sm:p-3 sm:pb-0"
+                style={{
+                  background: "linear-gradient(180deg, #262c38 0%, #141821 55%, #0b0e15 100%)",
+                  boxShadow:
+                    "inset 0 1px 0 rgba(255,255,255,0.14), 0 30px 70px -24px rgba(5,12,35,0.65), 0 0 60px -18px color-mix(in srgb, var(--brand) 32%, transparent)",
+                }}
+              >
+                <span className="absolute left-1/2 top-[6px] h-1 w-1 -translate-x-1/2 rounded-full bg-white/25 ring-1 ring-black/40" aria-hidden />
+                {/* vidro escuro = tela desligada; o conteúdo "liga" quando a tampa abre */}
+                <div className="relative mt-1.5 aspect-[16/10] overflow-hidden rounded-t-[10px] border border-black/60 bg-[#0a0d14]">
+                  <div className="laptop-screen-content absolute inset-0 bg-background">
+                    {PANELS.map((Panel, k) => (
+                      <div
+                        key={k}
+                        data-panel
+                        data-active={k === 0 ? "true" : "false"}
+                        aria-hidden={k !== 0}
+                        className="laptop-panel absolute inset-0"
+                      >
+                        <Panel />
+                      </div>
+                    ))}
+                  </div>
+                  {/* reflexo de vidro */}
+                  <div
+                    className="pointer-events-none absolute inset-0 z-10"
+                    style={{
+                      background:
+                        "linear-gradient(115deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.03) 28%, transparent 45%)",
+                    }}
+                    aria-hidden
+                  />
+                </div>
+              </div>
+            </div>
+            {/* base/teclado — alumínio escuro */}
+            <div className="relative mx-[-3.5%]" aria-hidden>
+              <div
+                className="relative h-[15px] rounded-b-[16px] rounded-t-[3px] border border-white/10"
+                style={{
+                  background: "linear-gradient(180deg, #323947 0%, #1c212c 45%, #10141c 100%)",
+                  boxShadow:
+                    "inset 0 1px 0 rgba(255,255,255,0.18), 0 26px 50px -18px rgba(5,12,35,0.7)",
+                }}
+              >
+                <span
+                  className="mx-auto block h-[7px] w-24 rounded-b-xl"
+                  style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.55), rgba(0,0,0,0.2))" }}
+                />
+                <span className="absolute inset-x-8 bottom-[2px] h-px bg-white/10" />
+              </div>
+            </div>
+            {/* sombra de contato + reflexo no "chão" */}
+            <div
+              className="mx-auto mt-2 h-6 w-[82%] rounded-[100%]"
+              style={{
+                background:
+                  "radial-gradient(50% 100% at 50% 0%, rgba(5,12,35,0.5), color-mix(in srgb, var(--brand-deep) 20%, transparent) 45%, transparent 75%)",
+                filter: "blur(10px)",
+              }}
+              aria-hidden
+            />
+          </div>
         </div>
       </div>
 
