@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { IconType } from "react-icons";
 import {
@@ -50,8 +50,10 @@ function ago(ts: number | null): string {
 
 export default function OutreachPage() {
   const items = useQuery(api.outreach.outbox, {});
+  const markReplied = useMutation(api.outreach.markReplied);
   const [filter, setFilter] = useState<Status | "all">("all");
   const [page, setPage] = useState(0);
+  const [busyLead, setBusyLead] = useState<string | null>(null);
 
   const counts = (items ?? []).reduce<Record<string, number>>((acc, it) => {
     acc[it.status] = (acc[it.status] ?? 0) + 1;
@@ -175,18 +177,36 @@ export default function OutreachPage() {
                         {timing}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        {it.previewToken ? (
-                          <a
-                            href={`/p/${it.previewToken}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand hover:underline"
-                          >
-                            Abrir <MdOpenInNew size={12} />
-                          </a>
-                        ) : (
-                          <span className="text-faint">—</span>
-                        )}
+                        <div className="inline-flex items-center gap-3">
+                          {(it.status === "sent" || it.status === "opened") && (
+                            <button
+                              onClick={async () => {
+                                setBusyLead(it.leadId);
+                                try {
+                                  await markReplied({ leadId: it.leadId });
+                                } finally {
+                                  setBusyLead(null);
+                                }
+                              }}
+                              disabled={busyLead === it.leadId}
+                              className="inline-flex items-center gap-1 text-[11px] font-semibold text-hot hover:underline disabled:opacity-50"
+                            >
+                              <MdOutlineReply size={12} /> Respondeu
+                            </button>
+                          )}
+                          {it.previewToken ? (
+                            <a
+                              href={`/p/${it.previewToken}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand hover:underline"
+                            >
+                              Abrir <MdOpenInNew size={12} />
+                            </a>
+                          ) : (
+                            <span className="text-faint">—</span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
