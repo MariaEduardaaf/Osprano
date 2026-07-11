@@ -2,6 +2,17 @@
 
 **Ache a dor. Aborde. Feche o site.**
 
+![Next.js](https://img.shields.io/badge/Next.js-16-000?logo=nextdotjs&logoColor=white)
+![Convex](https://img.shields.io/badge/Convex-reactive-EE342F)
+![Clerk](https://img.shields.io/badge/Auth-Clerk-6C47FF?logo=clerk&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38BDF8?logo=tailwindcss&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
+![Anthropic](https://img.shields.io/badge/AI-Claude-D97757?logo=anthropic&logoColor=white)
+
+<!-- Hero: salve um screenshot em docs/preview.png (ou me mande a tela que você quer) e descomente:
+![Osprano](docs/preview.png)
+-->
+
 Osprano encontra **negócios locais europeus com presença digital fraca**, pontua a "dor"
 de cada um, e a **IA escreve a abordagem por email** — _compliant by design_. Você gera
 um preview de site em segundos, fecha o cliente e transforma a venda única em **receita
