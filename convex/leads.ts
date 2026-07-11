@@ -171,6 +171,30 @@ export const schedule = mutation({
   },
 });
 
+/** Registra o opt-in explícito do prospect para WhatsApp (COMP-04). Origem + timestamp. */
+export const recordWaOptIn = mutation({
+  args: {
+    leadId: v.id("leads"),
+    source: v.string(), // "replied_email" | "phone_call" | "in_person"
+    note: v.optional(v.string()),
+  },
+  handler: async (ctx, { leadId, source, note }) => {
+    const orgId = await requireOrgId(ctx);
+    const lead = await ctx.db.get(leadId);
+    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    const now = Date.now();
+    await ctx.db.patch(leadId, { waOptInAt: now, waOptInSource: source });
+    await ctx.db.insert("events", {
+      orgId,
+      type: "wa_opt_in",
+      leadId,
+      at: now,
+      meta: { source, ...(note ? { note } : {}) },
+    });
+    return { optInAt: now };
+  },
+});
+
 // ---------------------------------------------------------------------------
 // Internal API (used by the discovery + scoring pipeline)
 // ---------------------------------------------------------------------------
