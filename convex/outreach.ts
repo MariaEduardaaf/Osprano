@@ -1,9 +1,11 @@
 import { action, mutation, query, internalMutation } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 import { v } from "convex/values";
+import type { Doc } from "./_generated/dataModel";
 import { requireOrgId } from "./model/tenant";
-import { writeEmail } from "./lib/outreachAi";
+import { writeEmail, LANG } from "./lib/outreachAi";
 import { normalizeEmail } from "./lib/domain";
+import { optOutFooter, senderIdentityFrom } from "./lib/compliance";
 import { addSuppression } from "./suppressions";
 
 export const getForLead = query({
@@ -72,6 +74,19 @@ export const outbox = query({
   },
 });
 
+function buildUnsubscribeUrl(token: string): string {
+  return `${process.env.CONVEX_SITE_URL}/unsubscribe?token=${token}`;
+}
+
+/** Anexa o rodapé de opt-out se ainda não estiver presente (marcador = a URL única). */
+function withOptOutFooter(body: string, lead: Doc<"leads"> | null, token: string): string {
+  const url = buildUnsubscribeUrl(token);
+  if (body.includes(url)) return body; // idempotente
+  const sender = senderIdentityFrom(process.env.RESEND_FROM ?? "Osprano");
+  const lang = LANG[lead?.countryCode ?? ""] ?? "English";
+  return `${body}${optOutFooter(lang, url, sender)}`;
+}
+
 export const upsertDraft = internalMutation({
   args: {
     orgId: v.string(),
@@ -81,15 +96,19 @@ export const upsertDraft = internalMutation({
     previewToken: v.string(),
   },
   handler: async (ctx, args) => {
+    const lead = await ctx.db.get(args.leadId);
     const existing = await ctx.db
       .query("outreach")
       .withIndex("by_lead", (q) => q.eq("leadId", args.leadId))
       .first();
+    const unsubscribeToken = existing?.unsubscribeToken ?? crypto.randomUUID().replace(/-/g, "");
+    const body = withOptOutFooter(args.body, lead, unsubscribeToken);
     if (existing) {
       await ctx.db.patch(existing._id, {
         subject: args.subject,
-        body: args.body,
+        body,
         previewToken: args.previewToken,
+        unsubscribeToken,
         status: "draft",
       });
       return existing._id;
@@ -99,10 +118,18 @@ export const upsertDraft = internalMutation({
       leadId: args.leadId,
       channel: "email",
       subject: args.subject,
-      body: args.body,
+      body,
       previewToken: args.previewToken,
+      unsubscribeToken,
       status: "draft",
     });
+  },
+});
+
+export const setUnsubscribeToken = internalMutation({
+  args: { outreachId: v.id("outreach"), unsubscribeToken: v.string() },
+  handler: async (ctx, { outreachId, unsubscribeToken }) => {
+    await ctx.db.patch(outreachId, { unsubscribeToken });
   },
 });
 
