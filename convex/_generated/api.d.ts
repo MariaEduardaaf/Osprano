@@ -14,6 +14,7 @@ import type * as events from "../events.js";
 import type * as foursquare from "../foursquare.js";
 import type * as http from "../http.js";
 import type * as leads from "../leads.js";
+import type * as lib_compliance from "../lib/compliance.js";
 import type * as lib_domain from "../lib/domain.js";
 import type * as lib_enrich from "../lib/enrich.js";
 import type * as lib_outreachAi from "../lib/outreachAi.js";
@@ -24,6 +25,7 @@ import type * as outreach from "../outreach.js";
 import type * as places from "../places.js";
 import type * as previews from "../previews.js";
 import type * as scoring from "../scoring.js";
+import type * as suppressions from "../suppressions.js";
 import type * as whatsapp from "../whatsapp.js";
 import type * as workspaces from "../workspaces.js";
 
@@ -40,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   foursquare: typeof foursquare;
   http: typeof http;
   leads: typeof leads;
+  "lib/compliance": typeof lib_compliance;
   "lib/domain": typeof lib_domain;
   "lib/enrich": typeof lib_enrich;
   "lib/outreachAi": typeof lib_outreachAi;
@@ -50,6 +53,7 @@ declare const fullApi: ApiFromModules<{
   places: typeof places;
   previews: typeof previews;
   scoring: typeof scoring;
+  suppressions: typeof suppressions;
   whatsapp: typeof whatsapp;
   workspaces: typeof workspaces;
 }>;
