@@ -9,8 +9,8 @@ Bloqueadores de produção identificados pela auditoria de 2026-07-11. Cada um m
 
 ### Billing & Quota
 
-- [ ] **BILL-01**: Nenhuma chamada consegue negativar a quota — `foursquare.search` clampa o count com piso 1 (como `places.ts` já faz) e `reserveUsage` rejeita `count <= 0` com erro (defesa em profundidade). (`convex/foursquare.ts:44`, `convex/model/workspace.ts:41-58`)
-- [ ] **BILL-02**: A quota de leads cobra o que foi entregue, não o que foi pedido — após a descoberta, o uso reservado é reconciliado com o nº de leads realmente inseridos (excedente estornado; falha total do fetch externo estorna tudo). (`convex/places.ts:44-53`, `convex/foursquare.ts:43-47`)
+- [x] **BILL-01**: Nenhuma chamada consegue negativar a quota — `foursquare.search` clampa o count com piso 1 (como `places.ts` já faz) e `reserveUsage` rejeita `count <= 0` com erro (defesa em profundidade). (`convex/foursquare.ts:44`, `convex/model/workspace.ts:41-58`)
+- [x] **BILL-02**: A quota de leads cobra o que foi entregue, não o que foi pedido — após a descoberta, o uso reservado é reconciliado com o nº de leads realmente inseridos (excedente estornado; falha total do fetch externo estorna tudo). (`convex/places.ts:44-53`, `convex/foursquare.ts:43-47`)
 - [x] **BILL-03**: Upgrade/downgrade feito pelo Stripe Billing Portal reflete no workspace — o webhook deriva o plano do `price_id` atual da subscription (mapa price→plan via `STRIPE_PRICE_PRO`/`STRIPE_PRICE_AGENCY`), não de `metadata.plan`. (`convex/http.ts:41-53`, `convex/workspaces.ts:54-74`)
 
 ### Tracking & Funil
@@ -30,7 +30,7 @@ Bloqueadores de produção identificados pela auditoria de 2026-07-11. Cada um m
 
 ### Segurança
 
-- [ ] **SEC-01**: O modo demo é inerte em produção — `NEXT_PUBLIC_DEMO` (proxy) e `DEMO_MODE` (backend/seed) só têm efeito fora de produção (guarda de ambiente), impossibilitando desligar a auth por env esquecida. (`src/proxy.ts:27`, `convex/model/tenant.ts:12`, `convex/demo.ts:133`)
+- [x] **SEC-01**: O modo demo é inerte em produção — `NEXT_PUBLIC_DEMO` (proxy) e `DEMO_MODE` (backend/seed) só têm efeito fora de produção (guarda de ambiente), impossibilitando desligar a auth por env esquecida. (`src/proxy.ts:27`, `convex/model/tenant.ts:12`, `convex/demo.ts:133`)
 
 ### Outreach UX
 
@@ -76,8 +76,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BILL-01 | Phase 1 | Pending |
-| BILL-02 | Phase 1 | Pending |
+| BILL-01 | Phase 1 | Complete |
+| BILL-02 | Phase 1 | Complete |
 | BILL-03 | Phase 1 | Complete |
 | TRCK-01 | Phase 3 | Pending |
 | TRCK-02 | Phase 3 | Pending |
@@ -85,7 +85,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | COMP-02 | Phase 2 | Pending |
 | COMP-03 | Phase 2 | Pending |
 | COMP-04 | Phase 2 | Pending |
-| SEC-01 | Phase 1 | Pending |
+| SEC-01 | Phase 1 | Complete |
 | OUTR-01 | Phase 3 | Pending |
 | L10N-01 | Phase 3 | Pending |
 
