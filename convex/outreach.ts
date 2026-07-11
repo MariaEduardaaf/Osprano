@@ -216,6 +216,12 @@ export const send = action({
     if (!lead.emailable) throw new Error("Fora do escopo compliant.");
     if (!lead.email) throw new Error("Lead sem email — copie a abordagem e envie do seu email.");
 
+    const suppressed = await ctx.runQuery(internal.suppressions.isSuppressed, {
+      email: normalizeEmail(lead.email),
+      orgId,
+    });
+    if (suppressed) throw new Error("Este contato pediu para não ser contatado (opt-out).");
+
     const row = await ctx.runQuery(api.outreach.getForLead, { leadId });
     if (!row?.subject || !row?.body) throw new Error("Escreva a abordagem primeiro.");
 
@@ -223,10 +229,34 @@ export const send = action({
     const from = process.env.RESEND_FROM;
     if (!apiKey || !from) throw new Error("RESEND_API_KEY / RESEND_FROM não configurados.");
 
+    let unsubscribeToken = row.unsubscribeToken;
+    if (!unsubscribeToken) {
+      unsubscribeToken = crypto.randomUUID().replace(/-/g, "");
+      await ctx.runMutation(internal.outreach.setUnsubscribeToken, {
+        outreachId: row._id,
+        unsubscribeToken,
+      });
+    }
+    const unsubscribeUrl = `${process.env.CONVEX_SITE_URL}/unsubscribe?token=${unsubscribeToken}`;
+    let body = row.body;
+    if (!body.includes(unsubscribeUrl)) {
+      const lang = LANG[lead.countryCode] ?? "English";
+      body = `${body}${optOutFooter(lang, unsubscribeUrl, senderIdentityFrom(from))}`;
+    }
+
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
-      body: JSON.stringify({ from, to: lead.email, subject: row.subject, text: row.body }),
+      body: JSON.stringify({
+        from,
+        to: lead.email,
+        subject: row.subject,
+        text: body,
+        headers: {
+          "List-Unsubscribe": `<${unsubscribeUrl}>`,
+          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        },
+      }),
     });
     if (!res.ok) {
       const t = await res.text();
