@@ -101,6 +101,10 @@ export default defineSchema({
     meetingAt: v.optional(v.number()),
     meetingNote: v.optional(v.string()),
 
+    // WhatsApp opt-in (COMP-04) — só com registro explícito, nunca por estágio de Kanban
+    waOptInAt: v.optional(v.number()),
+    waOptInSource: v.optional(v.string()), // "replied_email" | "phone_call" | "in_person"
+
     fetchedAt: v.number(), // for the Google Places 30-day refresh policy
   })
     .index("by_org", ["orgId"])
@@ -137,11 +141,13 @@ export default defineSchema({
       v.literal("bounced"),
     ),
     previewToken: v.optional(v.string()),
+    unsubscribeToken: v.optional(v.string()), // token dedicado do unsubscribe (NÃO reutilizar previewToken)
     sentAt: v.optional(v.number()),
     openedAt: v.optional(v.number()),
   })
     .index("by_org", ["orgId"])
-    .index("by_lead", ["leadId"]),
+    .index("by_lead", ["leadId"])
+    .index("by_unsub_token", ["unsubscribeToken"]),
 
   events: defineTable({
     orgId: v.string(),
@@ -150,10 +156,21 @@ export default defineSchema({
       v.literal("email_sent"),
       v.literal("reply"),
       v.literal("stage_change"),
+      v.literal("wa_opt_in"),
     ),
     leadId: v.optional(v.id("leads")),
     previewToken: v.optional(v.string()),
     at: v.number(),
     meta: v.optional(v.any()),
   }).index("by_org", ["orgId"]),
+
+  suppressions: defineTable({
+    email: v.string(), // normalizado (lowercase/trim) via normalizeEmail — SEMPRE gravado normalizado
+    orgId: v.optional(v.string()), // undefined = supressão global (todas as orgs)
+    source: v.string(), // "unsubscribe_link" | "manual" | "reply_stop"
+    leadId: v.optional(v.id("leads")),
+    at: v.number(),
+  })
+    .index("by_email", ["email"])
+    .index("by_org_email", ["orgId", "email"]),
 });
