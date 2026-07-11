@@ -121,6 +121,15 @@ export const recordOpen = mutation({
       .first();
     if (!preview) return;
 
+    // TRCK-01: o dono do workspace abrindo o próprio preview (logado no app, no
+    // mesmo browser) NÃO pode contar como sinal de prospect. Um prospect real
+    // nunca tem sessão Clerk, então identity é null para ele. Limitação aceita e
+    // documentada: uma aba anônima/privada do próprio dono conta como prospect
+    // (igual a qualquer ferramenta de tracking). Modo demo não tem ClerkProvider
+    // → getUserIdentity() sempre null → aberturas de demo seguem contando (desejado).
+    const identity = await ctx.auth.getUserIdentity();
+    if (identity && identity.subject === preview.orgId) return;
+
     const now = Date.now();
     await ctx.db.patch(preview._id, {
       openCount: preview.openCount + 1,
