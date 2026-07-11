@@ -8,6 +8,8 @@ import {
   inferLegalForm,
   inferContactType,
   clampDiscoveryCount,
+  normalizeEmail,
+  hasWaOptIn,
   type Signals,
 } from "../convex/lib/domain.ts";
 
@@ -146,4 +148,16 @@ test("clampDiscoveryCount: ceiling at 50", () => {
 test("clampDiscoveryCount: exact boundaries", () => {
   assert.equal(clampDiscoveryCount(1), 1);
   assert.equal(clampDiscoveryCount(50), 50);
+});
+
+test("normalizeEmail: trims and lowercases", () => {
+  assert.equal(normalizeEmail("  Info@Business.COM "), "info@business.com");
+  assert.equal(normalizeEmail("a@b.com"), "a@b.com");
+});
+
+test("hasWaOptIn: only true with a positive timestamp", () => {
+  assert.equal(hasWaOptIn({}), false);
+  assert.equal(hasWaOptIn({ waOptInAt: undefined }), false);
+  assert.equal(hasWaOptIn({ waOptInAt: 0 }), false);
+  assert.equal(hasWaOptIn({ waOptInAt: 1700000000000 }), true);
 });
