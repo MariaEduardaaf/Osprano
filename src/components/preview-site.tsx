@@ -1,4 +1,5 @@
 import { MdCall, MdOutlineChat } from "react-icons/md";
+import { DICTS, localeForCountry } from "@/lib/preview-i18n";
 
 export interface PreviewContent {
   name: string;
@@ -20,8 +21,9 @@ function waLink(phone: string): string {
  * independent of the app chrome.
  */
 export function PreviewSite({ content }: { content: PreviewContent }) {
-  const { name, category, city, phone, rating, reviewsCount } = content;
+  const { name, category, city, phone, rating, reviewsCount, countryCode } = content;
   const cat = category ? category.replace(/_/g, " ") : null;
+  const tr = DICTS[localeForCountry(countryCode)];
 
   return (
     <div className="min-h-dvh bg-[#0e0d0a] text-[#f4f1e9] [font-family:var(--font-geist-sans)]">
@@ -37,7 +39,7 @@ export function PreviewSite({ content }: { content: PreviewContent }) {
               className="inline-flex items-center gap-1.5 rounded-full bg-[#f4f1e9] px-4 py-2 text-sm font-semibold text-[#0e0d0a] transition-transform hover:scale-105"
             >
               <MdCall size={16} />
-              Ligar
+              {tr.call}
             </a>
           )}
         </div>
@@ -63,8 +65,7 @@ export function PreviewSite({ content }: { content: PreviewContent }) {
             {name}
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-relaxed text-[#f4f1e9]/70">
-            Tradição, atendimento próximo e a confiança de quem já conhece. Reserve, ligue ou passe
-            para conhecer.
+            {tr.heroSubtitle}
           </p>
 
           <div className="mt-9 flex flex-wrap items-center gap-3">
@@ -75,14 +76,14 @@ export function PreviewSite({ content }: { content: PreviewContent }) {
                   className="inline-flex items-center gap-2 rounded-xl bg-[#f4f1e9] px-7 py-3.5 text-sm font-semibold text-[#0e0d0a] transition-transform hover:scale-[1.03]"
                 >
                   <MdCall size={17} />
-                  Ligar agora
+                  {tr.callNow}
                 </a>
                 <a
                   href={waLink(phone)}
                   className="inline-flex items-center gap-2 rounded-xl border border-white/25 px-7 py-3.5 text-sm font-semibold text-[#f4f1e9] transition-colors hover:bg-white/10"
                 >
                   <MdOutlineChat size={17} />
-                  WhatsApp
+                  {tr.whatsapp}
                 </a>
               </>
             )}
@@ -94,7 +95,9 @@ export function PreviewSite({ content }: { content: PreviewContent }) {
                 </span>
                 <span className="font-semibold">{rating.toFixed(1)}</span>
                 {reviewsCount != null && (
-                  <span className="text-[#f4f1e9]/50">· {reviewsCount} avaliações</span>
+                  <span className="text-[#f4f1e9]/50">
+                    · {reviewsCount} {tr.reviews}
+                  </span>
                 )}
               </div>
             )}
@@ -106,9 +109,12 @@ export function PreviewSite({ content }: { content: PreviewContent }) {
       <section className="border-t border-white/10 bg-[#141209]">
         <div className="mx-auto grid max-w-5xl gap-px overflow-hidden px-6 py-16 sm:grid-cols-3 sm:gap-0 sm:px-0">
           {[
-            { t: "Qualidade", d: "Feito com cuidado, do começo ao fim." },
-            { t: "Atendimento", d: "Perto de você, do jeito que gosta." },
-            { t: "No coração da cidade", d: city ? `Bem no centro de ${city}.` : "Fácil de chegar." },
+            { t: tr.featureQualityTitle, d: tr.featureQualityBody },
+            { t: tr.featureServiceTitle, d: tr.featureServiceBody },
+            {
+              t: tr.featureLocationTitle,
+              d: city ? tr.featureLocationBodyWithCity(city) : tr.featureLocationBodyNoCity,
+            },
           ].map((f, i) => (
             <div key={f.t} className={`px-2 py-6 sm:px-10 ${i > 0 ? "sm:border-l sm:border-white/10" : ""}`}>
               <div className="[font-family:var(--font-geist-mono)] text-xs text-[#e0b968]">
@@ -126,29 +132,28 @@ export function PreviewSite({ content }: { content: PreviewContent }) {
         <div className="grid gap-12 sm:grid-cols-2">
           <div>
             <h2 className="[font-family:var(--font-bricolage)] text-3xl font-bold tracking-tight">
-              Venha nos visitar
+              {tr.visitHeading}
             </h2>
             <p className="mt-4 max-w-md leading-relaxed text-[#f4f1e9]/65">
-              {name} é referência {cat ? `em ${cat}` : "no bairro"}
-              {city ? `, em ${city}` : ""}. Estamos prontos para te receber.
+              {tr.visitBody({ name, category: cat, city })}
             </p>
           </div>
           <dl className="space-y-4 text-sm">
             {phone && (
               <div className="flex justify-between border-b border-white/10 pb-4">
-                <dt className="text-[#f4f1e9]/50">Telefone</dt>
+                <dt className="text-[#f4f1e9]/50">{tr.phoneLabel}</dt>
                 <dd className="font-medium">{phone}</dd>
               </div>
             )}
             {city && (
               <div className="flex justify-between border-b border-white/10 pb-4">
-                <dt className="text-[#f4f1e9]/50">Onde</dt>
+                <dt className="text-[#f4f1e9]/50">{tr.whereLabel}</dt>
                 <dd className="font-medium">{city}</dd>
               </div>
             )}
             <div className="flex justify-between border-b border-white/10 pb-4">
-              <dt className="text-[#f4f1e9]/50">Horário</dt>
-              <dd className="font-medium">Seg–Sáb · 9h–19h</dd>
+              <dt className="text-[#f4f1e9]/50">{tr.hoursLabel}</dt>
+              <dd className="font-medium">{tr.hoursValue}</dd>
             </div>
           </dl>
         </div>

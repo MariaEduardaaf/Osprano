@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { DICTS, localeForCountry } from "../src/lib/preview-i18n.ts";
 
 test("preview-i18n: countryCode mapeia para o locale correto", () => {
@@ -23,4 +24,9 @@ test("preview-i18n: funções interpoladas incluem os argumentos", () => {
   assert.ok(DICTS.sv.featureLocationBodyWithCity("Stockholm").includes("Stockholm"));
   const body = DICTS.en.visitBody({ name: "Joe", category: "café", city: "London" });
   assert.ok(body.includes("Joe") && body.includes("London"));
+});
+
+test("preview-site: nenhuma string PT hardcoded permanece", () => {
+  const src = readFileSync(new URL("../src/components/preview-site.tsx", import.meta.url), "utf8");
+  assert.equal(src.match(/Venha|Tradição|Seg–Sáb/), null);
 });
