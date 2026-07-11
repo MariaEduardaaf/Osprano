@@ -271,6 +271,13 @@ export function planLimit(plan: Plan, kind: "leads" | "sites"): number {
   return kind === "leads" ? PLANS[plan].leadsPerMonth : PLANS[plan].sitesPerMonth;
 }
 
+/** Clamp do parâmetro `max` de descoberta: default 20, piso 1, teto 50, arredonda decimais. */
+export function clampDiscoveryCount(max?: number): number {
+  const n = Math.round(max ?? 20);
+  const safe = Number.isFinite(n) ? n : 20; // NaN/Infinity → default (Math.max(NaN,1) = NaN em JS)
+  return Math.min(Math.max(safe, 1), 50);
+}
+
 /** Category options for the discovery UI — value is the Places search term, label is pt-BR. */
 export const CATEGORY_OPTIONS: { value: string; label: string }[] = [
   { value: "restaurant", label: "Restaurante" },

@@ -1,7 +1,7 @@
 import { query, internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 import { requireOrgId } from "./model/tenant";
-import { getWorkspace, ensureWorkspace, reserveUsage } from "./model/workspace";
+import { getWorkspace, ensureWorkspace, reserveUsage, refundUsage } from "./model/workspace";
 import { PLANS } from "./lib/domain";
 
 const planV = v.union(v.literal("free"), v.literal("pro"), v.literal("agency"));
@@ -32,6 +32,18 @@ export const reserve = internalMutation({
   },
   handler: async (ctx, args) => {
     await reserveUsage(ctx, args.orgId, args.kind, args.count);
+  },
+});
+
+/** Refund usage previously reserved (called when discovery inserts fewer leads than reserved). */
+export const refund = internalMutation({
+  args: {
+    orgId: v.string(),
+    kind: v.union(v.literal("leads"), v.literal("sites")),
+    count: v.number(),
+  },
+  handler: async (ctx, args) => {
+    await refundUsage(ctx, args.orgId, args.kind, args.count);
   },
 });
 

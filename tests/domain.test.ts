@@ -7,6 +7,7 @@ import {
   isEmailable,
   inferLegalForm,
   inferContactType,
+  clampDiscoveryCount,
   type Signals,
 } from "../convex/lib/domain.ts";
 
@@ -119,4 +120,30 @@ test("inferContactType: role vs named", () => {
   assert.equal(inferContactType("maria@x.com"), "named");
   assert.equal(inferContactType(undefined), "unknown");
   assert.equal(inferContactType("x1y2z3@x.com"), "unknown");
+});
+
+test("clampDiscoveryCount: default when undefined", () => {
+  assert.equal(clampDiscoveryCount(undefined), 20);
+});
+
+test("clampDiscoveryCount: floor at 1 for negative/zero", () => {
+  assert.equal(clampDiscoveryCount(-5), 1);
+  assert.equal(clampDiscoveryCount(0), 1);
+});
+
+test("clampDiscoveryCount: non-finite falls back to default", () => {
+  assert.equal(clampDiscoveryCount(Number.NaN), 20);
+});
+
+test("clampDiscoveryCount: rounds decimals", () => {
+  assert.equal(clampDiscoveryCount(3.6), 4);
+});
+
+test("clampDiscoveryCount: ceiling at 50", () => {
+  assert.equal(clampDiscoveryCount(999), 50);
+});
+
+test("clampDiscoveryCount: exact boundaries", () => {
+  assert.equal(clampDiscoveryCount(1), 1);
+  assert.equal(clampDiscoveryCount(50), 50);
 });

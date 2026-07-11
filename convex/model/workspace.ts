@@ -44,6 +44,9 @@ export async function reserveUsage(
   kind: "leads" | "sites",
   count: number,
 ): Promise<void> {
+  if (!Number.isInteger(count) || count < 1) {
+    throw new Error(`Quantidade de reserva inválida (${count}).`);
+  }
   const ws = await ensureFresh(ctx, orgId);
   const used = kind === "leads" ? ws.leadsUsed : ws.sitesUsed;
   const limit = planLimit(ws.plan, kind);
@@ -55,4 +58,18 @@ export async function reserveUsage(
     ws._id,
     kind === "leads" ? { leadsUsed: used + count } : { sitesUsed: used + count },
   );
+}
+
+/** Estorna `count` unidades de uso; NUNCA deixa o contador negativo (clamp em 0). */
+export async function refundUsage(
+  ctx: MutationCtx,
+  orgId: string,
+  kind: "leads" | "sites",
+  count: number,
+): Promise<void> {
+  if (count <= 0) return;
+  const ws = await ensureFresh(ctx, orgId);
+  const used = kind === "leads" ? ws.leadsUsed : ws.sitesUsed;
+  const next = Math.max(0, used - count);
+  await ctx.db.patch(ws._id, kind === "leads" ? { leadsUsed: next } : { sitesUsed: next });
 }
