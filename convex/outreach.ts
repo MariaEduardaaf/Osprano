@@ -3,6 +3,8 @@ import { api, internal } from "./_generated/api";
 import { v } from "convex/values";
 import { requireOrgId } from "./model/tenant";
 import { writeEmail } from "./lib/outreachAi";
+import { normalizeEmail } from "./lib/domain";
+import { addSuppression } from "./suppressions";
 
 export const getForLead = query({
   args: { leadId: v.id("leads") },
@@ -114,6 +116,13 @@ export const draft = action({
     if (!lead.emailable) {
       throw new Error("Fora do escopo compliant: mercado opt-in, ou pessoa nomeada/autônomo.");
     }
+    if (lead.email) {
+      const suppressed = await ctx.runQuery(internal.suppressions.isSuppressed, {
+        email: normalizeEmail(lead.email),
+        orgId,
+      });
+      if (suppressed) throw new Error("Este contato pediu para não ser contatado (opt-out).");
+    }
     const key = process.env.ANTHROPIC_API_KEY;
     if (!key) throw new Error("ANTHROPIC_API_KEY não configurada no deployment Convex.");
 
@@ -149,6 +158,24 @@ export const markSent = mutation({
       await ctx.db.patch(leadId, { stage: "approached", stageUpdatedAt: now });
     }
     await ctx.db.insert("events", { orgId, type: "email_sent", leadId, at: now });
+  },
+});
+
+/** Registrar supressão manual ("respondeu stop"). Org-scoped. UI na Fase 3. */
+export const suppress = mutation({
+  args: { leadId: v.id("leads") },
+  handler: async (ctx, { leadId }) => {
+    const orgId = await requireOrgId(ctx);
+    const lead = await ctx.db.get(leadId);
+    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    if (!lead.email) throw new Error("Lead sem email para suprimir.");
+    await addSuppression(ctx, {
+      email: normalizeEmail(lead.email),
+      orgId,
+      source: "manual",
+      leadId,
+    });
+    return { suppressed: true };
   },
 });
 
