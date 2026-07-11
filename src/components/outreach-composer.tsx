@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import {
   MdOutlineAutoAwesome,
   MdOutlineContentCopy,
@@ -10,35 +10,54 @@ import {
 import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
+import type { Doc } from "@convex/_generated/dataModel";
 
 function errMsg(e: unknown): string {
   return e instanceof Error ? e.message : "Falha";
 }
 
+/**
+ * Wrapper: busca o rascunho salvo (getForLead) e monta o corpo do composer só depois
+ * que a query resolve, trocando a `key` de "loading" para "loaded" — o padrão oficial
+ * do React para inicializar estado uma única vez a partir de dado assíncrono
+ * (https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes),
+ * sem useEffect+setState (react-hooks/set-state-in-effect) nem leitura de ref durante
+ * o render (react-hooks/refs) — ambos proibidos pelo React Compiler deste projeto.
+ * A troca de key acontece uma única vez (quando a query deixa de ser `undefined`),
+ * então digitação do usuário nunca é sobrescrita depois da hidratação inicial.
+ */
 export function OutreachComposer({ leadId, hasEmail }: { leadId: Id<"leads">; hasEmail: boolean }) {
+  const existing = useQuery(api.outreach.getForLead, { leadId });
+  return (
+    <ComposerBody
+      key={existing === undefined ? "loading" : "loaded"}
+      leadId={leadId}
+      hasEmail={hasEmail}
+      existing={existing ?? null}
+    />
+  );
+}
+
+function ComposerBody({
+  leadId,
+  hasEmail,
+  existing,
+}: {
+  leadId: Id<"leads">;
+  hasEmail: boolean;
+  existing: Doc<"outreach"> | null;
+}) {
   const draft = useAction(api.outreach.draft);
   const send = useAction(api.outreach.send);
   const markSent = useMutation(api.outreach.markSent);
   const updateDraft = useMutation(api.outreach.updateDraft);
-  const existing = useQuery(api.outreach.getForLead, { leadId });
 
-  const [subject, setSubject] = useState("");
-  const [body, setBody] = useState("");
-  const [open, setOpen] = useState(false);
+  const hasDraft = !!(existing && (existing.subject || existing.body));
+  const [subject, setSubject] = useState(existing?.subject ?? "");
+  const [body, setBody] = useState(existing?.body ?? "");
+  const [open, setOpen] = useState(hasDraft); // pré-preenchido, sem gastar IA
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
-
-  const hydrated = useRef(false);
-
-  useEffect(() => {
-    if (hydrated.current || existing === undefined) return; // ainda carregando
-    hydrated.current = true;
-    if (existing && (existing.subject || existing.body)) {
-      setSubject(existing.subject ?? "");
-      setBody(existing.body ?? "");
-      setOpen(true); // pré-preenchido, sem gastar IA
-    }
-  }, [existing]);
 
   async function run(kind: string, fn: () => Promise<void>) {
     setBusy(kind);
