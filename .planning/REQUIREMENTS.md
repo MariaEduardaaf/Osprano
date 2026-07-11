@@ -11,7 +11,7 @@ Bloqueadores de produção identificados pela auditoria de 2026-07-11. Cada um m
 
 - [ ] **BILL-01**: Nenhuma chamada consegue negativar a quota — `foursquare.search` clampa o count com piso 1 (como `places.ts` já faz) e `reserveUsage` rejeita `count <= 0` com erro (defesa em profundidade). (`convex/foursquare.ts:44`, `convex/model/workspace.ts:41-58`)
 - [ ] **BILL-02**: A quota de leads cobra o que foi entregue, não o que foi pedido — após a descoberta, o uso reservado é reconciliado com o nº de leads realmente inseridos (excedente estornado; falha total do fetch externo estorna tudo). (`convex/places.ts:44-53`, `convex/foursquare.ts:43-47`)
-- [ ] **BILL-03**: Upgrade/downgrade feito pelo Stripe Billing Portal reflete no workspace — o webhook deriva o plano do `price_id` atual da subscription (mapa price→plan via `STRIPE_PRICE_PRO`/`STRIPE_PRICE_AGENCY`), não de `metadata.plan`. (`convex/http.ts:41-53`, `convex/workspaces.ts:54-74`)
+- [x] **BILL-03**: Upgrade/downgrade feito pelo Stripe Billing Portal reflete no workspace — o webhook deriva o plano do `price_id` atual da subscription (mapa price→plan via `STRIPE_PRICE_PRO`/`STRIPE_PRICE_AGENCY`), não de `metadata.plan`. (`convex/http.ts:41-53`, `convex/workspaces.ts:54-74`)
 
 ### Tracking & Funil
 
@@ -78,7 +78,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | BILL-01 | Phase 1 | Pending |
 | BILL-02 | Phase 1 | Pending |
-| BILL-03 | Phase 1 | Pending |
+| BILL-03 | Phase 1 | Complete |
 | TRCK-01 | Phase 3 | Pending |
 | TRCK-02 | Phase 3 | Pending |
 | COMP-01 | Phase 2 | Pending |
