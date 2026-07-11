@@ -2,11 +2,13 @@ import { action, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { requireOrgId } from "./model/tenant";
+import { hasWaOptIn } from "./lib/domain";
 
 /**
- * Send a WhatsApp follow-up. COMPLIANCE: allowed ONLY after the prospect opted
- * in by replying (stage "replied"/"converted"). Never cold — cold WhatsApp is
- * unlawful in the EU without prior opt-in.
+ * Send a WhatsApp follow-up. COMPLIANCE: allowed ONLY after the prospect has a
+ * registered opt-in (lead.waOptInAt, set via leads.recordWaOptIn with an explicit
+ * source + timestamp). Kanban stage does NOT unlock WhatsApp — moving a card never
+ * grants consent. Cold WhatsApp is unlawful in the EU without prior opt-in.
  */
 export const sendFollowup = action({
   args: { leadId: v.id("leads"), message: v.string() },
@@ -14,8 +16,8 @@ export const sendFollowup = action({
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.runQuery(internal.leads.getInternal, { leadId });
     if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
-    if (lead.stage !== "scheduled" && lead.stage !== "converted") {
-      throw new Error("WhatsApp só depois que o prospect agenda/opta (nunca a frio).");
+    if (!hasWaOptIn(lead)) {
+      throw new Error("WhatsApp só com opt-in registrado do prospect.");
     }
     if (!lead.phone) throw new Error("Lead sem telefone.");
 
