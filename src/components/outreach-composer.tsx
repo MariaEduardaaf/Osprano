@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   MdOutlineAutoAwesome,
   MdOutlineContentCopy,
   MdOutlineCheck,
   MdOutlineSend,
 } from "react-icons/md";
-import { useAction, useMutation } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 
@@ -19,12 +19,26 @@ export function OutreachComposer({ leadId, hasEmail }: { leadId: Id<"leads">; ha
   const draft = useAction(api.outreach.draft);
   const send = useAction(api.outreach.send);
   const markSent = useMutation(api.outreach.markSent);
+  const updateDraft = useMutation(api.outreach.updateDraft);
+  const existing = useQuery(api.outreach.getForLead, { leadId });
 
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+
+  const hydrated = useRef(false);
+
+  useEffect(() => {
+    if (hydrated.current || existing === undefined) return; // ainda carregando
+    hydrated.current = true;
+    if (existing && (existing.subject || existing.body)) {
+      setSubject(existing.subject ?? "");
+      setBody(existing.body ?? "");
+      setOpen(true); // pré-preenchido, sem gastar IA
+    }
+  }, [existing]);
 
   async function run(kind: string, fn: () => Promise<void>) {
     setBusy(kind);
@@ -77,6 +91,7 @@ export function OutreachComposer({ leadId, hasEmail }: { leadId: Id<"leads">; ha
           onClick={() =>
             run("copy", async () => {
               await navigator.clipboard.writeText(`${subject}\n\n${body}`);
+              void updateDraft({ leadId, subject, body }).catch(() => {});
               setMsg("Copiado — envie do seu email.");
             })
           }
@@ -87,6 +102,7 @@ export function OutreachComposer({ leadId, hasEmail }: { leadId: Id<"leads">; ha
         </button>
         <button
           onClick={() => run("mark", async () => {
+            await updateDraft({ leadId, subject, body });
             await markSent({ leadId });
             setMsg("Marcado como enviado.");
           })}
@@ -99,6 +115,7 @@ export function OutreachComposer({ leadId, hasEmail }: { leadId: Id<"leads">; ha
         {hasEmail && (
           <button
             onClick={() => run("send", async () => {
+              await updateDraft({ leadId, subject, body });
               await send({ leadId });
               setMsg("Enviado via Resend.");
             })}
