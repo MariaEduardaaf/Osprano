@@ -23,6 +23,7 @@ import { RevenueCalculator } from "@/components/landing/calculator";
 import { Faq } from "@/components/landing/faq";
 import { Pricing } from "@/components/landing/pricing";
 import { Reveal, CountUp, Tilt } from "@/components/landing/motion";
+import { LandingHeader } from "@/components/landing/header";
 
 const SCAN_FEED = [
   "restaurantes · Manchester",
@@ -91,7 +92,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section id={id} className="mx-auto max-w-6xl px-6 py-20 sm:py-28">
+    <section id={id} className="mx-auto max-w-6xl scroll-mt-20 px-6 py-20 sm:py-28">
       {(eyebrow || title) && (
         <Reveal variant="up" className="mb-14 border-t border-border pt-8">
           <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
@@ -126,7 +127,9 @@ export default async function Home() {
   const ctaLabel = DEMO ? "Entrar no app (demo)" : userId ? "Ir pro painel" : "Começar grátis";
 
   return (
-    <div className="relative overflow-hidden">
+    // overflow-x-clip (e não hidden): corta o vazamento horizontal das decorações
+    // SEM criar scroll container — senão o position:sticky do header morre.
+    <div id="top" className="relative overflow-x-clip">
       {/* atmosphere — auroras que derivam + grão fotográfico por cima de tudo */}
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[980px] overflow-hidden" aria-hidden>
         <div
@@ -157,27 +160,8 @@ export default async function Home() {
       </div>
       <div className="bg-grain pointer-events-none fixed inset-0 z-[60] opacity-[0.05] mix-blend-overlay" aria-hidden />
 
-      {/* nav */}
-      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/70 backdrop-blur-lg">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
-          <div className="flex items-center gap-2.5">
-            <Logo />
-            <span className="font-display text-lg font-bold tracking-tight">Osprano</span>
-          </div>
-          <nav className="hidden items-center gap-7 text-sm font-medium text-muted md:flex">
-            <a href="#como" className="hover:text-foreground">Como funciona</a>
-            <a href="#recursos" className="hover:text-foreground">Recursos</a>
-            <a href="#precos" className="hover:text-foreground">Preços</a>
-            <a href="#faq" className="hover:text-foreground">FAQ</a>
-          </nav>
-          <Link
-            href={ctaHref}
-            className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-fg shadow-[var(--shadow-sm)] transition-colors hover:bg-brand-hover"
-          >
-            Entrar no app
-          </Link>
-        </div>
-      </header>
+      {/* nav — sticky, scrollspy e hovers no client component */}
+      <LandingHeader ctaHref={ctaHref} ctaLabel="Entrar no app" />
 
       {/* hero — asymmetric: copy left, live radar right */}
       <section className="mx-auto grid max-w-6xl items-center gap-14 px-6 pb-20 pt-16 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10 lg:pb-24 lg:pt-24">
@@ -557,22 +541,102 @@ export default async function Home() {
         </Reveal>
       </div>
 
-      {/* footer */}
-      <footer className="border-t border-border">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 py-10 sm:flex-row">
-          <div className="flex items-center gap-2.5">
-            <Logo />
-            <span className="font-display text-base font-bold">Osprano</span>
+      {/* footer — editorial, com marca d'água e colunas de navegação */}
+      <footer className="relative overflow-hidden border-t border-border">
+        {/* wordmark gigante ancorado no fundo */}
+        <div
+          className="pointer-events-none absolute inset-x-0 -bottom-[0.18em] select-none text-center font-display text-[22vw] font-bold leading-none tracking-tight text-foreground opacity-[0.035] sm:text-[17vw]"
+          aria-hidden
+        >
+          Osprano
+        </div>
+
+        <div className="relative mx-auto max-w-6xl px-6 pb-12 pt-16">
+          <div className="grid gap-12 pb-14 md:grid-cols-[1.3fr_1fr_1fr]">
+            {/* marca */}
+            <div>
+              <div className="flex items-center gap-2.5">
+                <Logo />
+                <span className="font-display text-lg font-bold tracking-tight">Osprano</span>
+              </div>
+              <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">
+                A camada de aquisição de clientes de quem vende presença digital na Europa. Ache a
+                dor, aborde compliant, feche com recorrência.
+              </p>
+              <div className="mt-6 flex flex-wrap items-center gap-2.5">
+                <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-faint">
+                  Mercados
+                </span>
+                {LAUNCH_MARKETS.map((c) => (
+                  <span
+                    key={c}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1 text-xs"
+                    title={MARKETS[c].name}
+                  >
+                    {MARKETS[c].flag}
+                    <span className="font-mono text-[10px] uppercase text-muted">{c}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* navegação */}
+            <nav aria-label="Produto">
+              <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-faint">
+                Produto
+              </div>
+              <ul className="mt-4 space-y-2.5 text-sm">
+                {[
+                  ["#como", "Como funciona"],
+                  ["#produto", "O painel por dentro"],
+                  ["#recursos", "Recursos"],
+                  ["#precos", "Preços"],
+                  ["#faq", "Perguntas frequentes"],
+                ].map(([href, label]) => (
+                  <li key={href}>
+                    <a
+                      href={href}
+                      className="group inline-flex items-center gap-1.5 text-muted transition-colors hover:text-foreground"
+                    >
+                      <span className="h-px w-0 bg-brand transition-all duration-300 group-hover:w-3" />
+                      {label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+
+            {/* acesso */}
+            <div>
+              <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-faint">
+                Comece agora
+              </div>
+              <p className="mt-4 text-sm leading-relaxed text-muted">
+                Grátis para começar. A primeira varredura leva menos de um minuto.
+              </p>
+              <Link
+                href={ctaHref}
+                className="group mt-5 inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-brand-fg shadow-[var(--shadow-sm)] transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)]"
+              >
+                {ctaLabel}
+                <MdArrowForward size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
+              </Link>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-[10px] uppercase tracking-wider text-faint">Mercados</span>
-            {LAUNCH_MARKETS.map((c) => (
-              <span key={c} className="text-sm" title={MARKETS[c].name}>
-                {MARKETS[c].flag}
-              </span>
-            ))}
+
+          {/* linha final */}
+          <div className="flex flex-col items-center justify-between gap-3 border-t border-border pt-6 sm:flex-row">
+            <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-faint">
+              © 2026 Osprano · compliant by design · feito para a Europa
+            </div>
+            <a
+              href="#top"
+              className="group inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-muted transition-colors hover:text-foreground"
+            >
+              Voltar ao topo
+              <MdArrowForward size={13} className="-rotate-90 transition-transform duration-300 group-hover:-translate-y-0.5" />
+            </a>
           </div>
-          <div className="text-xs text-faint">© 2026 Osprano · compliant by design</div>
         </div>
       </footer>
     </div>
