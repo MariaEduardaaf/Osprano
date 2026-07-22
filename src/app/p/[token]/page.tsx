@@ -22,8 +22,17 @@ const loadPreview = cache(async (token: string): Promise<PreviewContent | null> 
 
 /**
  * Título/descrição no idioma do lead e com o nome do NEGÓCIO: o prospect abre o
- * que parece ser o site dele, não uma página da Osprano. `robots.index: false`
- * continua valendo — link rastreado nunca vai para buscador.
+ * que parece ser o site dele, não uma página da Osprano.
+ *
+ * `robots.index: false` em TODOS os caminhos, e isto não é simetria com
+ * `/site/[slug]` — é o contrário dela:
+ *   - aqui a página é a prévia RASTREADA, mandada por email a quem ainda não
+ *     comprou nada. O link é privado e o token é a única credencial; indexar
+ *     publicaria uma página sobre o negócio de um terceiro que nunca pediu isso,
+ *     e ainda entregaria o token a qualquer um que buscasse o nome dele.
+ *   - `/site/[slug]` é o site já vendido e publicado, e lá `index: true` é o
+ *     produto: ser achável no Google é o que o cliente comprou.
+ * Ou seja: mudar este arquivo para indexável não é "consertar a divergência".
  */
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { token } = await params;

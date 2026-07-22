@@ -9,7 +9,26 @@
  *   - promessa de resultado ("vai trazer X clientes", "se paga em Y");
  *   - afirmação sobre o passado ou a operação do prospect que ninguém checou
  *     ("você pagou adiantado e ficou na mão") — use condicional ou pergunte;
- *   - comparação com concorrentes que a usuária não mediu ("na maioria dos outros lugares...").
+ *   - comparação com concorrentes que a usuária não mediu ("na maioria dos outros lugares...");
+ *   - FEATURE que a página não renderiza. A fonte de verdade do que o prospect vê
+ *     é `src/components/preview-site.tsx` (com os textos de `src/lib/preview-i18n.ts`)
+ *     e o conteúdo derivado do lead em `convex/previews.ts`. Hoje a página tem:
+ *     nome, categoria, cidade, nota e nº de avaliações do Google, botão de ligar e
+ *     botão de WhatsApp (só quando há telefone), três blocos curtos de apresentação
+ *     e o bloco final com telefone e cidade. NÃO tem cardápio, galeria de fotos,
+ *     mapa, horário, preço, formulário nem sistema de reserva — não venda nada disso;
+ *   - EDIÇÃO como funcionalidade. Não existe editor: o conteúdo sai dos dados do lead
+ *     e o layout é fixo. A usuária pode ajustar na mão, mas "tudo é ajustável" e
+ *     qualquer sugestão de autoatendimento do prospect são falsos;
+ *   - COMPROMISSO DE SERVIÇO CONTÍNUO (manutenção, suporte, "não fica sozinho"):
+ *     o produto entrega o site; não há contrato de manutenção por trás;
+ *   - MODELO COMERCIAL (mensal, assinatura, parcelado, desconto): o sistema não tem
+ *     campo de preço/plano da usuária e ela não pratica recorrência. Fale de preço
+ *     como número único que ela mesma define na hora;
+ *   - POSIÇÃO na busca ("aparecer na frente", "primeiro lugar", "no topo"). O site
+ *     publicado (/site/[slug]) é indexável; a PRÉVIA (/p/[token]) é `noindex` de
+ *     propósito, por ser link privado pré-venda. Ser indexável não é ranquear, e o
+ *     tempo até o Google encontrar não está sob controle de ninguém aqui.
  * O que é permitido: argumento, raciocínio, o que a usuária de fato entrega,
  * e convite para o próprio prospect verificar (ex.: "pesquisa no Google e vê").
  */
@@ -116,9 +135,9 @@ export const OBJECTIONS: Objection[] = [
     empatia:
       "Que bom que você já se preocupou com isso, então a gente já parte de um ponto em comum: você sabe que estar visível conta.",
     argumento:
-      "Ter um site é meio caminho; o que importa é se ele traz cliente hoje. Eu montei uma versão pensada pra aparecer no Google, funcionar bem no celular e facilitar o contato de quem chega, e você pode comparar com o seu sem gastar nada.",
+      "Ter um site é meio caminho; o que importa é o que ele faz por você hoje. Eu montei uma versão que abre bem no celular e deixa o contato a um toque, ligar ou WhatsApp, e você pode comparar com o seu sem gastar nada. O link que eu te mando é privado, serve pra você ver como ficou; publicado, ele vira um site aberto, que o Google pode encontrar.",
     reforco:
-      "Vale olhar os dois lado a lado com critério: qual abre rápido no celular, qual aparece quando alguém pesquisa o seu tipo de negócio na sua cidade e em qual dá pra te chamar em um toque. Se o seu ganhar nesses pontos, ótimo.",
+      "Vale olhar os dois lado a lado com critério: qual abre mais rápido no celular, em qual dá pra te chamar em um toque e qual explica em cinco segundos quem você é. Isso você julga na hora, com os dois abertos na sua frente. Se o seu ganhar nesses pontos, ótimo.",
     pergunta:
       "Quando foi a última vez que o seu site atual te trouxe um cliente novo de fato?",
   },
@@ -129,7 +148,7 @@ export const OBJECTIONS: Objection[] = [
     empatia:
       "O Instagram é ótimo mesmo e faz sentido você investir onde já tem público.",
     argumento:
-      "O site não substitui o Instagram, ele completa: quando alguém quer ver preço, horário, endereço ou reservar, é o site que responde isso de forma direta, sem a pessoa ter que rolar o feed ou te mandar mensagem.",
+      "O site não substitui o Instagram, ele completa: é um endereço seu fora do feed, onde quem te procura vê logo quem você é, onde fica e o que os clientes já acharam, e fala com você em um toque, ligando ou no WhatsApp, sem rolar publicação nem esperar resposta na mensagem.",
     reforco:
       "Faz o teste você mesmo agora: pesquisa no Google o seu tipo de negócio na sua cidade e vê o que aparece. O que estiver lá é exatamente o que um cliente novo encontra.",
     pergunta:
@@ -140,13 +159,13 @@ export const OBJECTIONS: Objection[] = [
     label: "Site não traz cliente pra mim",
     category: "site",
     empatia:
-      "Entendo a frustração, e se você já sentiu isso é porque provavelmente teve uma experiência que não deu retorno.",
+      "Entendo a frustração, e prefiro ouvir o que você já tentou antes de te dizer qualquer coisa sobre isso.",
     argumento:
-      "Site parado é enfeite, você tem razão; a diferença é um site feito pra ser achado no Google e pra converter, com botão de contato, reserva e localização claros. Não é ter um site, é ter o site certo trabalhando por você.",
+      "Site parado é enfeite, você tem razão. O que eu montei é enxuto de propósito: quem abre vê o seu nome, a sua cidade, a sua nota do Google quando você já tem avaliação, e dois botões pra falar com você, ligar ou WhatsApp. Nada pra rolar sem fim, nada pra preencher. Não é ter um site, é ter um que leve a pessoa ao contato.",
     reforco:
-      "Um site só pode trazer cliente se ele for encontrado e se o próximo passo for fácil. Dá pra checar isso no seu em um minuto: ele aparece quando você pesquisa o seu serviço na sua cidade, e dá pra te chamar em um toque pelo celular?",
+      "Um site só pode trazer cliente se ele for encontrado e se o próximo passo for fácil. O segundo ponto você confere agora mesmo abrindo a prévia no seu celular; o primeiro depende de ele estar publicado como site aberto, que é o que muda quando a gente coloca no ar. O que eu não te prometo é em que posição você aparece na busca, porque isso ninguém aqui controla.",
     pergunta:
-      "Posso te mostrar como a prévia foi pensada pra aparecer pra quem procura o seu tipo de negócio na sua cidade?",
+      "Posso te mostrar a prévia agora e depois te explicar o que muda quando ela vai pro ar como site aberto?",
   },
   {
     id: "ja-tentei-site-antes",
@@ -155,11 +174,11 @@ export const OBJECTIONS: Objection[] = [
     empatia:
       "Sinto que você já se decepcionou com isso antes, e é justo ficar com o pé atrás.",
     argumento:
-      "Se da última vez você pagou adiantado e só depois viu no que dava, aqui a ordem é o contrário: o site já está pronto pra você ver funcionando antes de qualquer decisão, e a manutenção fica comigo, você não fica sozinho.",
+      "Se da última vez você pagou adiantado e só depois viu no que dava, aqui a ordem é o contrário: o site já está pronto e funcionando pra você abrir antes de qualquer decisão. Você julga o resultado primeiro, no seu celular, e decide depois. O risco de pagar por algo que você ainda não viu simplesmente não existe aqui.",
     reforco:
       "E me conta o que travou naquela vez que eu te digo com honestidade se aqui seria diferente ou não. Se for a mesma história, eu prefiro te falar isso agora do que depois.",
     pergunta:
-      "O que deu errado da última vez, foi o resultado ou foi ficar sem suporte depois de pronto?",
+      "O que deu errado da última vez: o que entregaram não era o que você esperava, ou você só viu depois de já ter pago?",
   },
   {
     id: "negocio-pequeno-nao-precisa",
@@ -168,11 +187,11 @@ export const OBJECTIONS: Objection[] = [
     empatia:
       "Entendo, quando o negócio é enxuto a gente quer cortar tudo que parece supérfluo.",
     argumento:
-      "Na hora que alguém pesquisa perto, o que aparece na tela é quem está na busca, não quem é maior. Um site simples e bem feito te coloca nessa lista sem você precisar de estrutura nenhuma.",
+      "Na internet, quem pode ser encontrado é quem está lá — e pra estar lá não precisa ser o maior, precisa existir. Um site simples e bem feito te dá esse endereço, e não te pede estrutura nenhuma pra manter de pé.",
     reforco:
-      "Olhar a prévia não te compromete com nada e te mostra na prática como o seu negócio ficaria nessa vitrine, ao lado de quem o seu cliente já encontra hoje.",
+      "Olhar a prévia não te compromete com nada e te mostra na prática como o seu negócio se apresenta pra quem chega pela internet, em vez de você imaginar.",
     pergunta:
-      "Se ser encontrado te trouxesse só alguns clientes novos por mês, já valeria pra você?",
+      "Quantos clientes novos por mês fariam isso valer a pena pra você?",
   },
 ];
 
@@ -193,7 +212,7 @@ export const MEETING_PLAYBOOK: MeetingStep[] = [
     n: 3,
     title: "Apresentar o site seção por seção",
     body:
-      "Percorra a prévia com calma, de cima pra baixo, narrando cada parte: topo com o nome e a chamada, fotos, cardápio ou serviços, botão de contato, localização e reservas. Diga sempre o porquê de cada bloco (\"esse botão aqui é pra ele te ligar sem pensar duas vezes\"). Vá devagar e deixe a pessoa absorver.",
+      "Percorra a prévia com calma, de cima pra baixo, narrando o que está na tela e nada além: o topo com o nome do negócio e o botão de ligar, a chamada de abertura, a nota e o número de avaliações do Google quando o negócio tem, os três blocos curtos de apresentação e o fecho com telefone e cidade, com ligar e WhatsApp a um toque. Diga sempre o porquê de cada bloco (\"esse botão aqui é pra ele te ligar sem pensar duas vezes\"). NÃO narre o que não está ali: a página não tem cardápio, galeria de fotos, mapa, horário nem sistema de reserva, e prometer isso com a tela compartilhada é o jeito mais rápido de perder a confiança que você acabou de construir. Vá devagar e deixe a pessoa absorver.",
   },
   {
     n: 4,
@@ -203,15 +222,15 @@ export const MEETING_PLAYBOOK: MeetingStep[] = [
   },
   {
     n: 5,
-    title: "\"Qualquer mudança a gente faz\"",
+    title: "\"O que estiver errado eu acerto\"",
     body:
-      "Assim que surgir um \"mas eu mudaria isso\", comemore por dentro: é sinal de interesse. Reforce que tudo é ajustável, cor, foto, texto, ordem das seções, e que ele não está preso a nada do que viu. Tirar o medo de ficar com algo imperfeito remove uma barreira antes mesmo de falar de preço.",
+      "Assim que surgir um \"mas eu mudaria isso\", comemore por dentro: é sinal de interesse. Anote o pedido e responda com o que é verdade. O que varia de negócio pra negócio são os dados dele: nome, categoria, cidade, telefone e a nota do Google — se algum estiver errado, você corrige. O texto de apresentação e a ordem das seções são iguais pra todo mundo e só mudam se você mexer no sistema depois, na mão: é trabalho seu, não um botão que ele aperta. Então prometa no singular (\"isso aí eu acerto\"), nunca \"tudo é ajustável\", e nunca sugira que ele mesmo edita. Se o pedido for algo que a página não faz, diga na hora e trate como trabalho à parte. Ainda assim a barreira cai: o que tira o medo dele é saber que não vai ficar preso a um erro no próprio nome ou telefone.",
   },
   {
     n: 6,
-    title: "A oferta — ancoragem, mensal e silêncio",
+    title: "A oferta — ancoragem, preço firme e silêncio",
     body:
-      "Ancore no SEU valor cheio primeiro (\"o projeto avulso, do zero, é X\") e só então apresente a condição real em euros, puxando pro mensal ou parcelado pra caber no caixa dele. Ancore só em número que você pratica de verdade: não invente quanto \"o mercado cobra\", porque você não mediu isso e ele pode ter cotado ontem. Diga o preço com firmeza e faça silêncio depois — não preencha o vazio com desconto nem justificativa, deixe ele responder.",
+      "Ancore no SEU valor cheio primeiro (\"o projeto do zero, feito sob medida, é X\") e só então diga o número que você está praticando neste caso. Duas travas: ancore só em valor que você pratica de verdade, porque \"o mercado cobra Y\" você não mediu e ele pode ter cotado ontem; e não ofereça condição que você não pratica — mensalidade, parcelamento, desconto — só pra destravar a conversa, porque combinar o que você não cumpre sai mais caro que perder a venda. Diga o preço com firmeza e faça silêncio depois: não preencha o vazio com desconto nem justificativa, deixe ele responder.",
   },
 ];
 
@@ -220,7 +239,7 @@ export const CLOSING_OBJECTIONS: ClosingObjection[] = [
     id: "ta-caro-sem-dinheiro",
     label: "Tá caro, não tenho esse dinheiro agora",
     response:
-      "Eu entendo, e é por isso que trabalho no mensal, pra virar um custo pequeno que cabe no seu caixa em vez de um valor grande de uma vez. Faz a conta com o seu número: quanto vale pra você um cliente novo? Aí você mesmo vê quantos precisariam vir pra isso valer a pena. Quer que eu te mostre a condição parcelada que fica mais leve?",
+      "Eu entendo, e não vou fingir que é troco. Faz a conta com o seu número: quanto vale pra você um cliente novo? Aí você mesmo vê quantos precisariam vir pra isso valer a pena, e a conta é sua, não minha. O que eu te peço é que decida olhando o site pronto, que você já viu funcionando, e não um valor solto no ar. Se ainda assim não couber no seu momento, prefiro que você me diga isso agora.",
   },
   {
     id: "vou-pensar-falar-socio",
@@ -232,7 +251,7 @@ export const CLOSING_OBJECTIONS: ClosingObjection[] = [
     id: "vou-deixar-pra-depois",
     label: "Vou deixar pra depois",
     response:
-      "Entendo, só que o site já está pronto agora e enquanto ele não está no ar quem pesquisa encontra outros e não você. Como não tem custo pra ver funcionando, adiar não te protege de nada, só empurra a decisão pra frente. Que tal a gente deixar no ar hoje e você acompanha de perto o que acontece?",
+      "Entendo, só que o site já está pronto agora e ver não te custa nada, então adiar não te protege de nada, só empurra a decisão pra frente. E tem um detalhe de tempo: enquanto ele não está publicado ele nem existe pra quem procura na internet, e depois de publicado ainda leva um tempo até o Google encontrar. Quanto antes entra no ar, antes esse relógio começa a correr. Que tal a gente publicar e você acompanha de perto o que acontece?",
   },
   {
     id: "quero-ver-mais-opcoes-cotar",
@@ -244,7 +263,7 @@ export const CLOSING_OBJECTIONS: ClosingObjection[] = [
     id: "nao-sei-se-vai-funcionar",
     label: "Não sei se vai funcionar pra mim",
     response:
-      "É uma dúvida honesta e eu prefiro que você tenha ela agora. Por isso o combinado é sem amarras: você começa, acompanha o site no ar e a manutenção fica comigo, então você nunca fica sozinho pra fazer dar certo. Se a gente ajustar o que for preciso pra caber no seu negócio, você topa dar o primeiro passo?",
+      "É uma dúvida honesta e eu prefiro que você tenha ela agora. Repara que você não está apostando no escuro como quem encomenda um site: o que você está avaliando já existe, você abriu no seu celular e viu funcionando, então sabe exatamente o que recebe — não é promessa de como vai ficar. O que eu não vou fazer é te garantir resultado, porque isso não depende só do site. Decidindo com o que você já viu na mão, você topa dar o primeiro passo?",
   },
   {
     id: "continuar-com-site-atual",
