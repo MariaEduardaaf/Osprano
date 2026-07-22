@@ -1,4 +1,9 @@
-export type Locale = "en" | "nl" | "sv" | "no" | "es" | "it" | "pt" | "de" | "da";
+// Import relativo e com extensão `.ts` de propósito: os testes rodam em
+// `node --experimental-strip-types`, que não lê os `paths` do tsconfig (o alias
+// `@convex/*` quebraria) nem resolve import sem extensão.
+import { swissLanguage } from "../../convex/lib/domain.ts";
+
+export type Locale = "en" | "nl" | "sv" | "no" | "es" | "it" | "pt" | "de" | "da" | "fr";
 
 /**
  * Idioma da prévia por mercado. Precisa cobrir TODOS os SEARCHABLE_MARKETS
@@ -17,12 +22,30 @@ const LOCALE_BY_COUNTRY: Record<string, Locale> = {
   IT: "it",
   PT: "pt", // português europeu
   DE: "de",
-  CH: "de", // alemão padrão para B2B, igual ao LANG do outreach
+  CH: "de", // só o país: a Suíça é multilíngue, ver localeForLead
   DK: "da",
 };
 
+/**
+ * Idioma derivado APENAS do país. Correto para todo mercado monolíngue, mas na
+ * Suíça devolve sempre alemão — use `localeForLead`, que é a fonte de verdade
+ * quando a cidade do lead está disponível. Exportado porque é a base do mapa
+ * país→idioma e das invariantes de paridade dos dicionários.
+ */
 export function localeForCountry(countryCode: string): Locale {
   return LOCALE_BY_COUNTRY[countryCode.toUpperCase()] ?? "en";
+}
+
+/**
+ * Idioma da prévia para um lead concreto. A Suíça é o único mercado multilíngue
+ * da base: lá o idioma sai da cidade (Genebra → francês, Lugano → italiano,
+ * desconhecida → alemão, ver `swissLanguage`). Todos os outros países ignoram a
+ * cidade e continuam derivando só do countryCode.
+ */
+export function localeForLead(countryCode: string, city?: string | null): Locale {
+  const cc = countryCode.toUpperCase();
+  if (cc === "CH") return swissLanguage(city); // "de" | "fr" | "it" — todos Locale
+  return localeForCountry(cc);
 }
 
 export interface PreviewDict {
@@ -193,7 +216,9 @@ const it: PreviewDict = {
   featureQualityTitle: "Qualità",
   featureQualityBody: "Fatto con cura, dall'inizio alla fine.",
   featureServiceTitle: "Servizio",
-  featureServiceBody: "Vicino a lei, proprio come le piace.",
+  // Lei/Le maiúsculos: forma de cortesia, igual a "La aspettiamo" e "Ci chiami"
+  // no mesmo dicionário — minúsculo aqui era alternância de tratamento.
+  featureServiceBody: "Vicino a Lei, proprio come Le piace.",
   featureLocationTitle: "Nel cuore della città",
   featureLocationBodyWithCity: (city) => `In pieno centro a ${city}.`,
   featureLocationBodyNoCity: "Facile da raggiungere.",
@@ -289,4 +314,47 @@ const da: PreviewDict = {
     `Åbningstider, telefonnummer og vejvisning til ${name}${city ? ` i ${city}` : ""}. Ring til os, eller kig forbi.`,
 };
 
-export const DICTS: Record<Locale, PreviewDict> = { en, nl, sv, no, es, it, pt, de, da };
+/**
+ * Francês de negócios, vouvoiement — serve a Suíça francófona (Romandia).
+ * Não é mercado novo: é o idioma de parte dos leads do mercado CH.
+ *
+ * TIPOGRAFIA: em francês, `?` `!` `:` `;` levam espaço INSECÁVEL antes. Escreva
+ * sempre o escape `\u00A0` na string — nunca o espaço normal (U+0020) e nunca o
+ * caractere invisível colado no código. Não é espaço duplo: num email em texto
+ * puro com quebra automática, o espaço normal deixa a pontuação cair sozinha no
+ * começo da linha, defeito que um leitor romando nota na hora. O apóstrofo fica
+ * ASCII (') de propósito, consistente com o resto do repo. Hoje nenhuma linha FR
+ * usa essa pontuação; a regra vale para a próxima (teste de guarda em tests/).
+ */
+const fr: PreviewDict = {
+  call: "Appeler",
+  callNow: "Appeler maintenant",
+  whatsapp: "WhatsApp",
+  reviews: "avis",
+  heroSubtitle:
+    "Un savoir-faire, un accueil chaleureux et la confiance de ceux qui nous connaissent déjà. Réservez, appelez ou passez nous voir.",
+  featureQualityTitle: "Qualité",
+  featureQualityBody: "Fait avec soin, du début à la fin.",
+  featureServiceTitle: "Service",
+  featureServiceBody: "Près de vous, comme vous l'entendez.",
+  featureLocationTitle: "Au cœur de la ville",
+  featureLocationBodyWithCity: (city) => `En plein centre de ${city}.`,
+  // Chave de acessibilidade ("Easy to reach"), não de localização: "d'accès",
+  // não "à trouver" — este último repetiria a ideia do título.
+  featureLocationBodyNoCity: "Facile d'accès.",
+  visitHeading: "Venez nous rendre visite",
+  // `en ${category}`: a categoria vem crua do Places ("boulangerie"), e
+  // "dans le secteur boulangerie" fica agramatical em francês.
+  visitBody: ({ name, category, city }) =>
+    `${name} est une adresse à connaître${category ? ` en ${category}` : " dans le quartier"}${city ? `, à ${city}` : ""}. Nous vous attendons.`,
+  phoneLabel: "Téléphone",
+  whereLabel: "Où",
+  hoursLabel: "Horaires",
+  hoursValue: "Lun–Sam · 9h00–19h00",
+  metaTitle: ({ name, city }) => (city ? `${name} · ${city}` : name),
+  // "itinéraire VERS": em francês o destino pede `vers`/`jusqu'à`, não `pour`.
+  metaDescription: ({ name, city }) =>
+    `Horaires, téléphone et itinéraire vers ${name}${city ? ` à ${city}` : ""}. Appelez-nous ou passez nous voir.`,
+};
+
+export const DICTS: Record<Locale, PreviewDict> = { en, nl, sv, no, es, it, pt, de, da, fr };

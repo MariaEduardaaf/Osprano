@@ -5,7 +5,7 @@ import { ConvexHttpClient } from "convex/browser";
 import { api } from "@convex/_generated/api";
 import { PreviewSite, type PreviewContent } from "@/components/preview-site";
 import { PreviewTracker } from "@/components/preview-tracker";
-import { DICTS, localeForCountry } from "@/lib/preview-i18n";
+import { DICTS, localeForLead } from "@/lib/preview-i18n";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -33,7 +33,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!site) return { robots: { index: false } };
 
   const { name, city, countryCode } = site.content;
-  const tr = DICTS[localeForCountry(countryCode)];
+  // Cidade junto do país: só assim a Suíça francófona/italófona sai do alemão.
+  const tr = DICTS[localeForLead(countryCode, city)];
   const title = tr.metaTitle({ name, city });
   const description = tr.metaDescription({ name, city });
   return { title, description, openGraph: { title, description }, robots: { index: false } };

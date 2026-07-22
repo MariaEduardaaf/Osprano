@@ -1,5 +1,5 @@
 import { MdCall, MdOutlineChat } from "react-icons/md";
-import { DICTS, localeForCountry } from "@/lib/preview-i18n";
+import { DICTS, localeForLead } from "@/lib/preview-i18n";
 
 export interface PreviewContent {
   name: string;
@@ -23,7 +23,9 @@ function waLink(phone: string): string {
 export function PreviewSite({ content }: { content: PreviewContent }) {
   const { name, category, city, phone, rating, reviewsCount, countryCode } = content;
   const cat = category ? category.replace(/_/g, " ") : null;
-  const locale = localeForCountry(countryCode);
+  // Cidade junto do país: a Suíça é multilíngue e um lead de Genebra não pode
+  // receber a prévia em alemão.
+  const locale = localeForLead(countryCode, city);
   const tr = DICTS[locale];
 
   return (
