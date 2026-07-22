@@ -105,6 +105,16 @@ export default defineSchema({
     waOptInAt: v.optional(v.number()),
     waOptInSource: v.optional(v.string()), // "replied_email" | "phone_call" | "in_person"
 
+    // Consentimento de contato generalizado (OPTIN-04) — destrava email E WhatsApp
+    contactOptInAt: v.optional(v.number()),
+    contactOptInSource: v.optional(v.string()), // "phone_call" | "in_person" | "reply" | "other"
+    contactOptInNote: v.optional(v.string()), // persistido no doc (diverge do waOptIn, que só grava no evento)
+
+    // Script de ligação gerado (OPTIN-03) — persistido para não regenerar à toa
+    callScript: v.optional(v.string()),
+    callScriptPt: v.optional(v.string()),
+    callScriptAt: v.optional(v.number()),
+
     fetchedAt: v.number(), // for the Google Places 30-day refresh policy
   })
     .index("by_org", ["orgId"])
@@ -158,6 +168,7 @@ export default defineSchema({
       v.literal("reply"),
       v.literal("stage_change"),
       v.literal("wa_opt_in"),
+      v.literal("contact_opt_in"),
     ),
     leadId: v.optional(v.id("leads")),
     previewToken: v.optional(v.string()),

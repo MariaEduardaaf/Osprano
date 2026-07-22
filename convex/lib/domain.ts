@@ -14,6 +14,7 @@ export interface Market {
   name: string;
   flag: string;
   coldEmail: ColdEmail;
+  legalReview?: "pending" | "validated"; // undefined = não aplicável (mercados launch opt-out)
 }
 
 /** V1 launch markets: opt-out or conditional cold B2B email. */
@@ -23,19 +24,31 @@ export const MARKETS: Record<string, Market> = {
   IE: { code: "IE", name: "Irlanda", flag: "🇮🇪", coldEmail: "opt_out" },
   SE: { code: "SE", name: "Suécia", flag: "🇸🇪", coldEmail: "opt_out" },
   NO: { code: "NO", name: "Noruega", flag: "🇳🇴", coldEmail: "conditional" },
-  // Present for display/gating only — cold email is unlawful (opt-in) → Phase 2.
-  DE: { code: "DE", name: "Alemanha", flag: "🇩🇪", coldEmail: "opt_in" },
-  CH: { code: "CH", name: "Suíça", flag: "🇨🇭", coldEmail: "opt_in" },
-  DK: { code: "DK", name: "Dinamarca", flag: "🇩🇰", coldEmail: "opt_in" },
-  IT: { code: "IT", name: "Itália", flag: "🇮🇹", coldEmail: "opt_in" },
-  ES: { code: "ES", name: "Espanha", flag: "🇪🇸", coldEmail: "opt_in" },
+  // Cold email é ilegal (opt-in): pesquisáveis, mas só contatáveis por ligação primeiro.
+  DE: { code: "DE", name: "Alemanha", flag: "🇩🇪", coldEmail: "opt_in", legalReview: "pending" },
+  CH: { code: "CH", name: "Suíça", flag: "🇨🇭", coldEmail: "opt_in", legalReview: "pending" },
+  DK: { code: "DK", name: "Dinamarca", flag: "🇩🇰", coldEmail: "opt_in", legalReview: "pending" },
+  IT: { code: "IT", name: "Itália", flag: "🇮🇹", coldEmail: "opt_in", legalReview: "pending" },
+  ES: { code: "ES", name: "Espanha", flag: "🇪🇸", coldEmail: "opt_in", legalReview: "pending" },
+  PT: { code: "PT", name: "Portugal", flag: "🇵🇹", coldEmail: "opt_in", legalReview: "pending" },
 };
 
 /** Markets the V1 cold-email motion is allowed to target. */
 export const LAUNCH_MARKETS = ["GB", "NL", "IE", "SE", "NO"];
 
+/** OPTIN-01: mercados opt-in — descoberta liberada, cold email nunca (ligação primeiro). */
+export const OPT_IN_MARKETS = ["ES", "IT", "PT", "DE", "DK", "CH"];
+
+/** Mercados em que a descoberta é permitida (launch + opt-in). */
+export const SEARCHABLE_MARKETS = [...LAUNCH_MARKETS, ...OPT_IN_MARKETS];
+
 export function isLaunchMarket(countryCode: string): boolean {
   return LAUNCH_MARKETS.includes(countryCode.toUpperCase());
+}
+
+/** OPTIN-01: "posso buscar aqui?" — mais amplo que isLaunchMarket ("posso enviar cold email?"). */
+export function isSearchableMarket(countryCode: string): boolean {
+  return SEARCHABLE_MARKETS.includes(countryCode.toUpperCase());
 }
 
 export type LegalForm = "incorporated" | "sole_trader" | "unknown";
@@ -65,9 +78,27 @@ export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
-/** Gate de WhatsApp (COMP-04): só há opt-in se houver timestamp registrado. */
-export function hasWaOptIn(lead: { waOptInAt?: number | null }): boolean {
-  return typeof lead.waOptInAt === "number" && lead.waOptInAt > 0;
+/** OPTIN-04: consentimento explícito destrava email independente de mercado/forma jurídica. */
+export function canContactByEmail(lead: {
+  emailable?: boolean | null;
+  contactOptInAt?: number | null;
+}): boolean {
+  if (lead.emailable === true) return true;
+  return typeof lead.contactOptInAt === "number" && lead.contactOptInAt > 0;
+}
+
+/**
+ * Gate de WhatsApp (COMP-04): só há opt-in se houver timestamp registrado.
+ * OPTIN-04: aceita o campo legado (waOptInAt) OU o consentimento generalizado
+ * (contactOptInAt) — um consentimento único destrava os dois canais.
+ */
+export function hasWaOptIn(lead: {
+  waOptInAt?: number | null;
+  contactOptInAt?: number | null;
+}): boolean {
+  const wa = typeof lead.waOptInAt === "number" && lead.waOptInAt > 0;
+  const contact = typeof lead.contactOptInAt === "number" && lead.contactOptInAt > 0;
+  return wa || contact;
 }
 
 /** Incorporation-marker suffixes in the business name, per launch market. */
@@ -334,7 +365,7 @@ export const CATEGORY_OPTIONS: { value: string; label: string }[] = [
   { value: "language school", label: "Escola de idiomas" },
 ];
 
-/** Main cities per launch market for the discovery UI. */
+/** Main cities per searchable market (launch + opt-in) for the discovery UI. */
 export const CITIES_BY_COUNTRY: Record<string, string[]> = {
   GB: [
     "London", "Birmingham", "Manchester", "Leeds", "Liverpool", "Sheffield", "Bristol",
@@ -365,6 +396,31 @@ export const CITIES_BY_COUNTRY: Record<string, string[]> = {
     "Oslo", "Bergen", "Trondheim", "Stavanger", "Drammen", "Fredrikstad", "Kristiansand",
     "Sandnes", "Tromsø", "Sarpsborg", "Skien", "Ålesund", "Sandefjord", "Haugesund", "Tønsberg",
     "Moss", "Porsgrunn", "Bodø", "Arendal", "Hamar", "Larvik", "Halden", "Lillehammer", "Molde",
+  ],
+  // Mercados opt-in (OPTIN-01): pesquisáveis, contato por ligação primeiro.
+  ES: [
+    "Madrid", "Barcelona", "Valencia", "Sevilla", "Zaragoza", "Málaga", "Murcia", "Palma",
+    "Bilbao", "Alicante", "Córdoba", "Valladolid",
+  ],
+  IT: [
+    "Roma", "Milano", "Napoli", "Torino", "Palermo", "Genova", "Bologna", "Firenze",
+    "Bari", "Catania", "Venezia", "Verona",
+  ],
+  PT: [
+    "Lisboa", "Porto", "Vila Nova de Gaia", "Braga", "Amadora", "Setúbal", "Coimbra", "Queluz",
+    "Funchal", "Aveiro", "Faro", "Almada",
+  ],
+  DE: [
+    "Berlin", "Hamburg", "München", "Köln", "Frankfurt am Main", "Stuttgart", "Düsseldorf",
+    "Leipzig", "Dortmund", "Essen", "Bremen", "Dresden",
+  ],
+  DK: [
+    "København", "Aarhus", "Odense", "Aalborg", "Esbjerg", "Randers", "Kolding", "Horsens",
+    "Vejle", "Roskilde", "Herning",
+  ],
+  CH: [
+    "Zürich", "Genève", "Basel", "Lausanne", "Bern", "Winterthur", "Luzern", "St. Gallen",
+    "Lugano", "Biel/Bienne", "Thun",
   ],
 };
 
