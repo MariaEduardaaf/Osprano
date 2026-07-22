@@ -38,7 +38,7 @@ O deployment atual é **local** (só existe na sua máquina). Pra uso real, crie
 ## 3. Anthropic (IA do outreach) — ~US$ 5
 
 - [ ] Crie a conta em [console.anthropic.com](https://console.anthropic.com).
-- [ ] Em **Billing**, adicione os créditos mínimos (US$ 5) — cobre ~1.000 rascunhos de email.
+- [ ] Em **Billing**, adicione os créditos mínimos (US$ 5) — cobre **~450 a 700 gerações** (rascunho de email ou script de ligação), dependendo da data. O app usa `claude-sonnet-5`, que está em preço promocional de US$ 2 / US$ 10 por milhão de tokens (entrada / saída) **até 31/08/2026**; depois disso passa a US$ 3 / US$ 15, e os mesmos US$ 5 rendem menos.
 - [ ] (Opcional, recomendado) Configure um **spend limit / alerta** na mesma tela.
 - [ ] Em **API Keys**, crie uma chave e rode:
   ```bash
