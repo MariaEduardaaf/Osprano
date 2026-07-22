@@ -27,6 +27,33 @@ test("optOutFooter: Norwegian copy", () => {
   assert.ok(footer.includes("Meld deg av"));
 });
 
+test("optOutFooter: Spanish copy", () => {
+  const footer = optOutFooter("Spanish", URL, "Ana");
+  assert.ok(footer.includes(URL));
+  assert.ok(footer.includes("baja"));
+  assert.ok(footer.startsWith("\n\n—\n"));
+});
+
+test("optOutFooter: Italian copy", () => {
+  const footer = optOutFooter("Italian", URL, "Ana");
+  assert.ok(footer.includes("Annulla"));
+});
+
+test("optOutFooter: Portuguese copy", () => {
+  const footer = optOutFooter("Portuguese", URL, "Ana");
+  assert.ok(footer.includes("Cancelar"));
+});
+
+test("optOutFooter: German copy", () => {
+  const footer = optOutFooter("German", URL, "Ana");
+  assert.ok(footer.includes("Abmelden"));
+});
+
+test("optOutFooter: Danish copy", () => {
+  const footer = optOutFooter("Danish", URL, "Ana");
+  assert.ok(footer.includes("Afmeld"));
+});
+
 test("optOutFooter: unknown language falls back to English", () => {
   const footer = optOutFooter("Klingon", URL, "Ana");
   assert.ok(footer.includes(URL));

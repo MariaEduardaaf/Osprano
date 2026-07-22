@@ -12,8 +12,10 @@ import {
   MdStar,
 } from "react-icons/md";
 import type { Doc } from "@convex/_generated/dataModel";
-import { MARKETS } from "@convex/lib/domain";
+import { MARKETS, canContactByEmail } from "@convex/lib/domain";
 import { Badge } from "./ui";
+import { CallScriptPanel } from "./call-script-panel";
+import { ContactOptInButton } from "./contact-opt-in-button";
 
 type Lead = Doc<"leads">;
 
@@ -39,12 +41,15 @@ export function LeadCard({
   selectable,
   selected,
   onToggle,
+  variant = "email",
 }: {
   lead: Lead;
   action?: ReactNode;
   selectable?: boolean;
   selected?: boolean;
   onToggle?: () => void;
+  /** "call" = modo ligação-primeiro (OPTIN-02): telefone + script; email só após consentimento. */
+  variant?: "email" | "call";
 }) {
   const tier = (lead.tier ?? "cold") as "hot" | "warm" | "cold";
   const signals = lead.signals;
@@ -52,6 +57,21 @@ export function LeadCard({
   const hasSite = !!lead.website;
   const noSite = !!(signals?.noSite || signals?.socialOnly);
   const category = (lead.category ?? "").replace(/_/g, " ");
+  const callMode = variant === "call";
+
+  const siteLink = hasSite ? (
+    <a
+      href={lead.website}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      title={lead.website}
+      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border-strong px-4 py-2.5 text-sm font-semibold text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
+    >
+      <MdOutlineLanguage size={16} />
+      Site atual
+    </a>
+  ) : null;
 
   return (
     <div
@@ -142,39 +162,69 @@ export function LeadCard({
         )}
       </div>
 
-      {/* compliance */}
+      {/* compliance — o selo segue canContactByEmail (o mesmo gate do servidor), nunca só emailable */}
       <div className="mt-5 border-t border-border pt-4">
-        <span
-          className={`inline-flex items-center gap-1.5 text-[11px] font-semibold ${
-            lead.emailable ? "text-brand" : "text-faint"
-          }`}
-        >
-          {lead.emailable ? <MdOutlineCheckCircle size={14} /> : <MdOutlineBlock size={14} />}
-          {lead.emailable ? "Abordável por email" : "Fora do escopo compliant"}
-        </span>
+        {callMode && !lead.contactOptInAt ? (
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted">
+            <MdOutlineCall size={14} />
+            Ligação primeiro · email após consentimento
+          </span>
+        ) : callMode && lead.contactOptInAt ? (
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-brand">
+            <MdOutlineCheckCircle size={14} />
+            Consentimento registrado em{" "}
+            {new Date(lead.contactOptInAt).toLocaleDateString("pt-BR")}
+          </span>
+        ) : canContactByEmail(lead) ? (
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-brand">
+            <MdOutlineCheckCircle size={14} />
+            {lead.emailable ? "Abordável por email" : "Abordável — consentimento registrado"}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-faint">
+            <MdOutlineBlock size={14} />
+            Fora do escopo compliant
+          </span>
+        )}
       </div>
 
       {/* actions (full width) */}
-      <div className="mt-3 flex items-stretch gap-2.5">
-        {action && (
-          <span className="flex-1" onClick={(e) => e.stopPropagation()}>
-            {action}
-          </span>
-        )}
-        {hasSite && (
-          <a
-            href={lead.website}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            title={lead.website}
-            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border-strong px-4 py-2.5 text-sm font-semibold text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
-          >
-            <MdOutlineLanguage size={16} />
-            Site atual
-          </a>
-        )}
-      </div>
+      {callMode ? (
+        <div className="mt-3 space-y-2.5" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-stretch gap-2.5">
+            {lead.phone && (
+              <a
+                href={`tel:${lead.phone.replace(/[^+0-9]/g, "")}`}
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-brand-fg shadow-[var(--shadow-sm)] transition-colors hover:bg-brand-hover"
+              >
+                <MdOutlineCall size={16} />
+                Ligar
+              </a>
+            )}
+            {siteLink}
+          </div>
+          <CallScriptPanel
+            leadId={lead._id}
+            phone={lead.phone}
+            initialScript={lead.callScript}
+            initialTranslation={lead.callScriptPt}
+          />
+          {/* o slot do pai é a prévia do site (não é envio de email) — precisa existir ANTES da
+              ligação, já que o script promete mostrar uma prévia pronta. O gate de cold email é
+              server-side (outreach.draft/send/markSent); a UI não esconde a geração de prévia. */}
+          {action && <div>{action}</div>}
+          <ContactOptInButton leadId={lead._id} optInAt={lead.contactOptInAt} />
+        </div>
+      ) : (
+        <div className="mt-3 flex items-stretch gap-2.5">
+          {action && (
+            <span className="flex-1" onClick={(e) => e.stopPropagation()}>
+              {action}
+            </span>
+          )}
+          {siteLink}
+        </div>
+      )}
     </div>
   );
 }

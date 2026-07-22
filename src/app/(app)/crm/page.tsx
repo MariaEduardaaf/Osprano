@@ -9,7 +9,7 @@ import { PageHeader } from "@/components/ui";
 import { WhatsAppFollowup } from "@/components/whatsapp-followup";
 import { CreateLeadModal } from "@/components/crm/create-lead-modal";
 import { LeadDetail } from "@/components/crm/lead-detail";
-import { PIPELINE_STAGES, type Stage } from "@convex/lib/domain";
+import { PIPELINE_STAGES, canContactByEmail, type Stage } from "@convex/lib/domain";
 
 const COLUMNS = PIPELINE_STAGES.filter((s) => s.id !== "lost");
 
@@ -39,7 +39,9 @@ const FILTERS: { id: string; label: string; fn: (l: Doc<"leads">) => boolean }[]
   { id: "nosite", label: "Sem site", fn: (l) => !!(l.signals?.noSite || l.signals?.socialOnly) },
   { id: "hot", label: "Quente", fn: (l) => l.tier === "hot" },
   { id: "score50", label: "Score 50+", fn: (l) => (l.score ?? 0) >= 50 },
-  { id: "email", label: "Abordável", fn: (l) => !!l.emailable },
+  // OPTIN-04: "abordável" = canContactByEmail (regime do mercado OU consentimento registrado).
+  // Ler l.emailable cru sumiria com leads que já deram opt-in explícito na ligação.
+  { id: "email", label: "Abordável", fn: (l) => canContactByEmail(l) },
 ];
 
 export default function CrmPage() {
@@ -272,10 +274,12 @@ export default function CrmPage() {
                               className="mt-2 border-t border-border pt-2"
                               onClick={(e) => e.stopPropagation()}
                             >
+                              {/* OPTIN-04: o consentimento de contato vale para os dois canais —
+                                  hasWaOptIn (servidor) já aceita contactOptInAt. */}
                               <WhatsAppFollowup
                                 leadId={lead._id}
                                 phone={lead.phone}
-                                optInAt={lead.waOptInAt}
+                                optInAt={lead.waOptInAt ?? lead.contactOptInAt}
                               />
                             </div>
                           )}

@@ -97,6 +97,73 @@ const PROFILES: Profile[] = [
   { s: { sparseProfile: true }, lf: "sole_trader", ct: "unknown" }, // 20 cold, not emailable
 ];
 
+/**
+ * OPTIN-05: leads de mercado opt-in. Sem eles a aba "Ligação primeiro" nasce vazia no demo
+ * e a feature principal da fase fica invisível. Todos têm telefone (o card de ligação depende
+ * dele) e nenhum é emailable — o valor vem de isEmailable, nunca forçado à mão.
+ * Cidades saem de CITIES_BY_COUNTRY; nomes são plausíveis no idioma do país.
+ */
+/** Espelha o union fechado de `leads.recordContactOptIn` — a origem do consentimento é prova
+ *  legal e precisa ser auditável, então o seed não pode inventar um valor fora do vocabulário. */
+type ContactOptInSource = "phone_call" | "in_person" | "reply" | "other";
+
+interface OptInSeed {
+  name: string;
+  category: string;
+  city: string;
+  cc: string;
+  s: Partial<Signals>;
+  lf: LegalForm;
+  ct: ContactType;
+  emailLocal?: string;
+  website?: string;
+  stage: Stage;
+  /** Consentimento já registrado → email destravado por canContactByEmail. */
+  optIn?: { source: ContactOptInSource; note: string };
+}
+
+const OPT_IN_LEADS: OptInSeed[] = [
+  // Sem consentimento: demonstram o fluxo ligar → gerar script → registrar consentimento.
+  {
+    name: "Panadería La Espiga",
+    category: "bakery",
+    city: "Valencia",
+    cc: "ES",
+    s: { noSite: true, sparseProfile: true }, // 75 hot
+    lf: "unknown",
+    ct: "unknown",
+    stage: "base",
+  },
+  {
+    name: "Trattoria del Borgo",
+    category: "restaurant",
+    city: "Bologna",
+    cc: "IT",
+    s: { socialOnly: true, sparseProfile: true }, // 70 hot
+    lf: "unknown",
+    ct: "unknown",
+    website: "https://instagram.com/trattoriadelborgo",
+    stage: "base",
+  },
+  // Com consentimento registrado por telefone: demonstra o email destravado.
+  {
+    name: "Friseursalon Schnittwerk GmbH",
+    category: "hair_salon",
+    city: "Leipzig",
+    cc: "DE",
+    s: { noHttps: true, notMobile: true, slow: true, sparseProfile: true }, // 70 hot
+    lf: "incorporated",
+    ct: "role",
+    emailLocal: "info",
+    website: "http://schnittwerk-leipzig.example",
+    stage: "approached",
+    optIn: {
+      source: "phone_call",
+      note: "Autorizou o envio da prévia por email durante a ligação.",
+    },
+  },
+];
+
 const STAGES: Stage[] = [
   "base", "base", "base", "base", "base", "base", "base", "base", "base", "base",
   "approached", "approached", "approached", "approached",
@@ -107,7 +174,12 @@ const STAGES: Stage[] = [
 ];
 
 function phone(cc: string, i: number): string {
-  const p: Record<string, string> = { GB: "+44 20 7946", NL: "+31 20 555", IE: "+353 1 555", SE: "+46 8 555", NO: "+47 21 555" };
+  const p: Record<string, string> = {
+    GB: "+44 20 7946", NL: "+31 20 555", IE: "+353 1 555", SE: "+46 8 555", NO: "+47 21 555",
+    // Mercados opt-in (OPTIN-05): o card de ligação depende do telefone.
+    ES: "+34 91 555", IT: "+39 06 555", PT: "+351 21 555",
+    DE: "+49 30 555", DK: "+45 32 555", CH: "+41 44 555",
+  };
   return `${p[cc] ?? "+44 20 7946"} ${String(1000 + i * 7).slice(0, 4)}`;
 }
 function emailLocal(ct: ContactType): string {
@@ -183,6 +255,60 @@ export const seed = mutation({
         fetchedAt: now,
       });
       ids.push({ id, name, category, city, cc, stage, phone: phone(cc, i), rating: Math.round(rating * 10) / 10, reviews });
+    }
+
+    // OPTIN-05: leads de mercado opt-in (aba "Ligação primeiro"). Fora de `ids` de propósito:
+    // não devem receber prévia nem rascunho de email automático do seed — o email só existe
+    // depois do consentimento, e é isso que o demo precisa mostrar.
+    const optInAt = now - 2 * 86_400_000;
+    for (let k = 0; k < OPT_IN_LEADS.length; k++) {
+      const o = OPT_IN_LEADS[k];
+      const i = NAMES.length + k;
+      const signals: Signals = { ...NONE, ...o.s };
+      const score = computeScore(signals);
+      const rating = 3.8 + ((i * 3) % 12) / 10; // 3.8–4.9
+      const domain = o.name.toLowerCase().replace(/[^a-z]/g, "");
+      const id = await ctx.db.insert("leads", {
+        orgId: ORG,
+        source: "places",
+        placeId: `demo-${i}`,
+        name: o.name,
+        category: o.category,
+        city: o.city,
+        countryCode: o.cc,
+        phone: phone(o.cc, i),
+        email: o.emailLocal ? `${o.emailLocal}@${domain}.example` : undefined,
+        rating: Math.round(rating * 10) / 10,
+        reviewsCount: 20 + ((i * 37) % 400),
+        website: o.website,
+        score,
+        tier: tierFromScore(score),
+        signals,
+        scoredAt: now,
+        legalForm: o.lf,
+        contactType: o.ct,
+        // Sempre false em mercado opt-in — derivado, nunca forçado.
+        emailable: isEmailable({ countryCode: o.cc, legalForm: o.lf, contactType: o.ct }),
+        ...(o.optIn
+          ? {
+              contactOptInAt: optInAt,
+              contactOptInSource: o.optIn.source,
+              contactOptInNote: o.optIn.note,
+            }
+          : {}),
+        stage: o.stage,
+        stageUpdatedAt: now,
+        fetchedAt: now,
+      });
+      if (o.optIn) {
+        await ctx.db.insert("events", {
+          orgId: ORG,
+          type: "contact_opt_in",
+          leadId: id,
+          at: optInAt,
+          meta: { source: o.optIn.source, note: o.optIn.note },
+        });
+      }
     }
 
     // Publish sites for a handful (opened/converted leads), previews for a few more
@@ -263,6 +389,6 @@ export const seed = mutation({
       await ctx.db.insert("events", { orgId: ORG, type: "reply", leadId: l.id, at: now - ot++ * 6 * HOUR });
     }
 
-    return { seeded: NAMES.length };
+    return { seeded: NAMES.length + OPT_IN_LEADS.length };
   },
 });

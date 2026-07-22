@@ -42,12 +42,12 @@ Bloqueadores de produção identificados pela auditoria de 2026-07-11. Cada um m
 
 ### Modo Opt-in (ligação-primeiro) — Fase 4
 
-- [ ] **OPTIN-01**: A descoberta funciona em mercados opt-in (ES/IT/PT/DE/DK/CH — adicionar PT ao `MARKETS` + cidades por país): "mercado pesquisável" é separado de "mercado emailável", e TODO lead de mercado opt-in nasce `emailable=false`, independente de forma jurídica/inbox. (`convex/lib/domain.ts`, `convex/places.ts`, `convex/scoring.ts`)
-- [ ] **OPTIN-02**: A página de Leads tem abas "Email primeiro" (mercados opt-out) e "Ligação primeiro" (mercados opt-in); na segunda, o card prioriza telefone (Ligar em destaque) e script de ligação, sem ação de cold email. (`src/app/(app)/leads/page.tsx`, `src/components/lead-card.tsx`)
-- [ ] **OPTIN-03**: Script de ligação gerado por IA no idioma do mercado + tradução pt-BR lado a lado, citando a dor específica do lead (mesmo padrão do `writeEmail`). (`convex/lib/outreachAi.ts`, `convex/outreach.ts`)
-- [ ] **OPTIN-04**: Consentimento de contato generalizado (email/WhatsApp) com origem + timestamp + evento — registrável pelo usuário; após registro, o composer de email destrava para o lead. (generalizar `waOptIn*` da Fase 2; `convex/leads.ts`, `convex/schema.ts`)
-- [ ] **OPTIN-05**: Guardrail server-side: `outreach.draft` e `outreach.send` recusam lead de mercado opt-in SEM consentimento registrado — nunca confiar só na UI. (`convex/outreach.ts`, `convex/lib/domain.ts`)
-- [ ] **OPTIN-06**: Mercados opt-in exibem aviso discreto "validação jurídica pendente" na UI até validação por país (flag por mercado no `MARKETS`).
+- [x] **OPTIN-01**: A descoberta funciona em mercados opt-in (ES/IT/PT/DE/DK/CH — adicionar PT ao `MARKETS` + cidades por país): "mercado pesquisável" é separado de "mercado emailável", e TODO lead de mercado opt-in nasce `emailable=false`, independente de forma jurídica/inbox. (`convex/lib/domain.ts`, `convex/places.ts`, `convex/scoring.ts`)
+- [x] **OPTIN-02**: A página de Leads tem abas "Email primeiro" (mercados opt-out) e "Ligação primeiro" (mercados opt-in); na segunda, o card prioriza telefone (Ligar em destaque) e script de ligação, sem ação de cold email. (`src/app/(app)/leads/page.tsx`, `src/components/lead-card.tsx`)
+- [x] **OPTIN-03**: Script de ligação gerado por IA no idioma do mercado + tradução pt-BR lado a lado, citando a dor específica do lead (mesmo padrão do `writeEmail`). (`convex/lib/outreachAi.ts`, `convex/outreach.ts`)
+- [x] **OPTIN-04**: Consentimento de contato generalizado (email/WhatsApp) com origem + timestamp + evento — registrável pelo usuário; após registro, o composer de email destrava para o lead. (generalizar `waOptIn*` da Fase 2; `convex/leads.ts`, `convex/schema.ts`)
+- [x] **OPTIN-05**: Guardrail server-side: `outreach.draft` e `outreach.send` recusam lead de mercado opt-in SEM consentimento registrado — nunca confiar só na UI. (`convex/outreach.ts`, `convex/lib/domain.ts`)
+- [x] **OPTIN-06**: Mercados opt-in exibem aviso discreto "validação jurídica pendente" na UI até validação por país (flag por mercado no `MARKETS`).
 
 ## v2 Requirements
 
@@ -97,12 +97,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SEC-01 | Phase 1 | Complete |
 | OUTR-01 | Phase 3 | Complete |
 | L10N-01 | Phase 3 | Complete |
-| OPTIN-01 | Phase 4 | Pending |
-| OPTIN-02 | Phase 4 | Pending |
-| OPTIN-03 | Phase 4 | Pending |
-| OPTIN-04 | Phase 4 | Pending |
-| OPTIN-05 | Phase 4 | Pending |
-| OPTIN-06 | Phase 4 | Pending |
+| OPTIN-01 | Phase 4 | Complete |
+| OPTIN-02 | Phase 4 | Complete |
+| OPTIN-03 | Phase 4 | Complete |
+| OPTIN-04 | Phase 4 | Complete |
+| OPTIN-05 | Phase 4 | Complete |
+| OPTIN-06 | Phase 4 | Complete |
 
 **Coverage:**
 - v1 requirements: 18 total (12 do milestone de produção + 6 do modo opt-in)
@@ -111,4 +111,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-07-11*
-*Last updated: 2026-07-11 after roadmap creation (12/12 mapped to Phases 1-3)*
+*Last updated: 2026-07-22 — Phase 4 concluída; 18/18 requisitos v1 completos*

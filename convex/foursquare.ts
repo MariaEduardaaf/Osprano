@@ -2,7 +2,7 @@ import { action } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { requireOrgId } from "./model/tenant";
-import { isLaunchMarket, MARKETS, clampDiscoveryCount } from "./lib/domain";
+import { isSearchableMarket, MARKETS, clampDiscoveryCount } from "./lib/domain";
 
 interface FsqPlace {
   fsq_id?: string;
@@ -17,7 +17,8 @@ interface FsqPlace {
 
 /**
  * Discovery via Foursquare Places (secondary source / fallback to Google Places).
- * No ratings — those come from the Google enrichment layer. Same opt-out guard.
+ * No ratings — those come from the Google enrichment layer. Mesmo gate de
+ * mercados pesquisáveis (launch + opt-in) do places.ts.
  *
  * NOTE: verify the endpoint/auth against Foursquare's current API before scaling
  * (FSQ migrated APIs in 2025); the storable/resellable path is the FSQ OS open
@@ -33,9 +34,9 @@ export const search = action({
   handler: async (ctx, args): Promise<{ found: number; inserted: number }> => {
     const orgId = await requireOrgId(ctx);
     const country = args.countryCode.toUpperCase();
-    if (!isLaunchMarket(country)) {
+    if (!isSearchableMarket(country)) {
       const name = MARKETS[country]?.name ?? country;
-      throw new Error(`${name} está fora do escopo compliant (cold email só em mercados opt-out).`);
+      throw new Error(`${name} ainda não está disponível para busca.`);
     }
     const key = process.env.FSQ_API_KEY;
     if (!key) throw new Error("FSQ_API_KEY não configurada no deployment Convex.");

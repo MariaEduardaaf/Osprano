@@ -2,6 +2,8 @@ import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { verifyStripeSignature, planForPrice } from "./lib/stripe";
+import { unsubscribePageHtml } from "./lib/compliance";
+import { LANG } from "./lib/outreachAi";
 
 interface StripeObj {
   customer?: string;
@@ -65,19 +67,21 @@ http.route({
  */
 const unsubscribe = httpAction(async (ctx, req) => {
   const token = new URL(req.url).searchParams.get("token");
+  let lang = "English";
   if (token) {
+    // A supressão vem PRIMEIRO: é o efeito legal, não pode depender da localização.
     await ctx.runMutation(internal.suppressions.unsubscribeByToken, { token });
+    const countryCode = await ctx.runQuery(internal.suppressions.countryForUnsubToken, { token });
+    if (countryCode) lang = LANG[countryCode] ?? "English";
   }
-  // SEMPRE a mesma resposta — token válido, inválido ou ausente. Nunca vaza existência.
-  return new Response(
-    `<!doctype html><html lang="en"><head><meta charset="utf-8">` +
-      `<meta name="viewport" content="width=device-width, initial-scale=1">` +
-      `<title>Unsubscribed</title></head>` +
-      `<body style="font-family:system-ui,sans-serif;max-width:32rem;margin:4rem auto;padding:0 1.5rem;color:#0f172a">` +
-      `<h1 style="font-size:1.5rem">You've been unsubscribed</h1>` +
-      `<p style="color:#475569">You won't hear from us again.</p></body></html>`,
-    { status: 200, headers: { "content-type": "text/html; charset=utf-8" } },
-  );
+  // SEMPRE o mesmo status e a mesma página — token válido, inválido ou ausente.
+  // Nunca vaza qual email existe; só o IDIOMA acompanha o lead, porque este é o fim
+  // do caminho de opt-out (COMP-02): quem clicou em "Afmeld dig" lê dinamarquês.
+  // Token que não resolve lead → inglês.
+  return new Response(unsubscribePageHtml(lang), {
+    status: 200,
+    headers: { "content-type": "text/html; charset=utf-8" },
+  });
 });
 
 http.route({ path: "/unsubscribe", method: "GET", handler: unsubscribe });
