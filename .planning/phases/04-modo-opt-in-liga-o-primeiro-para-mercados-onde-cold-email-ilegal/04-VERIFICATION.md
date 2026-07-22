@@ -122,9 +122,12 @@ com o ambiente real. Roteiro no `docs/CHECKLIST-MODO-REAL.md` §8.
 
 ## Limitações conhecidas (deliberadas)
 
-- **Suíça inteira mapeada para alemão.** Prospect em Genebra ou Lugano recebe
-  script, email e prévia em alemão. Adiamento consciente — as regiões
-  francófona e italófona precisam de decisão de produto.
+- ~~**Suíça inteira mapeada para alemão.**~~ **RESOLVIDO em 2026-07-22**
+  (branch `feat/suica-multilingue`): o idioma passou a ser derivado de
+  `(país, cidade)` via `swissLanguage`. Genebra/Lausanne/Neuchâtel/Fribourg/
+  Sion → francês; Lugano/Bellinzona/Locarno/Chiasso → italiano; resto e
+  cidade desconhecida → alemão. Francês entrou no dicionário da prévia, no
+  rodapé de opt-out e na página de cancelamento.
 - **Sem testes de função Convex.** O repo não tem `convex-test` e instalar
   dependência exige aprovação; mutations/actions são cobertas por typecheck +
   grep de invariantes, como nas fases 1–3.

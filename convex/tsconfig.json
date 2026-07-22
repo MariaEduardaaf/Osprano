@@ -11,6 +11,12 @@
     "jsx": "react-jsx",
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
+    /* Um módulo daqui (lib/outreachAi.ts) importa outro (lib/domain.ts) em RUNTIME e é
+     * carregado pela suíte `node --experimental-strip-types --test`, cujo resolvedor ESM
+     * exige a extensão explícita — sem ela, `./domain` é ERR_MODULE_NOT_FOUND e os testes
+     * de idioma do prospect nem carregam. Legal com noEmit; esbuild (bundler do Convex),
+     * Next e o tsc da raiz resolvem o caminho explícito normalmente. */
+    "allowImportingTsExtensions": true,
 
     /* These compiler options are required by Convex */
     "target": "ESNext",

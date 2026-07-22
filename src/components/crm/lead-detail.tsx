@@ -334,6 +334,11 @@ function ApproachTab({ lead }: { lead: Doc<"leads"> }) {
           <CallScriptPanel
             leadId={lead._id}
             phone={lead.phone}
+            // País E cidade: sem os dois o painel não consegue rotular o idioma, e é
+            // justamente aqui (drawer do CRM) que ela decide antes de discar. Na Suíça
+            // o idioma é regional — Genebra sai em francês, Lugano em italiano.
+            countryCode={lead.countryCode}
+            city={lead.city}
             initialScript={lead.callScript}
             initialTranslation={lead.callScriptPt}
           />

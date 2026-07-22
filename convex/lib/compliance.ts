@@ -24,13 +24,23 @@ const FOOTER_COPY: Record<string, (sender: string, url: string) => string> = {
   // ES/IT em tratamento formal (usted / Lei): é B2B, e tutear o dono do negócio destoa.
   Spanish: (s, url) =>
     `\n\n—\nEnviado por ${s}. ¿Prefiere no recibir más correos nuestros? Darse de baja: ${url}`,
+  // "Per annullare" (infinitivo), não "Annulla" (imperativo de TU): a primeira
+  // frase trata por Lei ("Non desidera"), e o imperativo informal quebrava a forma.
   Italian: (s, url) =>
-    `\n\n—\nInviato da ${s}. Non desidera più ricevere le nostre email? Annulla l'iscrizione: ${url}`,
+    `\n\n—\nInviato da ${s}. Non desidera più ricevere le nostre email? Per annullare l'iscrizione: ${url}`,
   [PT_PT]: footerPtPt,
   // Alias defensivo: quem passar o nome simples do idioma recebe pt-PT, nunca o inglês.
   Portuguese: footerPtPt,
   German: (s, url) => `\n\n—\nGesendet von ${s}. Möchten Sie nichts mehr von uns hören? Abmelden: ${url}`,
   Danish: (s, url) => `\n\n—\nSendt af ${s}. Vil du ikke høre fra os igen? Afmeld dig: ${url}`,
+  // Suíça francófona (langForLead, convex/lib/outreachAi.ts): o prospect de Genebra lê
+  // francês, não alemão. Vouvoiement, como ES/IT — é B2B.
+  // `\u00A0` = espaço INSECÁVEL, exigido em francês antes de `?` `!` `:` `;`.
+  // Fica como escape de propósito, para ninguém "consertar" achando que é espaço
+  // duplo: este rodapé sai em email de TEXTO PURO, e com espaço normal a quebra
+  // automática joga o `?` sozinho para o começo da linha seguinte.
+  French: (s, url) =>
+    `\n\n—\nEnvoyé par ${s}. Vous ne souhaitez plus recevoir nos e-mails\u00A0? Se désabonner\u00A0: ${url}`,
 };
 
 export function optOutFooter(lang: string, unsubscribeUrl: string, senderIdentity: string): string {
@@ -112,6 +122,16 @@ const UNSUBSCRIBE_PAGE_COPY: Record<string, UnsubscribePageCopy> = {
     title: "Afmeldt",
     heading: "Du er afmeldt",
     body: "Du hører ikke fra os igen.",
+  },
+  // Suíça francófona: quem clicou em "Se désabonner" aterrissa em francês.
+  // Formulação sem marca de gênero ("désabonné(e)") de propósito. Se algum dia
+  // esta copy ganhar `?` `!` `:` `;`, vale a mesma regra do rodapé French acima:
+  // espaço insecável (`\u00A0`) antes da pontuação, nunca espaço normal.
+  French: {
+    htmlLang: "fr",
+    title: "Désabonnement confirmé",
+    heading: "Votre désabonnement est confirmé",
+    body: "Vous ne recevrez plus d'e-mails de notre part.",
   },
 };
 

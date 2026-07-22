@@ -203,9 +203,13 @@ export function LeadCard({
             )}
             {siteLink}
           </div>
+          {/* país + cidade: o painel rotula o script com o idioma real (a Suíça é
+              multilíngue — Genebra sai em francês, Zurique em alemão). */}
           <CallScriptPanel
             leadId={lead._id}
             phone={lead.phone}
+            countryCode={lead.countryCode}
+            city={lead.city}
             initialScript={lead.callScript}
             initialTranslation={lead.callScriptPt}
           />

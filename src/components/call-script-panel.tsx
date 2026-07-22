@@ -12,6 +12,41 @@ import {
 import { useAction } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
+import { PT_PT, langForLead } from "@convex/lib/outreachAi";
+
+/**
+ * Nome do idioma em PORTUGUÊS — é só RÓTULO DE UI, para a usuária brasileira ler.
+ * Nunca vai para o modelo (quem manda no idioma do prompt é `langForLead`, em
+ * convex/lib/outreachAi.ts). As chaves são exatamente os valores que `langForLead`
+ * devolve, para que um idioma novo no backend apareça aqui como "sem rótulo" em
+ * vez de rotulado errado.
+ */
+const LANGUAGE_LABEL_PT: Record<string, string> = {
+  English: "inglês",
+  Dutch: "holandês",
+  Swedish: "sueco",
+  Norwegian: "norueguês",
+  Spanish: "espanhol",
+  Italian: "italiano",
+  German: "alemão",
+  French: "francês",
+  Danish: "dinamarquês",
+  [PT_PT]: "português",
+};
+
+/**
+ * Em que idioma o script sai, em pt-BR. NÃO reimplementa a regra: chama o mesmo
+ * `langForLead` que o backend usa para escrever o script (é ele quem consulta a
+ * cidade na Suíça — Genebra → French, Lugano → Italian, cidade desconhecida →
+ * German — e o país em todos os outros mercados). Aqui só se traduz o nome do
+ * idioma para pt-BR. null = sem país em mãos ou idioma sem rótulo: melhor não
+ * rotular do que rotular errado.
+ */
+export function scriptLanguageLabel(countryCode?: string, city?: string | null): string | null {
+  if (!countryCode) return null;
+  const label: string | undefined = LANGUAGE_LABEL_PT[langForLead({ countryCode, city })];
+  return label ?? null;
+}
 
 function CopyButton({ text, label }: { text: string; label: string }) {
   const [copied, setCopied] = useState(false);
@@ -53,15 +88,24 @@ function ScriptColumn({ label, text }: { label: string; text: string }) {
  * OPTIN-03 — painel do script de ligação: gera via api.outreach.callScript e mostra
  * o script (idioma do mercado) e a tradução pt-BR lado a lado, cada um com copiar nativo.
  * Aproveita o que já está persistido no lead (callScript / callScriptPt) para não regenerar à toa.
+ *
+ * O idioma do script é EXIBIDO porque a Suíça é multilíngue: duas cidades do mesmo
+ * país geram idiomas diferentes, e quem liga não fala nenhum deles. `countryCode` e
+ * `city` são opcionais para não quebrar quem ainda não passa (o painel só omite o
+ * rótulo nesse caso) — passe-os sempre que o lead estiver em mãos.
  */
 export function CallScriptPanel({
   leadId,
   phone,
+  countryCode,
+  city,
   initialScript,
   initialTranslation,
 }: {
   leadId: Id<"leads">;
   phone?: string;
+  countryCode?: string;
+  city?: string | null;
   initialScript?: string;
   initialTranslation?: string;
 }) {
@@ -89,12 +133,21 @@ export function CallScriptPanel({
   const hasTranslation =
     translation.trim().length > 0 && translation.trim() !== script.trim();
 
+  // Idioma do prospect, pela mesma regra do backend. No cabeçalho ele aparece ANTES
+  // de gerar (ela já sabe o que vai sair); na coluna, colado ao texto que vai ler.
+  const language = scriptLanguageLabel(countryCode, city);
+
   return (
     <div className="space-y-2 rounded-md border border-border bg-surface-2 p-2.5">
       <div className="flex items-center justify-between gap-2">
-        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-foreground">
+        <span className="inline-flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-foreground">
           <MdOutlineDescription size={14} />
           Script de ligação
+          {language && (
+            <span className="rounded-full border border-border bg-surface px-2 py-0.5 text-[10px] font-semibold text-muted">
+              idioma: {language}
+            </span>
+          )}
         </span>
         <button
           onClick={() => setOpen(false)}
@@ -135,7 +188,7 @@ export function CallScriptPanel({
 
       {script && (
         <div className="grid gap-2 md:grid-cols-2">
-          <ScriptColumn label="Script" text={script} />
+          <ScriptColumn label={language ? `Script (${language})` : "Script"} text={script} />
           {hasTranslation ? (
             <ScriptColumn label="Tradução (pt-BR)" text={translation} />
           ) : (

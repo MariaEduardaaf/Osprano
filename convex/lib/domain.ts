@@ -51,6 +51,313 @@ export function isSearchableMarket(countryCode: string): boolean {
   return SEARCHABLE_MARKETS.includes(countryCode.toUpperCase());
 }
 
+// ---------------------------------------------------------------------------
+// Suíça: regiões linguísticas (o país é o único mercado multilíngue da base)
+// ---------------------------------------------------------------------------
+
+/** Idiomas oficiais que o produto atende na Suíça (romanche fica fora: <0,5%). */
+export type SwissLang = "de" | "fr" | "it";
+
+/**
+ * Fallback quando a cidade é desconhecida/ausente: alemão, o idioma de ~62% da
+ * população. É uma escolha DELIBERADA e testada — nunca um acidente.
+ */
+export const SWISS_DEFAULT_LANGUAGE: SwissLang = "de";
+
+/**
+ * DE ONDE VEM O CAMPO `city` DE UM LEAD (verificado no código, não suposto —
+ * o comentário que ficava aqui afirmava o contrário e estava factualmente errado):
+ *
+ *   1. Google Places (convex/places.ts) grava `city: args.city`, isto é, a cidade
+ *      que a usuária escolheu no SELECT — forma LOCAL, vinda de CITIES_BY_COUNTRY.CH.
+ *      O `languageCode: "en"` do request afeta só `displayName`/`formattedAddress`,
+ *      e o field mask nem pede `addressComponents`: o Places NUNCA é a origem do
+ *      nome da cidade. Ou seja, por esta porta chega "Genève", não "Geneva".
+ *   2. Foursquare (convex/foursquare.ts) grava `p.location?.locality ?? args.city`.
+ *      É a ÚNICA origem em que a cidade vem de um provedor externo — e o risco real
+ *      aqui não é exônimo inglês: é a `locality` ser um SUBÚRBIO/COMUNA da
+ *      aglomeração (Carouge, Paradiso, Riehen…), que sem mapa cai calado no
+ *      fallback alemão e manda francês/italiano em alemão.
+ *   3. Criação manual (convex/leads.ts `create`) aceita texto livre: daí vêm
+ *      exônimos de qualquer idioma ("Genf", "Zurigo", "Bâle") e sufixos
+ *      (", Switzerland", " NE").
+ *
+ * Consequência para as listas abaixo: os alias de exônimo (en/de/fr/it) são
+ * COBERTURA DEFENSIVA para (3) e para colagens manuais — não são a origem
+ * principal. A cobertura que paga a conta no dia a dia é a de subúrbios, por (2).
+ */
+
+/** Sufixos de país que aparecem colados na cidade em dados reais/colados à mão. */
+const SWISS_COUNTRY_SUFFIXES = new Set(["switzerland", "suisse", "schweiz", "svizzera", "ch"]);
+
+/** Códigos dos 26 cantões — sufixo canônico em endereços suíços ("Neuchâtel NE"). */
+const SWISS_CANTON_CODES = new Set([
+  "ag", "ai", "ar", "be", "bl", "bs", "fr", "ge", "gl", "gr", "ju", "lu", "ne",
+  "nw", "ow", "sg", "sh", "so", "sz", "tg", "ti", "ur", "vd", "vs", "zg", "zh",
+]);
+
+/**
+ * Chave canônica de cidade: minúsculas, sem acento, separadores virando espaço e
+ * sufixos de país/cantão descartados. Isso faz casar de uma só vez:
+ *   - forma local vs sem acento         ("Genève" / "Geneve")
+ *   - caixa qualquer                    ("GENEVE" / "geneve")
+ *   - abreviação com ou sem ponto       ("St. Gallen" / "St Gallen")
+ *   - nomes compostos                   ("Yverdon-les-Bains", "Biel/Bienne")
+ *   - sufixo de país                    ("Geneve, Switzerland" / "Genf, Schweiz")
+ *   - sufixo cantonal                   ("Neuchâtel NE" / "Lugano TI")
+ * O que NÃO dá para derivar por regra — exônimos que mudam a grafia (Genf,
+ * Zurigo, Bâle, Basle) — entra como alias explícito nas listas abaixo.
+ *
+ * O descarte de sufixo só roda enquanto sobrar pelo menos um token, então uma
+ * entrada que seja SÓ o cantão ("GE") continua desconhecida em vez de virar "".
+ * Nenhum nome das listas termina em token de 2 letras, e as chaves do mapa são
+ * construídas por esta mesma função — o corte é simétrico e não quebra
+ * "St. Gallen" nem "Biel/Bienne".
+ */
+function normalizeCityKey(city: string): string {
+  const tokens = city
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/[.,/\-_]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean);
+
+  while (tokens.length > 1) {
+    const last = tokens[tokens.length - 1] ?? "";
+    if (SWISS_COUNTRY_SUFFIXES.has(last) || SWISS_CANTON_CODES.has(last)) tokens.pop();
+    else break;
+  }
+  return tokens.join(" ");
+}
+
+/**
+ * Romandia (francófona): cidades do select, comunas das aglomerações de Genebra,
+ * Lausanne e Neuchâtel (o que o Foursquare devolve em `locality`) e exônimos.
+ *
+ * Fribourg/Freiburg é oficialmente BILÍNGUE: classificada como francesa porque
+ * ~63% da população fala francês. É uma aproximação deliberada — a cidade tem
+ * minoria germanófona relevante, e aqui se escolhe a maioria em vez de deixar
+ * o prospect sem idioma definido.
+ */
+const SWISS_FRENCH_CITIES = [
+  "Genève", "Geneva",
+  "Lausanne",
+  "Neuchâtel", "Neuchatel",
+  // Bilíngue oficial → francês pela maioria (~63%). "Freiburg" é a forma ALEMÃ da
+  // mesma cidade suíça: sem o alias ela cairia no fallback e sairia em alemão.
+  // Só é consultada quando o país é CH, então não colide com Freiburg im Breisgau (DE).
+  "Fribourg", "Freiburg",
+  "Sion",
+  "Montreux",
+  "Vevey",
+  "Yverdon-les-Bains",
+  "La Chaux-de-Fonds",
+  "Le Locle",
+  "Delémont",
+  "Porrentruy",
+  "Nyon",
+  "Morges",
+  "Bulle",
+  "Martigny",
+  "Monthey",
+  "Sierre",
+  "Aigle",
+  "Gland",
+  "Renens",
+  "Ecublens",
+  "Prilly",
+  "Pully",
+  // --- Aglomeração de GENEBRA (cantão GE, 100% francófono) ---
+  "Carouge",
+  "Vernier",
+  "Lancy",
+  "Meyrin",
+  "Onex",
+  "Versoix",
+  "Thônex",
+  "Chêne-Bougeries",
+  "Chêne-Bourg",
+  "Plan-les-Ouates",
+  "Grand-Saconnex", "Le Grand-Saconnex", // a comuna é "Le Grand-Saconnex"; sem artigo também aparece
+  "Bernex",
+  "Confignon",
+  "Collonge-Bellerive",
+  "Cologny",
+  "Veyrier",
+  "Troinex",
+  "Perly", "Perly-Certoux", // nome oficial da comuna é "Perly-Certoux"
+  "Satigny",
+  "Genthod",
+  "Bellevue",
+  "Prégny-Chambésy",
+  // --- Aglomeração de LAUSANNE (cantão VD, francófono) ---
+  "Epalinges",
+  "Chavannes-près-Renens",
+  "Crissier",
+  "Bussigny",
+  "Lutry",
+  "Paudex",
+  "Belmont-sur-Lausanne",
+  "Le Mont-sur-Lausanne",
+  "Cheseaux", "Cheseaux-sur-Lausanne",
+  // --- Aglomeração de NEUCHÂTEL (cantão NE, francófono) ---
+  "Peseux",
+  "Corcelles", "Corcelles-Cormondrèche",
+  "Colombier",
+  "Boudry",
+  "Saint-Blaise",
+  // --- Exônimos: cidade francófona com nome em outro idioma (criação manual) ---
+  "Genf",       // alemão para Genève
+  "Ginevra",    // italiano para Genève
+  "Losanna",    // italiano para Lausanne
+  "Neuenburg",  // alemão para Neuchâtel (existe Neuenburg am Rhein na Alemanha,
+                // mas este mapa só é consultado quando countryCode === "CH")
+  "Neucastello", // forma italiana arcaica de Neuchâtel
+  "Sitten",     // alemão para Sion
+];
+
+/**
+ * Ticino + Grigioni italiano: cidades, comuni/quartieri das aglomerações de
+ * Lugano e Locarno (o que chega como `locality` do Foursquare). Os nomes são
+ * idênticos em qualquer idioma — aqui não há exônimo a cobrir.
+ */
+const SWISS_ITALIAN_CITIES = [
+  "Lugano",
+  "Bellinzona",
+  "Locarno",
+  "Chiasso",
+  "Mendrisio",
+  "Ascona",
+  "Biasca",
+  "Losone",
+  "Minusio",
+  "Massagno",
+  "Giubiasco",
+  "Poschiavo",
+  "Mesocco",
+  // --- Aglomeração de LUGANO ---
+  "Paradiso",
+  "Viganello",
+  "Pregassona",
+  "Breganzona",
+  "Savosa",
+  "Sorengo",
+  "Cadempino",
+  "Vezia",
+  "Canobbio",
+  "Agno",
+  "Caslano",
+  // --- Aglomeração de LOCARNO / Bellinzonese ---
+  "Muralto",
+  "Tenero", "Tenero-Contra",
+  "Gordola",
+  "Cadenazzo",
+  "Gambarogno",
+];
+
+/**
+ * Suíça alemã — o resto do país, e também o destino do fallback. Inclui os
+ * bairros/comunas das aglomerações de Zurique, Basileia e Berna, que também
+ * podem chegar como `locality`, e os exônimos francês/italiano.
+ *
+ * Biel/Bienne é a segunda cidade oficialmente BILÍNGUE: classificada como alemã
+ * porque ~55% da população fala alemão. Mesma aproximação deliberada de
+ * Fribourg, só que caindo para o outro lado. "Biel" e "Bienne" isolados entram
+ * como alias porque a fonte pode devolver só uma das metades do nome.
+ */
+const SWISS_GERMAN_CITIES = [
+  "Zürich", "Zurich",
+  "Basel", "Basle",
+  "Bern", "Berne",
+  "Winterthur",
+  "Luzern", "Lucerne",
+  "St. Gallen", "Sankt Gallen", "St Gallen", "Saint Gallen",
+  "Thun",
+  "Biel/Bienne", "Biel", "Bienne", // bilíngue oficial → alemão pela maioria (~55%)
+  "Chur",
+  "Zug",
+  "Schaffhausen",
+  "Aarau",
+  "Baden",
+  "Olten",
+  "Solothurn",
+  "Frauenfeld",
+  "Wil",
+  "Rapperswil-Jona",
+  "Uster",
+  "Dübendorf",
+  "Emmen",
+  "Kriens",
+  "Köniz",
+  "Wetzikon",
+  "Schlieren",
+  "Kloten",
+  "Bülach",
+  "Herisau",
+  "Davos",
+  "Interlaken",
+  // --- Bairros de Zurique e comunas da aglomeração (cantão ZH) ---
+  "Oerlikon",
+  "Altstetten",
+  "Wiedikon",
+  "Opfikon",
+  "Wallisellen",
+  "Adliswil",
+  "Horgen",
+  "Meilen",
+  "Küsnacht",
+  "Thalwil",
+  // --- Aglomeração de BASILEIA (BS/BL) ---
+  "Riehen",
+  "Allschwil",
+  "Muttenz",
+  "Pratteln",
+  "Binningen",
+  // --- Aglomeração de BERNA (parte germanófona do cantão BE) ---
+  "Ostermundigen",
+  "Wabern",
+  "Liebefeld",
+  "Ittigen",
+  // --- Exônimos: cidade germanófona com nome em francês ou italiano ---
+  "Bâle",        // fr → Basel
+  "Coire",       // fr → Chur
+  "Saint-Gall",  // fr → St. Gallen
+  "Schaffhouse", // fr → Schaffhausen
+  "Berna",       // it → Bern
+  "Basilea",     // it → Basel
+  "Lucerna",     // it → Luzern
+  "Zurigo",      // it → Zürich
+  "Coira",       // it → Chur
+  "Sciaffusa",   // it → Schaffhausen
+  "Bienna",      // it → Biel/Bienne (alemão pela maioria, ver acima)
+  "San Gallo",   // it → St. Gallen
+];
+
+/** Cidade normalizada → idioma. Exportado para as invariantes de teste. */
+export const SWISS_CITY_LANGUAGE: ReadonlyMap<string, SwissLang> = new Map<string, SwissLang>([
+  ...SWISS_FRENCH_CITIES.map((c) => [normalizeCityKey(c), "fr"] as [string, SwissLang]),
+  ...SWISS_ITALIAN_CITIES.map((c) => [normalizeCityKey(c), "it"] as [string, SwissLang]),
+  ...SWISS_GERMAN_CITIES.map((c) => [normalizeCityKey(c), "de"] as [string, SwissLang]),
+]);
+
+/** A cidade está no mapa (vs. cair no fallback silencioso)? */
+export function isKnownSwissCity(city?: string | null): boolean {
+  if (!city) return false;
+  return SWISS_CITY_LANGUAGE.has(normalizeCityKey(city));
+}
+
+/**
+ * Idioma do prospect suíço a partir da cidade. Puro e total: qualquer entrada
+ * não reconhecida (desconhecida, vazia, undefined, null) devolve alemão.
+ */
+export function swissLanguage(city?: string | null): SwissLang {
+  if (!city) return SWISS_DEFAULT_LANGUAGE;
+  return SWISS_CITY_LANGUAGE.get(normalizeCityKey(city)) ?? SWISS_DEFAULT_LANGUAGE;
+}
+
 export type LegalForm = "incorporated" | "sole_trader" | "unknown";
 export type ContactType = "role" | "named" | "unknown";
 
@@ -418,9 +725,12 @@ export const CITIES_BY_COUNTRY: Record<string, string[]> = {
     "København", "Aarhus", "Odense", "Aalborg", "Esbjerg", "Randers", "Kolding", "Horsens",
     "Vejle", "Roskilde", "Herning",
   ],
+  // Suíça: cobre as três regiões linguísticas (ver swissLanguage). Nomes LOCAIS,
+  // que é o que a usuária vê no select — o resolvedor casa local e inglês.
   CH: [
     "Zürich", "Genève", "Basel", "Lausanne", "Bern", "Winterthur", "Luzern", "St. Gallen",
-    "Lugano", "Biel/Bienne", "Thun",
+    "Lugano", "Biel/Bienne", "Thun", "Fribourg", "Neuchâtel", "Zug", "Chur", "Schaffhausen",
+    "Sion", "Montreux", "Bellinzona", "Locarno", "Chiasso",
   ],
 };
 

@@ -112,8 +112,11 @@ ligar primeiro e o email só destrava depois do consentimento.
 > de opt-out, página de cancelamento e a prévia do site. Nada disso sai em
 > português — só a tradução do script, que é para você.
 >
-> **Ressalva da Suíça:** hoje tudo sai em alemão, inclusive para Genebra e
-> Lugano. Se for prospectar a parte francófona ou italófona, avise antes.
+> **Suíça:** o idioma sai da cidade, não do país. Genebra, Lausanne,
+> Neuchâtel, Fribourg e Sion → francês. Lugano, Bellinzona, Locarno e
+> Chiasso → italiano. O resto → alemão, que também é o padrão para cidade
+> que o sistema não conhece. O painel de script mostra qual idioma saiu —
+> confira antes de discar.
 
 ---
 

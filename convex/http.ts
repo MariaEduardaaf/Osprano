@@ -3,7 +3,6 @@ import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { verifyStripeSignature, planForPrice } from "./lib/stripe";
 import { unsubscribePageHtml } from "./lib/compliance";
-import { LANG } from "./lib/outreachAi";
 
 interface StripeObj {
   customer?: string;
@@ -71,8 +70,10 @@ const unsubscribe = httpAction(async (ctx, req) => {
   if (token) {
     // A supressão vem PRIMEIRO: é o efeito legal, não pode depender da localização.
     await ctx.runMutation(internal.suppressions.unsubscribeByToken, { token });
-    const countryCode = await ctx.runQuery(internal.suppressions.countryForUnsubToken, { token });
-    if (countryCode) lang = LANG[countryCode] ?? "English";
+    // Idioma derivado de (país, cidade) — na Suíça ele é regional: quem clicou em
+    // "Se désabonner" em Genebra não pode aterrissar numa página em alemão.
+    const leadLang = await ctx.runQuery(internal.outreach.langForUnsubToken, { token });
+    if (leadLang) lang = leadLang;
   }
   // SEMPRE o mesmo status e a mesma página — token válido, inválido ou ausente.
   // Nunca vaza qual email existe; só o IDIOMA acompanha o lead, porque este é o fim

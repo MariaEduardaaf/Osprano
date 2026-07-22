@@ -9,6 +9,10 @@
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",
+    // src/ importa convex/lib/domain.ts com a extensão explícita porque os
+    // testes rodam em `node --experimental-strip-types`, que não lê os `paths`
+    // do tsconfig nem resolve import sem extensão. Seguro com noEmit: true.
+    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",

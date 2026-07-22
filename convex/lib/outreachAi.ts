@@ -1,5 +1,6 @@
 import type { Doc } from "../_generated/dataModel";
-import type { Signals } from "./domain";
+import type { Signals, SwissLang } from "./domain.ts";
+import { swissLanguage } from "./domain.ts";
 
 /**
  * Português EUROPEU, qualificado de propósito. O valor do LANG entra CRU no prompt
@@ -24,8 +25,38 @@ export const LANG: Record<string, string> = {
   PT: PT_PT,
   DE: "German",
   DK: "Danish",
-  CH: "German", // padrão suíço-alemão para B2B; a região francófona/italófona fica para depois
+  // Padrão da Suíça GERMANÓFONA (~62% do país), não "o idioma da Suíça": o país tem três
+  // regiões linguísticas. A fonte de verdade do idioma de um lead é `langForLead` — que
+  // consulta a cidade e devolve French em Genebra e Italian em Lugano. Esta entrada existe
+  // porque é o fallback dessa função e a âncora dos testes de paridade LANG ↔ copy.
+  CH: "German",
 };
+
+/** Nome do idioma (no vocabulário do LANG) por região linguística suíça. */
+const SWISS_LANG_NAME: Record<SwissLang, string> = {
+  de: "German",
+  fr: "French",
+  it: "Italian",
+};
+
+/**
+ * Idioma do prospect — FONTE DE VERDADE do outreach e da compliance.
+ *
+ * Deriva de (país, cidade) porque a Suíça é o único mercado multilíngue da base: um
+ * lead em Genebra recebia script de ligação, email e rodapé de opt-out em alemão.
+ * Cidade suíça desconhecida → alemão (fallback deliberado de `swissLanguage`).
+ * Todos os outros países continuam derivando o idioma só do countryCode.
+ *
+ * O nome da cidade chega na forma LOCAL ("Genève", "Zürich"): é o valor do select
+ * que `convex/places.ts` grava (`city: args.city`), não o que o Places devolve.
+ * Exônimo inglês, caixa, acento e subúrbio são cobertura defensiva de
+ * `swissLanguage` — a origem de cada forma está documentada em `convex/lib/domain.ts`.
+ */
+export function langForLead(lead: { countryCode: string; city?: string | null }): string {
+  const cc = (lead.countryCode ?? "").toUpperCase();
+  if (cc === "CH") return SWISS_LANG_NAME[swissLanguage(lead.city)];
+  return LANG[cc] ?? "English";
+}
 
 /**
  * Assunto de emergência quando o JSON do modelo não parseia. Cobre TODO valor de
@@ -42,6 +73,9 @@ const FALLBACK_SUBJECT: Record<string, (business: string) => string> = {
   [PT_PT]: (b) => `${b} — uma nota rápida sobre o seu site`,
   German: (b) => `${b} — eine kurze Nachricht zu Ihrer Website`,
   Danish: (b) => `${b} — en kort besked om jeres hjemmeside`,
+  // Suíça francófona (langForLead): sem esta entrada, o corpo sairia em francês e o
+  // assunto em inglês — exatamente o que este mapa existe para evitar.
+  French: (b) => `${b} — une note rapide au sujet de votre site web`,
 };
 
 /** Assunto de fallback no idioma do prospect (inglês só para idioma desconhecido). */
@@ -73,7 +107,7 @@ export async function writeEmail(
   lead: Doc<"leads">,
   previewUrl: string,
 ): Promise<{ subject: string; body: string }> {
-  const lang = LANG[lead.countryCode] ?? "English";
+  const lang = langForLead(lead);
   const s = lead.signals;
   const pains = s
     ? (Object.keys(SIGNAL_TEXT) as (keyof Signals)[]).filter((k) => s[k]).map((k) => SIGNAL_TEXT[k])
@@ -139,7 +173,7 @@ export async function writeCallScript(
   apiKey: string,
   lead: Doc<"leads">,
 ): Promise<{ script: string; translation: string }> {
-  const lang = LANG[lead.countryCode] ?? "English";
+  const lang = langForLead(lead);
   const s = lead.signals;
   const pains = s
     ? (Object.keys(SIGNAL_TEXT) as (keyof Signals)[]).filter((k) => s[k]).map((k) => SIGNAL_TEXT[k])

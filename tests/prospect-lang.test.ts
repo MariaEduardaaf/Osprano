@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { LANG, PT_PT, fallbackSubject } from "../convex/lib/outreachAi.ts";
+import { LANG, PT_PT, fallbackSubject, langForLead } from "../convex/lib/outreachAi.ts";
 import { unsubscribePageHtml, optOutFooter } from "../convex/lib/compliance.ts";
 import { SEARCHABLE_MARKETS } from "../convex/lib/domain.ts";
 
@@ -66,4 +66,87 @@ test("o alias 'Portuguese' não cai no inglês (recebe a copy pt-PT)", () => {
   const url = "https://x/u/tok";
   assert.equal(optOutFooter("Portuguese", url, "Ana"), optOutFooter(LANG.PT, url, "Ana"));
   assert.equal(unsubscribePageHtml("Portuguese"), unsubscribePageHtml(LANG.PT));
+});
+
+// ---------------------------------------------------------------------------
+// Suíça: o idioma é REGIONAL (o país é o único mercado multilíngue da base)
+// ---------------------------------------------------------------------------
+
+test("langForLead: a Suíça deriva o idioma da cidade, não do país", () => {
+  // Nomes LOCAIS (o que a usuária escolhe no select da UI).
+  assert.equal(langForLead({ countryCode: "CH", city: "Genève" }), "French");
+  assert.equal(langForLead({ countryCode: "CH", city: "Lugano" }), "Italian");
+  assert.equal(langForLead({ countryCode: "CH", city: "Zürich" }), "German");
+  // Nomes em INGLÊS — cobertura defensiva de criação manual/colagem. NÃO é como o
+  // lead de descoberta chega: places.ts grava `city: args.city` (a forma local do
+  // select), e o `languageCode:"en"` só afeta displayName/formattedAddress.
+  assert.equal(langForLead({ countryCode: "CH", city: "Geneva" }), "French");
+  assert.equal(langForLead({ countryCode: "CH", city: "Zurich" }), "German");
+  assert.equal(langForLead({ countryCode: "CH", city: "Berne" }), "German");
+});
+
+test("langForLead: cidade suíça desconhecida/ausente cai no alemão (fallback deliberado)", () => {
+  assert.equal(langForLead({ countryCode: "CH", city: "Vila Que Não Existe" }), "German");
+  assert.equal(langForLead({ countryCode: "CH", city: "" }), "German");
+  assert.equal(langForLead({ countryCode: "CH", city: null }), "German");
+  assert.equal(langForLead({ countryCode: "CH" }), "German");
+  assert.equal(langForLead({ countryCode: "CH", city: "Lugano" }), LANG.IT);
+  assert.equal(LANG.CH, "German", "LANG.CH continua sendo o padrão germanófono/fallback");
+});
+
+test("langForLead: fora da Suíça o idioma continua vindo só do país", () => {
+  // Cidade francófona em país não-suíço não muda nada — a França NÃO virou mercado.
+  assert.equal(langForLead({ countryCode: "DE", city: "Genève" }), "German");
+  assert.equal(langForLead({ countryCode: "GB", city: "Lugano" }), "English");
+  assert.equal(langForLead({ countryCode: "PT", city: "Porto" }), PT_PT);
+  assert.equal(langForLead({ countryCode: "XX", city: "Nowhere" }), "English");
+  assert.equal(langForLead({ countryCode: "" }), "English");
+});
+
+test("o prospect suíço francófono não cai no inglês em NENHUM ponto do caminho", () => {
+  const url = "https://x/u/tok";
+  const lang = langForLead({ countryCode: "CH", city: "Geneva" });
+  assert.equal(lang, "French");
+
+  // 1. assunto de fallback (corpo em francês + assunto em inglês = automação denunciada)
+  assert.notEqual(
+    fallbackSubject(lang, "Acme"),
+    fallbackSubject(UNKNOWN, "Acme"),
+    'sem assunto de fallback em "French" — o assunto sairia em inglês',
+  );
+  assert.ok(fallbackSubject(lang, "Acme").includes("Acme"));
+
+  // 2. rodapé de opt-out
+  const footer = optOutFooter(lang, url, "Ana");
+  assert.notEqual(
+    footer,
+    optOutFooter(UNKNOWN, url, "Ana"),
+    'FOOTER_COPY não tem entrada própria para "French" — o rodapé cairia no inglês',
+  );
+  assert.notEqual(footer, optOutFooter("German", url, "Ana"), "o rodapé francês está saindo alemão");
+  assert.ok(footer.includes(url), "rodapé francês sem link de opt-out");
+
+  // 3. página de confirmação do unsubscribe
+  const page = unsubscribePageHtml(lang);
+  assert.notEqual(
+    page,
+    unsubscribePageHtml(UNKNOWN),
+    'sem página de unsubscribe em "French" — o prospect aterrissa em inglês',
+  );
+  assert.ok(page.includes(`<html lang="fr">`), "a página francesa precisa declarar lang=fr");
+});
+
+test("as três regiões suíças têm copy própria e distinta entre si", () => {
+  const url = "https://x/u/tok";
+  const langs = ["Geneva", "Lugano", "Zurich", "Cidade Desconhecida"].map((city) =>
+    langForLead({ countryCode: "CH", city }),
+  );
+  assert.deepEqual(langs, ["French", "Italian", "German", "German"]);
+
+  const pages = new Set(langs.map(unsubscribePageHtml));
+  assert.equal(pages.size, 3, "as três regiões precisam de páginas distintas (fr/it/de)");
+  for (const lang of langs) {
+    assert.notEqual(unsubscribePageHtml(lang), unsubscribePageHtml(UNKNOWN), `${lang} em inglês`);
+    assert.notEqual(optOutFooter(lang, url, "Ana"), optOutFooter(UNKNOWN, url, "Ana"), lang);
+  }
 });

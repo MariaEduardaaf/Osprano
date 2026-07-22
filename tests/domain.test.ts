@@ -16,7 +16,12 @@ import {
   OPT_IN_MARKETS,
   LAUNCH_MARKETS,
   SEARCHABLE_MARKETS,
+  CITIES_BY_COUNTRY,
+  swissLanguage,
+  isKnownSwissCity,
+  SWISS_DEFAULT_LANGUAGE,
   type Signals,
+  type SwissLang,
 } from "../convex/lib/domain.ts";
 
 const NONE: Signals = {
@@ -247,6 +252,181 @@ test("invariante: todo código de SEARCHABLE_MARKETS existe como chave em MARKET
       `mercado pesquisável ${cc} não existe em MARKETS`,
     );
     assert.equal(isSearchableMarket(cc), true, `${cc} deveria ser pesquisável`);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Suíça multilíngue
+// ---------------------------------------------------------------------------
+
+test("swissLanguage: as três regiões resolvem pela forma LOCAL", () => {
+  assert.equal(swissLanguage("Genève"), "fr");
+  assert.equal(swissLanguage("Zürich"), "de");
+  assert.equal(swissLanguage("Lugano"), "it");
+});
+
+test("swissLanguage: forma INGLESA também resolve (cobertura defensiva, não a origem principal)", () => {
+  // Correção de fato: o Places NÃO é a origem do nome da cidade — convex/places.ts
+  // grava `city: args.city` (a forma local escolhida no select), e o `languageCode: "en"`
+  // só afeta displayName/formattedAddress. Estas formas inglesas cobrem criação
+  // manual (texto livre) e colagem de endereço, não o fluxo de descoberta.
+  assert.equal(swissLanguage("Geneva"), "fr");
+  assert.equal(swissLanguage("Zurich"), "de");
+  assert.equal(swissLanguage("Basle"), "de");
+  assert.equal(swissLanguage("Berne"), "de");
+  assert.equal(swissLanguage("Lucerne"), "de");
+  assert.equal(swissLanguage("Neuchatel"), "fr");
+});
+
+test("swissLanguage: insensível a caixa, acento e espaço em volta", () => {
+  for (const form of ["GENEVE", "geneve", "Genève", "  genÈve  ", "GENÈVE"]) {
+    assert.equal(swissLanguage(form), "fr", `"${form}" deveria resolver para francês`);
+  }
+  assert.equal(swissLanguage("ZURICH"), "de");
+  assert.equal(swissLanguage("lugano"), "it");
+});
+
+test("swissLanguage: abreviação e separadores ('St. Gallen' vs 'Sankt Gallen' vs 'St Gallen')", () => {
+  assert.equal(swissLanguage("St. Gallen"), "de");
+  assert.equal(swissLanguage("Sankt Gallen"), "de");
+  assert.equal(swissLanguage("St Gallen"), "de");
+  assert.equal(swissLanguage("Saint Gallen"), "de");
+  assert.equal(isKnownSwissCity("Saint Gallen"), true); // reconhecida, não fallback
+  assert.equal(swissLanguage("Yverdon-les-Bains"), "fr");
+  assert.equal(swissLanguage("yverdon les bains"), "fr");
+  assert.equal(swissLanguage("La Chaux-de-Fonds"), "fr");
+});
+
+test("swissLanguage: entrada não reconhecida cai no ALEMÃO — fallback explícito", () => {
+  assert.equal(SWISS_DEFAULT_LANGUAGE, "de");
+  assert.equal(swissLanguage("Cidade Que Não Existe"), "de");
+  assert.equal(swissLanguage(""), "de");
+  assert.equal(swissLanguage("   "), "de");
+  assert.equal(swissLanguage(undefined), "de");
+  assert.equal(swissLanguage(null), "de");
+});
+
+test("swissLanguage: cidades oficialmente bilíngues seguem a maioria linguística", () => {
+  // Aproximação deliberada: Fribourg ~63% francófona, Biel/Bienne ~55% germanófona.
+  assert.equal(swissLanguage("Fribourg"), "fr");
+  assert.equal(swissLanguage("Freiburg"), "fr"); // forma alemã da MESMA cidade suíça
+  assert.equal(isKnownSwissCity("Freiburg"), true);
+  assert.equal(swissLanguage("Biel/Bienne"), "de");
+  assert.equal(swissLanguage("Biel"), "de");
+  assert.equal(swissLanguage("Bienne"), "de");
+});
+
+test("isKnownSwissCity: distingue 'reconhecida' de 'caiu no fallback'", () => {
+  // Sem isto, um alemão acidental é indistinguível de um alemão correto.
+  assert.equal(isKnownSwissCity("Zürich"), true);
+  assert.equal(isKnownSwissCity("Geneva"), true);
+  assert.equal(isKnownSwissCity("Cidade Que Não Existe"), false);
+  assert.equal(isKnownSwissCity(""), false);
+  assert.equal(isKnownSwissCity(undefined), false);
+  assert.equal(isKnownSwissCity(null), false);
+});
+
+test("invariante: toda cidade do select suíço está NO mapa (nenhuma cai no fallback por acidente)", () => {
+  // O bug que isto trava: acrescentar "Locarno" ao select e esquecer do mapa —
+  // swissLanguage devolveria "de" sem erro nenhum, e o prospect de Ticino
+  // receberia ligação, email e site em alemão.
+  const cities = CITIES_BY_COUNTRY.CH;
+  assert.ok(cities && cities.length > 0, "CH precisa ter cidades no select");
+  for (const city of cities) {
+    assert.equal(
+      isKnownSwissCity(city),
+      true,
+      `"${city}" está no select de CH mas não no mapa linguístico — cairia no fallback alemão`,
+    );
+  }
+});
+
+test("swissLanguage: subúrbio francófono da aglomeração de Genebra não cai no fallback", () => {
+  // O risco REAL: convex/foursquare.ts grava `p.location?.locality ?? args.city`.
+  // A locality vem do provedor e costuma ser a comuna, não a cidade-núcleo — sem
+  // mapa, um lead de Chêne-Bougeries (100% francófono) sairia em alemão, calado.
+  assert.equal(swissLanguage("Chêne-Bougeries"), "fr");
+  assert.equal(swissLanguage("Plan-les-Ouates"), "fr");
+  assert.equal(swissLanguage("Le Grand-Saconnex"), "fr");
+  assert.equal(isKnownSwissCity("Prégny-Chambésy"), true);
+  // Lausanne e Neuchâtel têm a mesma exposição
+  assert.equal(swissLanguage("Chavannes-près-Renens"), "fr");
+  assert.equal(swissLanguage("Peseux"), "fr");
+});
+
+test("swissLanguage: comune da aglomeração de Lugano/Locarno resolve para italiano", () => {
+  assert.equal(swissLanguage("Paradiso"), "it");
+  assert.equal(swissLanguage("Pregassona"), "it");
+  assert.equal(swissLanguage("Muralto"), "it");
+  assert.equal(isKnownSwissCity("Gambarogno"), true);
+});
+
+test("swissLanguage: subúrbio germanófono resolve para alemão POR MAPA, não por fallback", () => {
+  // A distinção importa: aqui "de" é uma resposta, não a ausência de resposta.
+  for (const city of ["Oerlikon", "Riehen", "Wallisellen", "Ostermundigen"]) {
+    assert.equal(swissLanguage(city), "de", `${city} deveria ser alemão`);
+    assert.equal(isKnownSwissCity(city), true, `${city} deveria estar no mapa, não no fallback`);
+  }
+});
+
+test("swissLanguage: exônimo alemão de cidade francófona mapeia para a REGIÃO, não para a língua do nome", () => {
+  // "Genf" é alemão, mas Genebra é francófona: o idioma sai da região, não da grafia.
+  assert.equal(swissLanguage("Genf"), "fr");
+  assert.equal(swissLanguage("Neuenburg"), "fr"); // Neuchâtel
+  assert.equal(swissLanguage("Sitten"), "fr"); // Sion
+});
+
+test("swissLanguage: exônimo italiano de cidade germanófona mapeia para alemão", () => {
+  assert.equal(swissLanguage("Zurigo"), "de");
+  assert.equal(swissLanguage("Basilea"), "de");
+  assert.equal(swissLanguage("San Gallo"), "de");
+  // e o italiano de cidade francófona continua francês
+  assert.equal(swissLanguage("Ginevra"), "fr");
+  assert.equal(swissLanguage("Losanna"), "fr");
+});
+
+test("swissLanguage: exônimo francês de cidade germanófona mapeia para alemão", () => {
+  assert.equal(swissLanguage("Bâle"), "de");
+  assert.equal(swissLanguage("Bale"), "de"); // sem acento, como chega em muito dado real
+  assert.equal(swissLanguage("Coire"), "de");
+  assert.equal(swissLanguage("Saint-Gall"), "de");
+  assert.equal(swissLanguage("Schaffhouse"), "de");
+});
+
+test("swissLanguage: sufixo de país é tolerado sem virar fallback", () => {
+  assert.equal(swissLanguage("Geneve, Switzerland"), "fr");
+  assert.equal(swissLanguage("Genève, Suisse"), "fr");
+  assert.equal(swissLanguage("Zürich, Schweiz"), "de");
+  assert.equal(swissLanguage("Lugano, Svizzera"), "it");
+  assert.equal(isKnownSwissCity("Geneve, Switzerland"), true);
+});
+
+test("swissLanguage: sufixo cantonal é tolerado sem virar fallback", () => {
+  assert.equal(swissLanguage("Neuchâtel NE"), "fr");
+  assert.equal(swissLanguage("Lausanne VD"), "fr");
+  assert.equal(swissLanguage("Carouge GE"), "fr");
+  assert.equal(swissLanguage("Lugano TI"), "it");
+  assert.equal(swissLanguage("Winterthur ZH"), "de");
+  assert.equal(swissLanguage("Neuchâtel, NE, Switzerland"), "fr"); // empilhado
+});
+
+test("normalização de sufixo não pode comer nome legítimo nem esvaziar a chave", () => {
+  // Guardas do corte de sufixo: nomes com abreviação/barra continuam intactos…
+  assert.equal(swissLanguage("St. Gallen"), "de");
+  assert.equal(swissLanguage("St. Gallen SG"), "de");
+  assert.equal(swissLanguage("Biel/Bienne"), "de");
+  assert.equal(swissLanguage("Biel/Bienne BE"), "de");
+  // …e uma entrada que é SÓ o cantão não vira string vazia casando com qualquer coisa:
+  // continua desconhecida (fallback), que é o comportamento honesto.
+  assert.equal(isKnownSwissCity("GE"), false);
+  assert.equal(swissLanguage("GE"), "de");
+});
+
+test("invariante: o select suíço cobre as três regiões linguísticas", () => {
+  // Hoje a lista era quase só germanófona; um select monolíngue esconde o bug.
+  const langs = new Set<SwissLang>(CITIES_BY_COUNTRY.CH.map((c) => swissLanguage(c)));
+  for (const lang of ["de", "fr", "it"] as const) {
+    assert.ok(langs.has(lang), `nenhuma cidade "${lang}" no select suíço`);
   }
 });
 
