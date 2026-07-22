@@ -1,7 +1,15 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { LANG, PT_PT, fallbackSubject, langForLead } from "../convex/lib/outreachAi.ts";
-import { unsubscribePageHtml, optOutFooter } from "../convex/lib/compliance.ts";
+import {
+  LANG,
+  NAME_PLACEHOLDER,
+  PT_PT,
+  callScriptSystemPrompt,
+  emailSystemPrompt,
+  fallbackSubject,
+  langForLead,
+} from "../convex/lib/outreachAi.ts";
+import { unsubscribePageHtml, optOutFooter, callerNameFrom } from "../convex/lib/compliance.ts";
 import { SEARCHABLE_MARKETS } from "../convex/lib/domain.ts";
 
 /** Idioma que garantidamente não existe nos mapas → devolve a copy de fallback (inglês). */
@@ -134,6 +142,116 @@ test("o prospect suíço francófono não cai no inglês em NENHUM ponto do cami
     'sem página de unsubscribe em "French" — o prospect aterrissa em inglês',
   );
   assert.ok(page.includes(`<html lang="fr">`), "a página francesa precisa declarar lang=fr");
+});
+
+// ---------------------------------------------------------------------------
+// Identidade de quem liga/assina: a IA NÃO inventa nome nem alega ser local
+//
+// Dois defeitos observados com a IA real, em produção:
+//   ES/Valencia → "Mi nombre es Carlos Martín ... aquí en Valencia" (nome inventado + local)
+//   CH/Genebra  → "je m'appelle [Prénom Nom] ... ici à Genève"      (placeholder estrangeiro)
+// Os prompts são strings puras — dá para travar as regras sem chamar a API.
+// ---------------------------------------------------------------------------
+
+/** Os dois prompts carregam as MESMAS regras de identidade/honestidade. */
+const PROMPTS: [string, (lang: string, identity?: { callerName?: string }) => string][] = [
+  ["callScriptSystemPrompt", callScriptSystemPrompt],
+  ["emailSystemPrompt", emailSystemPrompt],
+];
+
+test("o marcador de nome é PORTUGUÊS de propósito (impossível de ler no automático)", () => {
+  assert.equal(NAME_PLACEHOLDER, "[seu nome]");
+  assert.ok(/^\[.+\]$/.test(NAME_PLACEHOLDER), "o marcador precisa ser visivelmente um marcador");
+});
+
+for (const [nome, build] of PROMPTS) {
+  test(`${nome}: com callerName, usa EXATAMENTE esse nome e não emite marcador`, () => {
+    const prompt = build("Spanish", { callerName: "Duda" });
+    assert.ok(prompt.includes('"Duda"'), "o nome real precisa entrar literal no prompt");
+    assert.ok(/EXACTLY/.test(prompt), "o prompt precisa exigir o nome exato");
+    assert.ok(
+      !prompt.includes(NAME_PLACEHOLDER),
+      "com nome real, o marcador não pode aparecer — a IA escolheria entre dois",
+    );
+    assert.ok(/[Nn]ever invent any other personal name/.test(prompt));
+  });
+
+  test(`${nome}: sem callerName, emite o marcador pt-BR e proíbe inventar nome`, () => {
+    const prompt = build("French");
+    assert.ok(prompt.includes(NAME_PLACEHOLDER), "sem nome real, o marcador é obrigatório");
+    assert.ok(/NEVER invent one/.test(prompt), "o prompt precisa proibir inventar um nome");
+    assert.ok(/EVERY output field/.test(prompt), "o marcador vale nos DOIS campos de saída");
+    // As formas que a IA real emitiu/inventou ficam proibidas por nome.
+    for (const ruim of ["[Your name]", "[Prénom Nom]", "[Nombre]", "Carlos Martín"]) {
+      assert.ok(prompt.includes(ruim), `o prompt precisa vetar explicitamente ${ruim}`);
+    }
+    // Chamada sem identidade e com identidade vazia são o mesmo caso.
+    assert.equal(build("French", {}), prompt);
+    assert.equal(build("French", { callerName: "   " }), prompt, "nome só de espaço = sem nome");
+  });
+
+  test(`${nome}: proíbe alegar localidade/nacionalidade em qualquer variante`, () => {
+    for (const identity of [undefined, { callerName: "Duda" }]) {
+      const prompt = build("Spanish", identity);
+      assert.ok(/REMOTE, foreign/.test(prompt), "o prompt precisa declarar que a pessoa é remota");
+      assert.ok(/NEVER claim to be local/.test(prompt));
+      assert.ok(prompt.includes('"here in <city>"'), "a frase-problema precisa estar vetada");
+      // Exatamente as construções que saíram na IA real (ES e FR).
+      assert.ok(prompt.includes('"aquí en <city>"') && prompt.includes('"ici à <city>"'));
+      assert.ok(/NEVER claim a nationality/.test(prompt));
+      assert.ok(/never been there/.test(prompt), "nunca esteve no país do prospect");
+      assert.ok(/walked past, visited, eaten at/.test(prompt), "não conhece o estabelecimento");
+    }
+  });
+
+  test(`${nome}: proíbe inventar fatos não fornecidos, e diz o que PODE afirmar`, () => {
+    const prompt = build("Italian", { callerName: "Duda" });
+    assert.ok(/NEVER invent any fact you were not given/.test(prompt));
+    for (const fato of ["years of experience", "portfolio", "awards", "referred by anyone"]) {
+      assert.ok(prompt.includes(fato), `o prompt precisa vetar inventar ${fato}`);
+    }
+    assert.ok(/do not guess a plausible one/.test(prompt), "sem preencher lacuna com plausível");
+    assert.ok(
+      /may state ONLY what the (caller|sender) does/.test(prompt),
+      "o prompt precisa listar o que É permitido afirmar",
+    );
+  });
+
+  test(`${nome}: o idioma do prospect continua entrando cru no prompt`, () => {
+    for (const cc of SEARCHABLE_MARKETS) {
+      const lang = LANG[cc];
+      assert.ok(build(lang).includes(lang), `${cc}: prompt sem o idioma do prospect`);
+    }
+    assert.ok(build(PT_PT).includes("pt-PT"), "PT continua qualificado como europeu");
+  });
+}
+
+test("callScriptSystemPrompt: a tradução pt-BR e o papel de 'caller' seguem intactos", () => {
+  const prompt = callScriptSystemPrompt("German", { callerName: "Duda" });
+  assert.ok(/Brazilian\s+Portuguese \(pt-BR\)/.test(prompt), "a tradução da usuária é pt-BR");
+  assert.ok(/identifying the caller BY NAME/.test(prompt));
+  assert.ok(/permission to send it by email or WhatsApp/.test(prompt), "o fecho de consentimento");
+  assert.ok(prompt.includes(`"script" stays in German`), "script no idioma do prospect");
+});
+
+test("emailSystemPrompt: o corpo se identifica pelo nome e mantém o opt-out", () => {
+  const prompt = emailSystemPrompt("Dutch");
+  assert.ok(/identify the sender by name/.test(prompt));
+  assert.ok(/one-line opt-out/.test(prompt), "o corpo continua exigindo opt-out");
+  assert.ok(/ENTIRE email \(subject included\) in Dutch/.test(prompt));
+});
+
+test("callerNameFrom: só um nome HUMANO chega ao prompt (email cru vira marcador)", () => {
+  assert.equal(callerNameFrom("Duda <duda@osprano.com>"), "Duda");
+  assert.equal(callerNameFrom("  Team Osprano  <hi@osprano.com> "), "Team Osprano");
+  // Sem display name o RESEND_FROM é um endereço: dizer isso em voz alta como "meu nome"
+  // é pior que o marcador — então vira undefined e o prompt cai no `[seu nome]`.
+  assert.equal(callerNameFrom("contato@osprano.com"), undefined);
+  assert.equal(callerNameFrom("<contato@osprano.com>"), undefined);
+  assert.equal(callerNameFrom(""), undefined);
+  assert.equal(callerNameFrom("   "), undefined);
+  assert.equal(callerNameFrom(undefined), undefined);
+  assert.equal(callerNameFrom(null), undefined);
 });
 
 test("as três regiões suíças têm copy própria e distinta entre si", () => {

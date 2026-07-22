@@ -93,19 +93,139 @@ const SIGNAL_TEXT: Record<keyof Signals, string> = {
   sparseProfile: "their Google Business profile is incomplete",
 };
 
+/**
+ * Marcador para o nome de quem liga/assina quando o deployment não expõe um nome real.
+ *
+ * Em PORTUGUÊS de propósito, mesmo dentro de um script em espanhol ou francês: a usuária
+ * lê em voz alta um idioma que não fala, e um `[Prénom Nom]` francês ou um `[Your name]`
+ * inglês passam batidos no meio do texto (o modelo já emitiu os dois). Uma palavra que ela
+ * ENTENDE, no meio do que ela não entende, é impossível de ler no automático — é esse o
+ * ponto. A alternativa que estava em produção era pior: o modelo inventava um nome
+ * completo plausível ("Carlos Martín") e ela se apresentaria com identidade falsa.
+ */
+export const NAME_PLACEHOLDER = "[seu nome]";
+
+/** Identidade de quem fala/assina. Objeto (e não parâmetro posicional) porque `writeEmail`
+ *  já leva 3 posicionais e a regra tende a crescer (telefone/empresa/assinatura). */
+export interface OutreachIdentity {
+  /** Nome real de quem liga/assina. Ausente → o prompt emite `NAME_PLACEHOLDER`. */
+  callerName?: string;
+}
+
+/**
+ * Regras de IDENTIDADE do prompt: ou o nome exato, ou o marcador — nunca um nome inventado.
+ * `role` entra na frase ("caller"/"sender") só para o texto ficar natural nos dois prompts.
+ */
+function identityRules(role: "caller" | "sender", callerName?: string): string {
+  const name = callerName?.trim();
+  if (name) {
+    return (
+      `IDENTITY — the ${role}'s name is EXACTLY "${name}". ` +
+      `Use that exact spelling when introducing the ${role}. Do NOT translate it, localize it, ` +
+      `abbreviate it, add a surname to it, or replace it with any other name. ` +
+      `Never invent any other personal name anywhere in the output. `
+    );
+  }
+  return (
+    `IDENTITY — you were NOT told the ${role}'s name and you must NEVER invent one. ` +
+    `Wherever the name would go, output the literal placeholder ${NAME_PLACEHOLDER} — exactly ` +
+    `those characters, in Brazilian Portuguese, in EVERY output field, even though the rest of the ` +
+    `text is in another language. Do NOT translate, localize or adapt the placeholder, and do NOT ` +
+    `substitute any other bracketed form for it (no "[Your name]", "[Prénom Nom]", "[Nombre]", ` +
+    `"[Name]", "XXX", initials, or a made-up name like "Carlos Martín"). ` +
+    `The human reader replaces ${NAME_PLACEHOLDER} by hand before using the text. `
+  );
+}
+
+/**
+ * Regras de HONESTIDADE do prompt (as mesmas para ligação e email).
+ *
+ * Quem prospecta é brasileira, remota, e nunca esteve no país do prospect. O modelo, sem
+ * esta trava, escrevia "aquí en Valencia" / "ici à Genève": uma afirmação factual FALSA,
+ * dita ao prospect, no idioma que ela não fala — ela não teria como notar.
+ */
+function honestyRules(role: "caller" | "sender", lang: string): string {
+  return (
+    `HARD FACTUAL LIMITS — the ${role} is a REMOTE, foreign, independent web professional. ` +
+    `They are NOT in the prospect's city, region or country, have never been there, and have only ` +
+    `seen the business's ONLINE profile. Therefore: ` +
+    `(a) NEVER claim to be local, nearby, "here in <city>", based in the city/region/country, ` +
+    `to have a local office, or to be part of the local community — and never the ${lang} ` +
+    `equivalent of any of that (e.g. "aquí en <city>", "ici à <city>", "hier in <city>", ` +
+    `"qui a <city>"); ` +
+    `(b) NEVER claim a nationality, nor to be a native speaker of ${lang}; ` +
+    `(c) NEVER claim to know the area, to have walked past, visited, eaten at, shopped at, or been ` +
+    `a customer of this business, nor to have been referred by anyone; ` +
+    `(d) NEVER invent any fact you were not given: years of experience, number or names of clients, ` +
+    `clients in that country, portfolio, agency/company name, team, awards, prices, or availability; ` +
+    `(e) you may state ONLY what the ${role} does (independent web professional), what was observed ` +
+    `on the business's public online presence, and the free preview site already built for them. ` +
+    `If a detail was not given to you, leave it out — do not guess a plausible one. `
+  );
+}
+
 interface AnthropicResponse {
   content?: { type: string; text?: string }[];
+}
+
+/**
+ * System prompt do email — puro e exportado para ser testável sem chamar a API.
+ * `lang` é o idioma do PROSPECT (`langForLead`).
+ */
+export function emailSystemPrompt(lang: string, identity: OutreachIdentity = {}): string {
+  return (
+    `You write SHORT, honest, compliant B2B cold emails for an independent web ` +
+    `professional reaching a local business about their online presence. ` +
+    `Write the ENTIRE email (subject included) in ${lang} — the prospect's language, ` +
+    `never a related variety of it. Max ~120 words. Professional, no hype, no fake urgency. ` +
+    identityRules("sender", identity.callerName) +
+    honestyRules("sender", lang) +
+    `The email MUST: (1) identify the sender by name (see IDENTITY) as an independent web professional, ` +
+    `(2) briefly say why you're contacting them (relevant to their business), ` +
+    `(3) name the SPECIFIC gap noticed, (4) include the preview link exactly once, ` +
+    `(5) end with a one-line opt-out (e.g. reply "stop" to not be contacted again). ` +
+    `Return STRICT JSON only: {"subject": string, "body": string}. No markdown.`
+  );
+}
+
+/**
+ * System prompt do script de ligação — puro e exportado para ser testável sem chamar a API.
+ * `lang` é o idioma do PROSPECT; a tradução sai sempre em pt-BR (a usuária).
+ */
+export function callScriptSystemPrompt(lang: string, identity: OutreachIdentity = {}): string {
+  return (
+    `You write a SHORT spoken cold-call opening script (~150 words) for an independent web ` +
+    `professional calling a local business about their online presence, in a market where cold ` +
+    `EMAIL is not legally usable without prior consent but a B2B phone call is. ` +
+    `The two output fields have two DIFFERENT audiences and two DIFFERENT languages — never mix them: ` +
+    `"script" is what the caller says OUT LOUD to the prospect and MUST be written in ${lang} ` +
+    `(the prospect's language, not a related variety of it); "translation" is a faithful Brazilian ` +
+    `Portuguese (pt-BR) rendering of that same script, written only so the Brazilian caller understands ` +
+    `what they are reading aloud. Even when the prospect's language is itself a form of Portuguese, ` +
+    `"script" stays in ${lang} and only "translation" is pt-BR. ` +
+    identityRules("caller", identity.callerName) +
+    honestyRules("caller", lang) +
+    `The call MUST: (1) open by identifying the caller BY NAME (see IDENTITY), (2) name the SPECIFIC gap ` +
+    `noticed, (3) mention a free preview website already built for them, (4) end by EXPLICITLY asking ` +
+    `for permission to send it by email or WhatsApp. ` +
+    `Return STRICT JSON only: {"script": string, "translation": string}. No markdown.`
+  );
 }
 
 /**
  * Draft a short, compliant B2B cold email via Claude. Compliant-by-design:
  * sender identity, relevance-to-business, the specific gap, the preview link,
  * and a one-line opt-out. Returns { subject, body }.
+ *
+ * `identity.callerName` = quem assina. O rodapé de opt-out já carrega a identidade por
+ * CÓDIGO (`optOutFooter`), mas o CORPO é escrito pela IA — sem esta trava o modelo
+ * inventava nome e alegava ser local, exatamente como no script de ligação.
  */
 export async function writeEmail(
   apiKey: string,
   lead: Doc<"leads">,
   previewUrl: string,
+  identity: OutreachIdentity = {},
 ): Promise<{ subject: string; body: string }> {
   const lang = langForLead(lead);
   const s = lead.signals;
@@ -113,16 +233,7 @@ export async function writeEmail(
     ? (Object.keys(SIGNAL_TEXT) as (keyof Signals)[]).filter((k) => s[k]).map((k) => SIGNAL_TEXT[k])
     : [];
 
-  const system =
-    `You write SHORT, honest, compliant B2B cold emails for an independent web ` +
-    `professional reaching a local business about their online presence. ` +
-    `Write the ENTIRE email (subject included) in ${lang} — the prospect's language, ` +
-    `never a related variety of it. Max ~120 words. Professional, no hype, no fake urgency. ` +
-    `The email MUST: (1) identify the sender as an independent web professional, ` +
-    `(2) briefly say why you're contacting them (relevant to their business), ` +
-    `(3) name the SPECIFIC gap noticed, (4) include the preview link exactly once, ` +
-    `(5) end with a one-line opt-out (e.g. reply "stop" to not be contacted again). ` +
-    `Return STRICT JSON only: {"subject": string, "body": string}. No markdown.`;
+  const system = emailSystemPrompt(lang, identity);
 
   const user =
     `Business: ${lead.name}` +
@@ -168,10 +279,14 @@ export async function writeEmail(
 /**
  * Gera um script de ligação B2B curto (~150 palavras) no idioma do mercado + tradução pt-BR.
  * O fecho pede EXPLICITAMENTE consentimento para enviar a prévia por email/WhatsApp.
+ *
+ * `identity.callerName` é o nome que a usuária dirá em voz alta. Sem ele o prompt emite
+ * `NAME_PLACEHOLDER` nos dois campos — nunca um nome inventado pelo modelo.
  */
 export async function writeCallScript(
   apiKey: string,
   lead: Doc<"leads">,
+  identity: OutreachIdentity = {},
 ): Promise<{ script: string; translation: string }> {
   const lang = langForLead(lead);
   const s = lead.signals;
@@ -179,20 +294,7 @@ export async function writeCallScript(
     ? (Object.keys(SIGNAL_TEXT) as (keyof Signals)[]).filter((k) => s[k]).map((k) => SIGNAL_TEXT[k])
     : [];
 
-  const system =
-    `You write a SHORT spoken cold-call opening script (~150 words) for an independent web ` +
-    `professional calling a local business about their online presence, in a market where cold ` +
-    `EMAIL is not legally usable without prior consent but a B2B phone call is. ` +
-    `The two output fields have two DIFFERENT audiences and two DIFFERENT languages — never mix them: ` +
-    `"script" is what the caller says OUT LOUD to the prospect and MUST be written in ${lang} ` +
-    `(the prospect's language, not a related variety of it); "translation" is a faithful Brazilian ` +
-    `Portuguese (pt-BR) rendering of that same script, written only so the Brazilian caller understands ` +
-    `what they are reading aloud. Even when the prospect's language is itself a form of Portuguese, ` +
-    `"script" stays in ${lang} and only "translation" is pt-BR. ` +
-    `The call MUST: (1) open by identifying the caller, (2) name the SPECIFIC gap ` +
-    `noticed, (3) mention a free preview website already built for them, (4) end by EXPLICITLY asking ` +
-    `for permission to send it by email or WhatsApp. ` +
-    `Return STRICT JSON only: {"script": string, "translation": string}. No markdown.`;
+  const system = callScriptSystemPrompt(lang, identity);
 
   const user =
     `Business: ${lead.name}` +

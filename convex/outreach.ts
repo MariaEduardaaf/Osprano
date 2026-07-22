@@ -6,7 +6,7 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { requireOrgId } from "./model/tenant";
 import { writeEmail, writeCallScript, langForLead } from "./lib/outreachAi";
 import { normalizeEmail, canContactByEmail } from "./lib/domain";
-import { optOutFooter, senderIdentityFrom } from "./lib/compliance";
+import { optOutFooter, senderIdentityFrom, callerNameFrom } from "./lib/compliance";
 import { addSuppression, isEmailSuppressed } from "./suppressions";
 
 /**
@@ -210,7 +210,12 @@ export const draft = action({
 
     const token = await ctx.runMutation(internal.previews.ensureForLead, { leadId });
     const appUrl = process.env.APP_URL ?? "http://localhost:3000";
-    const email = await writeEmail(key, lead, `${appUrl}/p/${token}`);
+    // Mesma identidade do rodapé de opt-out (RESEND_FROM), agora também no CORPO: sem
+    // isso a IA inventava quem assina. Sem display name no RESEND_FROM → undefined, e o
+    // prompt emite o marcador `[seu nome]` em vez de um nome falso.
+    const email = await writeEmail(key, lead, `${appUrl}/p/${token}`, {
+      callerName: callerNameFrom(process.env.RESEND_FROM),
+    });
 
     await ctx.runMutation(internal.outreach.upsertDraft, {
       orgId,
@@ -238,7 +243,13 @@ export const callScript = action({
     const key = process.env.ANTHROPIC_API_KEY;
     if (!key) throw new Error("ANTHROPIC_API_KEY não configurada no deployment Convex.");
 
-    const result = await writeCallScript(key, lead);
+    // Quem liga se apresenta com o nome do RESEND_FROM (mesma fonte de verdade da
+    // identidade do email). Ausente/sem display name → o script sai com `[seu nome]`,
+    // que a usuária troca antes de discar. NUNCA um nome inventado pelo modelo: ela lê
+    // o script em voz alta num idioma que não fala e se apresentaria como outra pessoa.
+    const result = await writeCallScript(key, lead, {
+      callerName: callerNameFrom(process.env.RESEND_FROM),
+    });
     await ctx.runMutation(internal.leads.setCallScript, {
       leadId,
       script: result.script,

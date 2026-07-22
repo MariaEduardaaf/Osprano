@@ -158,3 +158,21 @@ export function senderIdentityFrom(resendFrom: string): string {
   const m = trimmed.match(/^(.+?)\s*<.+>$/);
   return (m ? m[1] : trimmed).trim();
 }
+
+/**
+ * Nome HUMANO de quem fala/assina, para a IA se APRESENTAR com ele ("meu nome é ...").
+ *
+ * Não é o mesmo caso de uso de `senderIdentityFrom`: lá o valor entra na copy do rodapé,
+ * onde "Enviado por contato@osprano.com" é feio mas correto. Aqui o valor é LIDO EM VOZ
+ * ALTA numa ligação ou vira a assinatura do corpo do email — um endereço de email no
+ * lugar do nome é pior que não ter nome nenhum. Por isso: RESEND_FROM sem display name
+ * (ou vazio/ausente) devolve `undefined`, e o prompt cai no marcador `[seu nome]`, que a
+ * usuária substitui antes de ligar.
+ */
+export function callerNameFrom(resendFrom: string | null | undefined): string | undefined {
+  if (!resendFrom) return undefined;
+  const identity = senderIdentityFrom(resendFrom);
+  // `senderIdentityFrom` devolve o email cru quando não há display name.
+  if (!identity || identity.includes("@")) return undefined;
+  return identity;
+}
