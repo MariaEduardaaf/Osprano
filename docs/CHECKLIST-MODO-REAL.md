@@ -9,7 +9,7 @@
 ## 0. Antes de começar
 
 - [ ] O app roda em modo demo (`pnpm dev` + seed) — nada a desfazer ainda; o demo será desligado no passo 6.
-- [ ] Você está logada no terminal na pasta do projeto (`~/Developer/sitescout`).
+- [ ] Você está logada no terminal na pasta do projeto (`~/Developer/mine/osprano`).
 
 ## 1. Convex (banco + backend) — grátis
 
@@ -93,6 +93,27 @@ O deployment atual é **local** (só existe na sua máquina). Pra uso real, crie
 5. [ ] Aba Abordagem → **Escrever com IA** → conferir que o email cita a dor certa e tem o rodapé de opt-out → **Copiar** → enviar do seu email → **Marcar enviado**.
 6. [ ] Outbox → quando alguém responder, **Respondeu**; se pedir pra parar, **Pediu opt-out**.
 7. [ ] Dashboard → funil refletindo tudo.
+
+### 8.1 Modo opt-in (ligação primeiro) — mercados onde cold email é ilegal
+
+Espanha, Itália, Portugal, Alemanha, Dinamarca e Suíça. Lá o cold email é
+ilegal, mas **ligar para um número comercial B2B não é** — então o fluxo é
+ligar primeiro e o email só destrava depois do consentimento.
+
+1. [ ] **Leads** → aba **Ligação primeiro** → 🇪🇸 Espanha · Madrid · Restaurantes → os cards aparecem com **Ligar** em destaque, sem ação de email.
+2. [ ] Conferir a faixa discreta de **validação jurídica pendente** com o nome do país.
+3. [ ] **Script de ligação** num card → sai em espanhol com a **tradução pt-BR ao lado** (você lê a tradução, o prospect ouve o original) e termina pedindo permissão pra mandar a prévia.
+4. [ ] **Gerar preview** ANTES de ligar — é a prévia que o script promete ao prospect.
+5. [ ] Ligar de verdade. Se a pessoa autorizar, **Registrar consentimento** → origem "Ligação" + nota do que foi dito.
+6. [ ] Confirmar que o card passa a mostrar **✓ Consentimento registrado** e que, no CRM, a aba Abordagem agora deixa escrever o email.
+7. [ ] Teste do guardrail: tentar escrever/enviar email para um lead espanhol **sem** consentimento → precisa dar erro ("registre o consentimento do prospect antes de enviar email"). Isso é garantido no servidor, não só na tela.
+
+> **O que o prospect recebe no idioma dele:** script de ligação, email, rodapé
+> de opt-out, página de cancelamento e a prévia do site. Nada disso sai em
+> português — só a tradução do script, que é para você.
+>
+> **Ressalva da Suíça:** hoje tudo sai em alemão, inclusive para Genebra e
+> Lugano. Se for prospectar a parte francófona ou italófona, avise antes.
 
 ---
 

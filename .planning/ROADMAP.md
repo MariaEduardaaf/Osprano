@@ -13,7 +13,7 @@ Este milestone leva o Osprano — SaaS de prospecção e venda de sites para o m
 - [x] **Phase 1: Integridade de Billing e Segurança do Modo Demo** - Quota não pode ficar negativa nem ser cobrada além do entregue; plano reflete o Stripe real; modo demo é inerte em produção (completed 2026-07-11)
 - [x] **Phase 2: Compliance de Email e WhatsApp** - Supressão, unsubscribe e opt-out garantidos por código; WhatsApp só com opt-in registrado (completed 2026-07-11)
 - [x] **Phase 3: Tracking, Composer e Localização** - Funil reflete abertura real do prospect, resposta manual funciona, composer é fonte de verdade do envio, preview localizado por mercado (completed 2026-07-11)
-- [ ] **Phase 4: Modo opt-in (ligação-primeiro)** - Prospecção compliant em mercados opt-in (ES/IT/PT/DE/DK/CH): aba "Ligação primeiro", script de ligação por IA, consentimento destrava email — guardrail server-side
+- [x] **Phase 4: Modo opt-in (ligação-primeiro)** - Prospecção compliant em mercados opt-in (ES/IT/PT/DE/DK/CH): aba "Ligação primeiro", script de ligação por IA, consentimento destrava email — guardrail server-side (completed 2026-07-22)
 
 ## Phase Details
 
@@ -45,10 +45,10 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Fundação: schema (suppressions/campos/índices) + helpers puros (normalizeEmail, hasWaOptIn, optOutFooter, senderIdentityFrom) + módulo suppressions (COMP-01/02/03/04)
-- [ ] 02-02-PLAN.md — Compliance no envio: supressão em draft/send, unsubscribeToken + rodapé de opt-out, headers List-Unsubscribe no Resend, outreach.suppress (COMP-01/02/03)
-- [ ] 02-03-PLAN.md — Endpoint público de unsubscribe GET/POST no httpRouter (COMP-02)
-- [ ] 02-04-PLAN.md — Opt-in de WhatsApp: recordWaOptIn + gate por waOptInAt + UI de registro (COMP-04)
+- [x] 02-01-PLAN.md — Fundação: schema (suppressions/campos/índices) + helpers puros (normalizeEmail, hasWaOptIn, optOutFooter, senderIdentityFrom) + módulo suppressions (COMP-01/02/03/04)
+- [x] 02-02-PLAN.md — Compliance no envio: supressão em draft/send, unsubscribeToken + rodapé de opt-out, headers List-Unsubscribe no Resend, outreach.suppress (COMP-01/02/03)
+- [x] 02-03-PLAN.md — Endpoint público de unsubscribe GET/POST no httpRouter (COMP-02)
+- [x] 02-04-PLAN.md — Opt-in de WhatsApp: recordWaOptIn + gate por waOptInAt + UI de registro (COMP-04)
 
 ### Phase 3: Tracking, Composer e Localização
 **Goal**: O funil reflete abertura real do prospect (não do próprio vendedor), o usuário consegue marcar resposta manualmente, o composer é a fonte de verdade do que é enviado, e o preview de site é renderizado no idioma do mercado do lead.
@@ -63,22 +63,22 @@ Plans:
 **Plans**: 4 plans (wave 1: 03-01, 03-02, 03-03 em paralelo · wave 2: 03-04)
 
 Plans:
-- [ ] 03-01-PLAN.md — Guarda de self-open no recordOpen (TRCK-01)
-- [ ] 03-02-PLAN.md — Dicionário i18n do preview (en/nl/sv/no) + migração de preview-site (L10N-01)
-- [ ] 03-03-PLAN.md — Backend: repliedAt + markReplied + updateDraft + fix activityAt na outbox (TRCK-02, OUTR-01)
-- [ ] 03-04-PLAN.md — UI: composer persistente/pré-preenchido + botões respondeu/opt-out + ação na outbox (TRCK-02, OUTR-01)
+- [x] 03-01-PLAN.md — Guarda de self-open no recordOpen (TRCK-01)
+- [x] 03-02-PLAN.md — Dicionário i18n do preview (en/nl/sv/no) + migração de preview-site (L10N-01)
+- [x] 03-03-PLAN.md — Backend: repliedAt + markReplied + updateDraft + fix activityAt na outbox (TRCK-02, OUTR-01)
+- [x] 03-04-PLAN.md — UI: composer persistente/pré-preenchido + botões respondeu/opt-out + ação na outbox (TRCK-02, OUTR-01)
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3
+Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Integridade de Billing e Segurança do Modo Demo | 3/3 | Complete    | 2026-07-11 |
 | 2. Compliance de Email e WhatsApp | 4/4 | Complete    | 2026-07-11 |
 | 3. Tracking, Composer e Localização | 4/4 | Complete    | 2026-07-11 |
-| 4. Modo opt-in (ligação-primeiro) | 0/6 | Planned     | — |
+| 4. Modo opt-in (ligação-primeiro) | 6/6 | Complete    | 2026-07-22 |
 
 ### Phase 4: Modo opt-in (ligação-primeiro) para mercados onde cold email é ilegal
 
@@ -94,9 +94,9 @@ Phases execute in numeric order: 1 → 2 → 3
 **Plans:** 6 plans (wave 1: 04-01 · wave 2: 04-02, 04-03, 04-04 em paralelo · wave 3: 04-05 · wave 4: 04-06)
 
 Plans:
-- [ ] 04-01-PLAN.md — Fundação: domain.ts (OPT_IN_MARKETS/SEARCHABLE_MARKETS/isSearchableMarket/canContactByEmail/hasWaOptIn generalizado/MARKETS.PT+legalReview/cidades) + schema (contactOptIn*/callScript*/evento contact_opt_in) + testes puros (OPTIN-01, OPTIN-04, OPTIN-06)
-- [ ] 04-02-PLAN.md — Descoberta: gate places.ts/foursquare.ts via isSearchableMarket (OPTIN-01)
-- [ ] 04-03-PLAN.md — Backend: recordContactOptIn + setCallScript (leads.ts), writeCallScript+LANG (outreachAi.ts), guardrail draft/send via canContactByEmail + action callScript (outreach.ts) (OPTIN-03, OPTIN-04, OPTIN-05)
-- [ ] 04-04-PLAN.md — Rodapé de opt-out localizado (compliance.ts FOOTER_COPY es/it/pt/de/da) (OPTIN-04)
-- [ ] 04-05-PLAN.md — UI: card variant "call" (Ligar/Script/Consentimento, sem cold email) + call-script-panel + contact-opt-in-button (OPTIN-02, OPTIN-03, OPTIN-04)
-- [ ] 04-06-PLAN.md — UI: abas Email/Ligação primeiro + filtro/select por regime + banner de validação jurídica + banner do CRM via canContactByEmail (OPTIN-02, OPTIN-06)
+- [x] 04-01-PLAN.md — Fundação: domain.ts (OPT_IN_MARKETS/SEARCHABLE_MARKETS/isSearchableMarket/canContactByEmail/hasWaOptIn generalizado/MARKETS.PT+legalReview/cidades) + schema (contactOptIn*/callScript*/evento contact_opt_in) + testes puros (OPTIN-01, OPTIN-04, OPTIN-06)
+- [x] 04-02-PLAN.md — Descoberta: gate places.ts/foursquare.ts via isSearchableMarket (OPTIN-01)
+- [x] 04-03-PLAN.md — Backend: recordContactOptIn + setCallScript (leads.ts), writeCallScript+LANG (outreachAi.ts), guardrail draft/send via canContactByEmail + action callScript (outreach.ts) (OPTIN-03, OPTIN-04, OPTIN-05)
+- [x] 04-04-PLAN.md — Rodapé de opt-out localizado (compliance.ts FOOTER_COPY es/it/pt/de/da) (OPTIN-04)
+- [x] 04-05-PLAN.md — UI: card variant "call" (Ligar/Script/Consentimento, sem cold email) + call-script-panel + contact-opt-in-button (OPTIN-02, OPTIN-03, OPTIN-04)
+- [x] 04-06-PLAN.md — UI: abas Email/Ligação primeiro + filtro/select por regime + banner de validação jurídica + banner do CRM via canContactByEmail (OPTIN-02, OPTIN-06)

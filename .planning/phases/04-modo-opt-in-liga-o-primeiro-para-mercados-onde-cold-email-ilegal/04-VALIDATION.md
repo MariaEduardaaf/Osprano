@@ -1,7 +1,7 @@
 ---
 phase: 4
 slug: modo-opt-in-liga-o-primeiro-para-mercados-onde-cold-email-ilegal
-status: draft
+status: complete
 nyquist_compliant: true
 wave_0_complete: true
 created: 2026-07-11
@@ -38,18 +38,18 @@ created: 2026-07-11
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 04-01-T1 | 04-01 | 1 | OPTIN-01, OPTIN-04, OPTIN-06 | unit (isSearchableMarket, canContactByEmail, hasWaOptIn, MARKETS.PT, legalReview) + regressão isEmailable | `pnpm test` + `grep -c "isLaunchMarket(input.countryCode)"` | ✅ | ⬜ pending |
-| 04-01-T2 | 04-01 | 1 | OPTIN-03, OPTIN-04 | schema/typecheck + grep dos campos | `npx convex codegen && pnpm typecheck` + grep | ✅ | ⬜ pending |
-| 04-02-T1 | 04-02 | 2 | OPTIN-01 | grep-negativo (isLaunchMarket ausente) + grep-positivo (isSearchableMarket) + typecheck | `grep -c "isLaunchMarket"` + `pnpm typecheck` | ✅ | ⬜ pending |
-| 04-03-T1 | 04-03 | 2 | OPTIN-04, OPTIN-03 | typecheck + grep (recordContactOptIn, setCallScript, contact_opt_in) | `npx convex codegen && pnpm typecheck` + grep | ✅ | ⬜ pending |
-| 04-03-T2 | 04-03 | 2 | OPTIN-03 | unit (LANG cobre OPT_IN_MARKETS) + grep (writeCallScript) | `pnpm test` + grep | ✅ | ⬜ pending |
-| 04-03-T3 | 04-03 | 2 | OPTIN-05, OPTIN-03 | grep (canContactByEmail 2×, callScript, isSuppressed 2×) + typecheck | `grep -c "canContactByEmail(lead)"` + `pnpm typecheck` | ✅ | ⬜ pending |
-| 04-04-T1 | 04-04 | 2 | OPTIN-04 | unit (optOutFooter es/it/pt/de/da) + grep | `pnpm test` + grep | ✅ | ⬜ pending |
-| 04-05-T1 | 04-05 | 3 | OPTIN-04 | typecheck + lint + grep (recordContactOptIn, vocabulário) | `pnpm typecheck && pnpm lint` + grep | ✅ | ⬜ pending |
-| 04-05-T2 | 04-05 | 3 | OPTIN-03 | typecheck + lint + grep (callScript, clipboard, Tradução) | `pnpm typecheck && pnpm lint` + grep | ✅ | ⬜ pending |
-| 04-05-T3 | 04-05 | 3 | OPTIN-02, OPTIN-03, OPTIN-04 | typecheck + lint + grep (variant, tel:, 3-estados) | `pnpm typecheck && pnpm lint` + grep | ✅ | ⬜ pending |
-| 04-06-T1 | 04-06 | 4 | OPTIN-02, OPTIN-06 | typecheck + lint + grep (tabs, variant call, OPT_IN filtro, banner) | `pnpm typecheck && pnpm lint` + grep | ✅ | ⬜ pending |
-| 04-06-T2 | 04-06 | 4 | OPTIN-02 | typecheck + lint + grep-negativo (!lead.emailable = 0) | `grep -c "!lead.emailable"` + `pnpm typecheck && pnpm lint` | ✅ | ⬜ pending |
+| 04-01-T1 | 04-01 | 1 | OPTIN-01, OPTIN-04, OPTIN-06 | unit (isSearchableMarket, canContactByEmail, hasWaOptIn, MARKETS.PT, legalReview) + regressão isEmailable | `pnpm test` + `grep -c "isLaunchMarket(input.countryCode)"` | ✅ | ✅ green |
+| 04-01-T2 | 04-01 | 1 | OPTIN-03, OPTIN-04 | schema/typecheck + grep dos campos | `npx convex codegen && pnpm typecheck` + grep | ✅ | ✅ green |
+| 04-02-T1 | 04-02 | 2 | OPTIN-01 | grep-negativo (isLaunchMarket ausente) + grep-positivo (isSearchableMarket) + typecheck | `grep -c "isLaunchMarket"` + `pnpm typecheck` | ✅ | ✅ green |
+| 04-03-T1 | 04-03 | 2 | OPTIN-04, OPTIN-03 | typecheck + grep (recordContactOptIn, setCallScript, contact_opt_in) | `npx convex codegen && pnpm typecheck` + grep | ✅ | ✅ green |
+| 04-03-T2 | 04-03 | 2 | OPTIN-03 | unit (LANG cobre OPT_IN_MARKETS) + grep (writeCallScript) | `pnpm test` + grep | ✅ | ✅ green |
+| 04-03-T3 | 04-03 | 2 | OPTIN-05, OPTIN-03 | grep (canContactByEmail 2×, callScript, isSuppressed 2×) + typecheck | `grep -c "canContactByEmail(lead)"` + `pnpm typecheck` | ✅ | ✅ green |
+| 04-04-T1 | 04-04 | 2 | OPTIN-04 | unit (optOutFooter es/it/pt/de/da) + grep | `pnpm test` + grep | ✅ | ✅ green |
+| 04-05-T1 | 04-05 | 3 | OPTIN-04 | typecheck + lint + grep (recordContactOptIn, vocabulário) | `pnpm typecheck && pnpm lint` + grep | ✅ | ✅ green |
+| 04-05-T2 | 04-05 | 3 | OPTIN-03 | typecheck + lint + grep (callScript, clipboard, Tradução) | `pnpm typecheck && pnpm lint` + grep | ✅ | ✅ green |
+| 04-05-T3 | 04-05 | 3 | OPTIN-02, OPTIN-03, OPTIN-04 | typecheck + lint + grep (variant, tel:, 3-estados) | `pnpm typecheck && pnpm lint` + grep | ✅ | ✅ green |
+| 04-06-T1 | 04-06 | 4 | OPTIN-02, OPTIN-06 | typecheck + lint + grep (tabs, variant call, OPT_IN filtro, banner) | `pnpm typecheck && pnpm lint` + grep | ✅ | ✅ green |
+| 04-06-T2 | 04-06 | 4 | OPTIN-02 | typecheck + lint + grep-negativo (!lead.emailable = 0) | `grep -c "!lead.emailable"` + `pnpm typecheck && pnpm lint` | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -84,3 +84,4 @@ Nenhuma lacuna. `tests/domain.test.ts` e `tests/compliance.test.ts` já existem 
 - [x] `nyquist_compliant: true` set in frontmatter
 
 **Approval:** ready
+**Executed:** 2026-07-22 — 12/12 tasks verdes; suíte final 69/69, tsc/lint/build limpos. Ver 04-VERIFICATION.md.

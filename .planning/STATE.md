@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: unknown
-stopped_at: Phase 4 context gathered
-last_updated: "2026-07-11T07:20:36.300Z"
+status: milestone-complete
+stopped_at: Phase 4 executada e verificada — milestone v1.0 completo
+last_updated: "2026-07-22T00:00:00.000Z"
 progress:
   total_phases: 4
-  completed_phases: 3
-  total_plans: 11
-  completed_plans: 11
+  completed_phases: 4
+  total_plans: 17
+  completed_plans: 17
 ---
 
 # Project State
@@ -19,12 +19,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-11)
 
 **Core value:** O usuário prospecta e aborda negócios europeus sem risco legal — compliance garantido por código, contagem de plano/billing íntegra.
-**Current focus:** Phase 3 — Tracking, Composer e Localização
+**Current focus:** nenhum — as 4 fases do milestone v1.0 estão completas e verificadas
 
 ## Current Position
 
-Phase: 3 (Tracking, Composer e Localização) — COMPLETE
-Plan: 4 of 4
+Phase: 4 (Modo opt-in ligação-primeiro) — COMPLETE
+Plan: 6 of 6
+
+Todos os 18 requisitos v1 estão fechados. Próximo passo é operacional, não de
+código: ligar o deployment real seguindo `docs/CHECKLIST-MODO-REAL.md`.
+O backlog v2 (SCAL-01..03, GDPR-01/02, BILL-04/05) segue em REQUIREMENTS.md.
 
 ## Performance Metrics
 
@@ -93,15 +97,29 @@ Recent decisions affecting current work:
 
 None yet.
 
+- [Phase 4]: 04-01: `isEmailable` NÃO muda — quem abre a descoberta é `isSearchableMarket`; emailabilidade segue governada por `isLaunchMarket`
+- [Phase 4]: 04-03: `canContactByEmail` é o ÚNICO predicado de "abordável" — leitura crua de `lead.emailable` para decidir abordabilidade é bug (achado em 6 telas na verificação)
+- [Phase 4]: 04-03: guardrail aplicado nos TRÊS caminhos de "email enviado" (draft, send, markSent) + upsertDraft/updateDraft por defesa em profundidade
+- [Phase 4]: 04-03: `callScript` NÃO checa supressão de propósito — supressão é indexada por email; ligação é o canal que resta quando o email está bloqueado
+- [Phase 4]: verificação: o slot `action` do card não pode ser gateado por consentimento — na página de Leads ele é a geração de PRÉVIA, que o script de ligação promete ao prospect
+- [Phase 4]: OPTIN-06: o aviso jurídico deriva de `MARKETS[país].legalReview`, não da aba — senão validar um país não muda nada
+- [Phase 4]: i18n: `LANG.PT` é "European Portuguese (pt-PT)" e o prompt separa as audiências — o prospect português lê pt-PT, só a tradução da usuária é pt-BR
+- [Phase 4]: bug pré-existente: `outreach` é compartilhada com o WhatsApp; toda leitura por `by_lead` precisa filtrar `channel === "email"`
+
 ### Blockers/Concerns
 
 [Issues that affect future work]
 
-- Phase 2 e Phase 3 tocam a mesma mutation `send` em `convex/outreach.ts` (Phase 2 injeta rodapé de opt-out; Phase 3 troca a fonte do subject/body para o composer e adiciona marcação manual de "respondeu"). Executar Phase 2 antes de Phase 3 evita retrabalho — já refletido na ordem do roadmap.
-- Phase 1 (BILL-03) e Phase 2 (COMP-02) tocam ambas `convex/http.ts` (webhook Stripe e endpoint de unsubscribe). Não é dependência técnica dura, mas a ordem sequencial evita conflitos.
+- RESOLVIDO (fases 2-3 executadas em ordem): Phase 2 e Phase 3 tocam a mesma mutation `send` em `convex/outreach.ts` (Phase 2 injeta rodapé de opt-out; Phase 3 troca a fonte do subject/body para o composer e adiciona marcação manual de "respondeu"). Executar Phase 2 antes de Phase 3 evita retrabalho — já refletido na ordem do roadmap.
+- RESOLVIDO (executadas em ordem): Phase 1 (BILL-03) e Phase 2 (COMP-02) tocam ambas `convex/http.ts` (webhook Stripe e endpoint de unsubscribe). Não é dependência técnica dura, mas a ordem sequencial evita conflitos.
 
 ## Session Continuity
 
-Last session: 2026-07-11T07:20:36.296Z
-Stopped at: Phase 4 context gathered
-Resume file: .planning/phases/04-modo-opt-in-liga-o-primeiro-para-mercados-onde-cold-email-ilegal/04-CONTEXT.md
+Last session: 2026-07-22
+Stopped at: Phase 4 executada, verificada e commitada na branch feat/fase-4-modo-opt-in
+Resume file: .planning/phases/04-modo-opt-in-liga-o-primeiro-para-mercados-onde-cold-email-ilegal/04-VERIFICATION.md
+
+## Pendências operacionais (não são código)
+
+- `npx convex codegen`/`deploy` não rodam nesta máquina (deployment do `.env.local` é local e inacessível). O schema da Fase 4 só chega ao banco ao rodar `npx convex dev` — passo 1 do `docs/CHECKLIST-MODO-REAL.md`. Campos novos são todos opcionais → migração não-quebra.
+- `pnpm test/typecheck/lint` abortam neste terminal (`ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY`). Usar `npx tsc --noEmit`, `npx eslint`, `node --experimental-strip-types --test tests/*.test.ts`.
