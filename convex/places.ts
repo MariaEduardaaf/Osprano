@@ -2,7 +2,7 @@ import { action } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { requireOrgId } from "./model/tenant";
-import { isLaunchMarket, MARKETS, clampDiscoveryCount } from "./lib/domain";
+import { isSearchableMarket, MARKETS, clampDiscoveryCount } from "./lib/domain";
 
 interface PlaceResult {
   id: string;
@@ -22,7 +22,9 @@ interface PlaceResult {
  * call) — ~10× cheaper than a Details-per-place path. Each discovered lead is
  * scheduled for Digital Presence scoring.
  *
- * Guarded to opt-out markets only (compliant by design).
+ * Guarded to mercados pesquisáveis (launch opt-out + opt-in). A emailabilidade
+ * continua governada pelo isEmailable no insertDiscovered: leads de mercados
+ * opt-in nascem emailable=false (ligação primeiro).
  */
 export const search = action({
   args: {
@@ -34,9 +36,9 @@ export const search = action({
   handler: async (ctx, args): Promise<{ found: number; inserted: number }> => {
     const orgId = await requireOrgId(ctx);
     const country = args.countryCode.toUpperCase();
-    if (!isLaunchMarket(country)) {
+    if (!isSearchableMarket(country)) {
       const name = MARKETS[country]?.name ?? country;
-      throw new Error(`${name} está fora do escopo compliant (cold email só em mercados opt-out).`);
+      throw new Error(`${name} ainda não está disponível para busca.`);
     }
     const key = process.env.GOOGLE_PLACES_API_KEY;
     if (!key) throw new Error("GOOGLE_PLACES_API_KEY não configurada no deployment Convex.");
