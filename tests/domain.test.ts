@@ -5,11 +5,17 @@ import {
   computeScore,
   tierFromScore,
   isEmailable,
+  isSearchableMarket,
+  canContactByEmail,
   inferLegalForm,
   inferContactType,
   clampDiscoveryCount,
   normalizeEmail,
   hasWaOptIn,
+  MARKETS,
+  OPT_IN_MARKETS,
+  LAUNCH_MARKETS,
+  SEARCHABLE_MARKETS,
   type Signals,
 } from "../convex/lib/domain.ts";
 
@@ -93,6 +99,20 @@ test("isEmailable: opt-in market always blocked", () => {
   assert.equal(isEmailable({ countryCode: "CH", contactType: "role" }), false);
 });
 
+test("isEmailable: TODO mercado opt-in nasce bloqueado, mesmo na combinação mais favorável", () => {
+  // Critério de sucesso nº 1 da fase: nenhum lead de mercado opt-in pode nascer emailable.
+  // "incorporated" + inbox de função (role) é a combinação MAIS defensável que existe —
+  // se nem ela passa, nenhuma outra passa. Se alguém mover um destes para LAUNCH_MARKETS,
+  // este teste quebra (é exatamente o ponto).
+  for (const cc of OPT_IN_MARKETS) {
+    assert.equal(
+      isEmailable({ countryCode: cc, legalForm: "incorporated", contactType: "role" }),
+      false,
+      `mercado opt-in ${cc} não pode ser emailable`,
+    );
+  }
+});
+
 test("isEmailable: sole-trader trap", () => {
   assert.equal(isEmailable({ countryCode: "GB", legalForm: "sole_trader" }), false);
   assert.equal(isEmailable({ countryCode: "GB", contactType: "named" }), false);
@@ -160,4 +180,83 @@ test("hasWaOptIn: only true with a positive timestamp", () => {
   assert.equal(hasWaOptIn({ waOptInAt: undefined }), false);
   assert.equal(hasWaOptIn({ waOptInAt: 0 }), false);
   assert.equal(hasWaOptIn({ waOptInAt: 1700000000000 }), true);
+});
+
+test("isSearchableMarket: launch + opt-in markets are searchable, others are not", () => {
+  assert.equal(isSearchableMarket("GB"), true); // launch
+  assert.equal(isSearchableMarket("ES"), true); // opt-in
+  assert.equal(isSearchableMarket("PT"), true); // opt-in, new
+  assert.equal(isSearchableMarket("FR"), false); // deferred market, not in either list
+});
+
+test("canContactByEmail: emailable=true always wins; contactOptInAt overrides regardless of market", () => {
+  assert.equal(canContactByEmail({ emailable: true }), true);
+  assert.equal(canContactByEmail({ emailable: false }), false);
+  assert.equal(canContactByEmail({ emailable: false, contactOptInAt: Date.now() }), true);
+  assert.equal(canContactByEmail({}), false);
+});
+
+test("hasWaOptIn: generalized to accept either waOptInAt or contactOptInAt", () => {
+  assert.equal(hasWaOptIn({ waOptInAt: Date.now() }), true); // legacy field still works
+  assert.equal(hasWaOptIn({ contactOptInAt: Date.now() }), true); // new field also unlocks WhatsApp
+  assert.equal(hasWaOptIn({}), false);
+});
+
+test("MARKETS.PT existe como mercado opt-in com estado de revisão jurídica", () => {
+  assert.equal(MARKETS.PT.coldEmail, "opt_in");
+  // O VALOR ("pending" vs "validated") muda quando o país for validado — o que não
+  // pode mudar é existir um estado. O valor de hoje está no teste de estado atual abaixo.
+  assert.ok(
+    MARKETS.PT.legalReview === "pending" || MARKETS.PT.legalReview === "validated",
+    "PT é opt-in, logo precisa de um estado de revisão jurídica",
+  );
+});
+
+test("invariante: todo mercado opt-in carrega um estado de revisão jurídica; nenhum launch carrega", () => {
+  // O que se trava aqui é o MECANISMO, não o dado: um mercado opt-in SEM estado jurídico
+  // (legalReview undefined) é o bug de verdade — a UI deriva o aviso jurídico desse campo,
+  // então um undefined vira "sem aviso" silencioso num país onde cold email é ilegal.
+  // Marcar um país como "validated" (OPTIN-06) é evolução esperada e NÃO pode quebrar a suíte.
+  for (const cc of OPT_IN_MARKETS) {
+    const market = MARKETS[cc];
+    assert.ok(market, `mercado opt-in ${cc} precisa existir em MARKETS`);
+    assert.equal(market.coldEmail, "opt_in", `${cc} está em OPT_IN_MARKETS mas não é coldEmail=opt_in`);
+    assert.ok(
+      market.legalReview === "pending" || market.legalReview === "validated",
+      `mercado opt-in ${cc} precisa de legalReview ("pending" ou "validated"), veio ${String(market.legalReview)}`,
+    );
+  }
+  // Mercados launch são opt-out/conditional por regime: revisão jurídica não se aplica.
+  for (const cc of LAUNCH_MARKETS) {
+    const market = MARKETS[cc];
+    assert.ok(market, `mercado launch ${cc} precisa existir em MARKETS`);
+    assert.notEqual(market.coldEmail, "opt_in", `${cc} está em LAUNCH_MARKETS mas é coldEmail=opt_in`);
+    assert.equal(
+      market.legalReview,
+      undefined,
+      `mercado launch ${cc} não deveria carregar legalReview`,
+    );
+  }
+});
+
+test("invariante: todo código de SEARCHABLE_MARKETS existe como chave em MARKETS", () => {
+  // Um código pesquisável sem entrada em MARKETS quebra bandeira, nome e aviso jurídico na UI.
+  for (const cc of SEARCHABLE_MARKETS) {
+    assert.ok(
+      Object.prototype.hasOwnProperty.call(MARKETS, cc),
+      `mercado pesquisável ${cc} não existe em MARKETS`,
+    );
+    assert.equal(isSearchableMarket(cc), true, `${cc} deveria ser pesquisável`);
+  }
+});
+
+test("estado atual: nenhum mercado opt-in foi validado juridicamente ainda (esperado mudar após OPTIN-06)", () => {
+  // Este teste DOCUMENTA o dado de hoje, não protege um mecanismo. Quando a revisão
+  // jurídica de um país concluir, atualize a lista abaixo — a invariante acima é que manda.
+  const validated = OPT_IN_MARKETS.filter((cc) => MARKETS[cc].legalReview === "validated");
+  assert.deepEqual(
+    validated,
+    [],
+    `mercados já validados: ${validated.join(", ")} — atualize este teste de estado atual`,
+  );
 });
