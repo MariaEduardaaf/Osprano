@@ -16,10 +16,18 @@ import {
   MdOutlineReply,
   MdBlock,
 } from "react-icons/md";
-import { PIPELINE_STAGES, MARKETS, type Stage } from "@convex/lib/domain";
+import {
+  PIPELINE_STAGES,
+  MARKETS,
+  OPT_IN_MARKETS,
+  canContactByEmail,
+  type Stage,
+} from "@convex/lib/domain";
 import { OutreachComposer } from "@/components/outreach-composer";
 import { GeneratePreviewButton } from "@/components/generate-preview-button";
 import { PublishButton } from "@/components/publish-button";
+import { CallScriptPanel } from "@/components/call-script-panel";
+import { ContactOptInButton } from "@/components/contact-opt-in-button";
 import { OBJECTIONS, MEETING_PLAYBOOK, CLOSING_OBJECTIONS, type Objection } from "@/lib/playbook";
 
 const TIER: Record<string, { label: string; color: string }> = {
@@ -190,16 +198,19 @@ function InfoTab({ lead, status, onStage }: { lead: Doc<"leads">; status: "open"
 
       {/* compliance */}
       <section className="rounded-xl border border-border bg-surface-2/50 p-4">
+        {/* mesmo gate do servidor (canContactByEmail): consentimento registrado destrava o email */}
         <div className="flex items-center gap-2">
-          {lead.emailable ? (
+          {canContactByEmail(lead) ? (
             <>
               <MdOutlineGppGood size={18} className="text-brand" />
-              <span className="text-sm font-semibold text-brand">Abordável por email</span>
+              <span className="text-sm font-semibold text-brand">
+                {lead.emailable ? "Abordável por email" : "Abordável — consentimento registrado"}
+              </span>
             </>
           ) : (
             <>
               <MdOutlineWarningAmber size={18} className="text-warm" />
-              <span className="text-sm font-semibold text-warm">Não abordável por email frio</span>
+              <span className="text-sm font-semibold text-warm">Fora do escopo compliant</span>
             </>
           )}
         </div>
@@ -270,6 +281,7 @@ function InfoTab({ lead, status, onStage }: { lead: Doc<"leads">; status: "open"
 /* ------------------------------------------------------------------ Abordagem */
 
 function ApproachTab({ lead }: { lead: Doc<"leads"> }) {
+  const callFirst = OPT_IN_MARKETS.includes(lead.countryCode) || !canContactByEmail(lead);
   const markReplied = useMutation(api.outreach.markReplied);
   const suppress = useMutation(api.outreach.suppress);
   const [busy, setBusy] = useState<string | null>(null);
@@ -289,7 +301,8 @@ function ApproachTab({ lead }: { lead: Doc<"leads"> }) {
 
   return (
     <div className="space-y-4">
-      {!lead.emailable && (
+      {/* OPTIN-04: some quando há consentimento registrado (o composer já funciona nesse caso). */}
+      {!canContactByEmail(lead) && (
         <div className="flex items-start gap-2 rounded-xl border border-warm/30 bg-warm/10 p-3 text-xs leading-relaxed text-ink-soft">
           <MdOutlineWarningAmber size={16} className="mt-0.5 shrink-0 text-warm" />
           <span>
@@ -298,6 +311,36 @@ function ApproachTab({ lead }: { lead: Doc<"leads"> }) {
           </span>
         </div>
       )}
+
+      {/* OPTIN-04: o CTA "prefira uma ligação" precisa ter ação aqui — mesmos componentes do card
+          da Descoberta, sem duplicar lógica. */}
+      {callFirst && (
+        <div className="space-y-2 rounded-xl border border-border bg-surface-2/50 p-3">
+          <div className="flex items-center justify-between gap-2">
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-foreground">
+              <MdOutlineCall size={14} />
+              Ligação primeiro
+            </span>
+            {lead.phone && (
+              <a
+                href={`tel:${lead.phone.replace(/[^+0-9]/g, "")}`}
+                className="inline-flex items-center gap-1 rounded-md bg-brand px-2.5 py-1 text-[11px] font-semibold text-brand-fg hover:bg-brand-hover"
+              >
+                <MdOutlineCall size={13} />
+                Ligar
+              </a>
+            )}
+          </div>
+          <CallScriptPanel
+            leadId={lead._id}
+            phone={lead.phone}
+            initialScript={lead.callScript}
+            initialTranslation={lead.callScriptPt}
+          />
+          <ContactOptInButton leadId={lead._id} optInAt={lead.contactOptInAt} />
+        </div>
+      )}
+
       <OutreachComposer leadId={lead._id} hasEmail={!!lead.email} />
 
       <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">

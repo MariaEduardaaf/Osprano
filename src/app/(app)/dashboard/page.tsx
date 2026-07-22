@@ -114,7 +114,9 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <StatCard label="Leads" value={stats?.total ?? "—"} hint="na base" icon={<MdOutlineTravelExplore size={18} />} />
         <StatCard label="Sem site / social" value={stats?.noSite ?? "—"} hint="maior intenção" icon={<MdOutlineWebAsset size={18} />} />
-        <StatCard label="Abordáveis" value={stats?.emailable ?? "—"} hint="opt-out + incorporados" icon={<MdOutlineMarkEmailRead size={18} />} />
+        {/* OPTIN-04: a métrica agora sai de canContactByEmail no servidor — inclui quem deu
+            consentimento explícito, então a copy não pode falar só do regime do mercado. */}
+        <StatCard label="Abordáveis" value={stats?.emailable ?? "—"} hint="opt-out ou com consentimento" icon={<MdOutlineMarkEmailRead size={18} />} />
         <StatCard label="Convertidos" value={stats?.byStage.converted ?? "—"} hint="fechados" accent icon={<MdOutlineCheckCircle size={18} />} />
       </div>
 

@@ -4,13 +4,28 @@ import { useState } from "react";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
-import { MARKETS, LAUNCH_MARKETS, CATEGORY_OPTIONS, CITIES_BY_COUNTRY } from "@convex/lib/domain";
-import { MdOutlineSearch, MdOutlineSend } from "react-icons/md";
+import {
+  MARKETS,
+  LAUNCH_MARKETS,
+  OPT_IN_MARKETS,
+  CATEGORY_OPTIONS,
+  CITIES_BY_COUNTRY,
+  canContactByEmail,
+} from "@convex/lib/domain";
+import { MdOutlineSearch, MdOutlineSend, MdOutlineGavel } from "react-icons/md";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { LeadCard } from "@/components/lead-card";
 import { GeneratePreviewButton } from "@/components/generate-preview-button";
 
+/** OPTIN-02: cada aba controla o select de países, o filtro da lista e a variante do card. */
+const TABS = [
+  { id: "email", label: "Email primeiro" },
+  { id: "call", label: "Ligação primeiro" },
+] as const;
+type LeadsTab = (typeof TABS)[number]["id"];
+
 export default function LeadsPage() {
+  const [tab, setTab] = useState<LeadsTab>("email");
   const [country, setCountry] = useState("GB");
   const [category, setCategory] = useState("");
   const [city, setCity] = useState("");
@@ -23,8 +38,27 @@ export default function LeadsPage() {
   const saveMany = useMutation(api.leads.saveMany);
   const leads = useQuery(api.leads.list, {});
 
-  const shown = leads ?? [];
-  const allSelected = shown.length > 0 && shown.every((l) => selected.has(l._id));
+  const markets = tab === "call" ? OPT_IN_MARKETS : LAUNCH_MARKETS;
+  // OPTIN-06: o aviso jurídico é DERIVADO só do estado do mercado selecionado
+  // (MARKETS[cc].legalReview), nunca da aba. Marcar um país como "validated" — ou remover a flag —
+  // apaga o aviso sozinho, sem tocar nesta página. Acoplar à aba criaria um falso-negativo: um
+  // mercado "pending" que entrasse em LAUNCH_MARKETS teria o aviso suprimido justo na aba de email.
+  const legalReviewMarket =
+    MARKETS[country]?.legalReview === "pending" ? MARKETS[country] : null;
+  // Filtro client-side por regime — sem query nova (leads.list já traz todos os leads da org).
+  const shownLeads = (leads ?? []).filter((l) =>
+    tab === "call" ? OPT_IN_MARKETS.includes(l.countryCode) : !OPT_IN_MARKETS.includes(l.countryCode),
+  );
+  const allSelected = shownLeads.length > 0 && shownLeads.every((l) => selected.has(l._id));
+
+  function switchTab(next: LeadsTab) {
+    if (next === tab) return;
+    setTab(next);
+    // o país da outra aba não existe no select desta — reseta para o primeiro do regime
+    setCountry((next === "call" ? OPT_IN_MARKETS : LAUNCH_MARKETS)[0]);
+    setCity("");
+    setSelected(new Set());
+  }
 
   function toggle(id: Id<"leads">) {
     setSelected((prev) => {
@@ -35,7 +69,7 @@ export default function LeadsPage() {
     });
   }
   function toggleAll() {
-    setSelected(allSelected ? new Set() : new Set(shown.map((l) => l._id)));
+    setSelected(allSelected ? new Set() : new Set(shownLeads.map((l) => l._id)));
   }
   async function sendToCrm() {
     if (selected.size === 0) return;
@@ -72,6 +106,27 @@ export default function LeadsPage() {
         subtitle="Encontre negócios locais com presença digital fraca, por categoria e cidade"
       />
 
+      <div className="mb-4 flex flex-wrap gap-2">
+        {TABS.map((t) => {
+          const active = tab === t.id;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => switchTab(t.id)}
+              aria-pressed={active}
+              className={`inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                active
+                  ? "bg-brand text-brand-fg shadow-[var(--shadow-sm)]"
+                  : "border border-border text-muted hover:border-border-strong hover:text-foreground"
+              }`}
+            >
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
+
       <form
         onSubmit={onSearch}
         className="mb-6 flex flex-wrap items-center gap-2 rounded-[var(--radius)] border border-border bg-surface p-3 shadow-[var(--shadow-sm)]"
@@ -84,7 +139,7 @@ export default function LeadsPage() {
           }}
           className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm"
         >
-          {LAUNCH_MARKETS.map((code) => (
+          {markets.map((code) => (
             <option key={code} value={code}>
               {MARKETS[code].flag} {MARKETS[code].name}
             </option>
@@ -148,15 +203,39 @@ export default function LeadsPage() {
         </p>
       )}
 
-      {leads !== undefined && leads.length > 0 && (
-        <div className="mb-4 flex items-center gap-4 font-mono text-[11px] uppercase tracking-wider text-faint">
-          <span className="text-foreground">{leads.length} leads</span>
-          <span>{leads.filter((l) => l.emailable).length} abordáveis</span>
-          <span>{leads.filter((l) => l.signals?.noSite || l.signals?.socialOnly).length} sem site</span>
+      {legalReviewMarket && (
+        <div
+          role="status"
+          className="mb-4 flex items-start gap-2 rounded-xl border border-warm/30 bg-warm/10 p-3 text-xs leading-relaxed text-ink-soft"
+        >
+          <MdOutlineGavel size={16} className="mt-0.5 shrink-0 text-warm" />
+          <span>
+            <strong>
+              {legalReviewMarket.flag} {legalReviewMarket.name}
+            </strong>{" "}
+            em validação jurídica — ligação B2B permitida; email/WhatsApp só após consentimento
+            registrado.
+          </span>
         </div>
       )}
 
-      {shown.length > 0 && (
+      {leads !== undefined && shownLeads.length > 0 && (
+        <div className="mb-4 flex items-center gap-4 font-mono text-[11px] uppercase tracking-wider text-faint">
+          <span className="text-foreground">{shownLeads.length} leads</span>
+          {tab === "call" ? (
+            <span>{shownLeads.filter((l) => l.contactOptInAt).length} com consentimento</span>
+          ) : (
+            // OPTIN-04: o contador tem que casar com o selo do card ("Abordável — consentimento
+            // registrado"): quem deu opt-in explícito conta, mesmo com emailable=false.
+            <span>{shownLeads.filter(canContactByEmail).length} abordáveis</span>
+          )}
+          <span>
+            {shownLeads.filter((l) => l.signals?.noSite || l.signals?.socialOnly).length} sem site
+          </span>
+        </div>
+      )}
+
+      {shownLeads.length > 0 && (
         <div className="mb-4 flex items-center justify-between gap-3">
           <label className="inline-flex cursor-pointer select-none items-center gap-2 text-sm font-medium text-muted">
             <input
@@ -180,23 +259,36 @@ export default function LeadsPage() {
 
       {leads === undefined ? (
         <p className="text-sm text-faint">Carregando…</p>
-      ) : leads.length === 0 ? (
-        <EmptyState title="Nenhum lead ainda">
-          Busque uma categoria numa cidade dos mercados opt-out ({LAUNCH_MARKETS.join(" · ")}). Cada
-          negócio recebe um Digital Presence Score automaticamente.
-        </EmptyState>
+      ) : shownLeads.length === 0 ? (
+        tab === "call" ? (
+          <EmptyState title="Nenhum lead em mercado opt-in ainda">
+            Busque um mercado opt-in ({OPT_IN_MARKETS.join(" · ")}). O fluxo é: ligar → registrar
+            consentimento → email destrava.
+          </EmptyState>
+        ) : (
+          <EmptyState title="Nenhum lead ainda">
+            Busque uma categoria numa cidade dos mercados opt-out ({LAUNCH_MARKETS.join(" · ")}). Cada
+            negócio recebe um Digital Presence Score automaticamente.
+          </EmptyState>
+        )
       ) : (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {leads.map((lead) => (
-            <LeadCard
-              key={lead._id}
-              lead={lead}
-              selectable
-              selected={selected.has(lead._id)}
-              onToggle={() => toggle(lead._id)}
-              action={<GeneratePreviewButton leadId={lead._id} variant="primary" />}
-            />
-          ))}
+          {shownLeads.map((lead) => {
+            // contrato com o 04-05: o slot `action` vai nas DUAS abas — quem esconde o fluxo de
+            // email até haver consentimento é o gating INTERNO do card, nunca o pai.
+            const common = {
+              lead,
+              selectable: true,
+              selected: selected.has(lead._id),
+              onToggle: () => toggle(lead._id),
+              action: <GeneratePreviewButton leadId={lead._id} variant="primary" />,
+            };
+            return tab === "call" ? (
+              <LeadCard key={lead._id} {...common} variant="call" />
+            ) : (
+              <LeadCard key={lead._id} {...common} />
+            );
+          })}
         </div>
       )}
     </>
