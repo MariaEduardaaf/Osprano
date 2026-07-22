@@ -84,14 +84,84 @@ export function fallbackSubject(lang: string, businessName: string): string {
   return build(businessName);
 }
 
-const SIGNAL_TEXT: Record<keyof Signals, string> = {
-  noSite: "has no website at all",
-  socialOnly: "only has a social/link-in-bio page, not a real website",
-  noHttps: "their website has no HTTPS (browsers show it as 'not secure')",
-  notMobile: "their website is not mobile-friendly",
-  slow: "their website is slow to load",
-  sparseProfile: "their Google Business profile is incomplete",
+/**
+ * O que cada sinal PROVA — não o diagnóstico que ele sugere.
+ *
+ * Este mapa é a fronteira entre um dado e uma afirmação dita a um negócio real, num idioma
+ * que ninguém aqui lê. A versão anterior traduzia heurística em veredito: `sparseProfile` é
+ * `!phone || rating === undefined || reviewsCount < 5` (convex/scoring.ts) e virava "their
+ * Google Business profile is incomplete" — um negócio com perfil impecável e 4 avaliações
+ * recebia um email dizendo que o perfil dele estava incompleto. Regra desta tabela:
+ *
+ *   1. cada frase descreve a OBSERVAÇÃO (o que foi checado e o que se viu), não a conclusão;
+ *   2. a frase precisa ser verdadeira em TODOS os casos que ligam o sinal — por isso
+ *      `sparseProfile` enumera a disjunção em vez de escolher uma das três causas;
+ *   3. a frase nomeia a FONTE (a ficha pública do Google, o teste do PageSpeed), porque é
+ *      só isso que se olhou: nunca o negócio, nunca a operação dele.
+ *
+ * ASSUNÇÃO (sinais tri-state, em curso em convex/lib/enrich.ts / convex/scoring.ts): aqui só
+ * entra sinal VERIFICADO. `signalObservations` exige `=== true` — "desconhecido" (undefined/
+ * null/false) não vira observação nenhuma, e um lead sem nada verificado cai no caminho
+ * honesto de `observationsPrompt` (nenhum problema alegado).
+ */
+export const SIGNAL_TEXT: Record<keyof Signals, string> = {
+  noSite: "their public Google Business listing does not link to any website",
+  socialOnly:
+    "the only link on their public Google Business listing is a social/link-in-bio page, not a website of their own",
+  noHttps:
+    "their listed website did not load over a secure HTTPS connection when it was checked (browsers label that 'not secure')",
+  notMobile: "Google's PageSpeed check did not report their website as mobile-friendly",
+  slow: "their website scored below 50 out of 100 on Google's PageSpeed performance test",
+  sparseProfile:
+    "their public Google Business listing is missing at least one basic item — a phone number, a star rating, or 5 or more reviews (which one, we cannot tell from outside)",
 };
+
+/**
+ * Observações VERIFICADAS de um lead, na ordem de `SIGNAL_TEXT`. Lista vazia = nada foi
+ * verificado (lead sem score) ou nada deu problema — os dois casos são tratados igual, e
+ * de propósito: em nenhum deles existe defeito comprovado para citar.
+ */
+export function signalObservations(signals?: Signals | null): string[] {
+  if (!signals) return [];
+  return (Object.keys(SIGNAL_TEXT) as (keyof Signals)[])
+    .filter((k) => signals[k] === true)
+    .map((k) => SIGNAL_TEXT[k]);
+}
+
+/**
+ * Bloco de fatos da mensagem de usuário — o único lugar de onde a IA pode tirar afirmação
+ * sobre a presença online do prospect.
+ *
+ * Sem sinal verificado, a versão anterior mandava literalmente `Issues noticed: weak online
+ * presence` — o sistema INVENTAVA um defeito (inclusive num lead com site rápido, HTTPS ok e
+ * perfil completo) e a IA construía a abordagem inteira em cima da invenção.
+ *
+ * DECISÃO (não recusar a geração): o caminho alternativo era barrar ("lead sem sinal
+ * verificado — rode o score primeiro"). Recusar protegeria contra a mentira, mas cobraria um
+ * preço que não se paga: (a) a ligação é justamente o canal que sobra quando o email está
+ * bloqueado (mercado opt-in), e travá-la por falta de defeito é travar o trabalho legítimo;
+ * (b) "não achei defeito" não é motivo para não abordar — a prévia pronta é oferta real e
+ * suficiente; (c) o lead sem score não é raro só por descuido (lead criado à mão), e forçar
+ * o score não muda a honestidade do texto. Então: gera, sem alegar nada, e devolve o aviso
+ * `no-verified-signal` para a UI dizer que rodar o score dá um ângulo mais específico.
+ */
+export function observationsPrompt(signals?: Signals | null): string {
+  const observed = signalObservations(signals);
+  if (observed.length === 0) {
+    return (
+      `Verified observations about their online presence: NONE. Nothing wrong was verified about ` +
+      `this business — either every check came back fine, or the checks were never run. You were ` +
+      `given NO problem, so there is no problem to name: do NOT claim, imply, hint at or ask about ` +
+      `any gap, weakness, mistake, risk or missed opportunity, and do NOT guess what might be wrong. ` +
+      `The whole reason for the contact is the free preview website already built for them. `
+    );
+  }
+  return (
+    `Verified observations about their online presence — these are the ONLY facts you may reference ` +
+    `about it, and you must not state them more strongly than they are written here: ` +
+    `${observed.join("; ")}. `
+  );
+}
 
 /**
  * Marcador para o nome de quem liga/assina quando o deployment não expõe um nome real.
@@ -164,6 +234,30 @@ function honestyRules(role: "caller" | "sender", lang: string): string {
   );
 }
 
+/**
+ * Regras de OBSERVAÇÃO do prompt (as mesmas para ligação e email).
+ *
+ * Par obrigatório de `observationsPrompt`: a mensagem de usuário diz o que foi verificado
+ * (ou que não foi verificado nada) e esta regra diz o que fazer com isso. O prompt antigo
+ * exigia "name the SPECIFIC gap noticed" — uma exigência que, num lead sem defeito, só podia
+ * ser cumprida inventando um.
+ */
+function observationRules(): string {
+  return (
+    `OBSERVATIONS — the user message lists what was actually CHECKED about this business's online ` +
+    `presence. Those observations are the ONLY things you may say about it, and you must not ` +
+    `sharpen them: report each one as something noticed from the outside, never as a diagnosis, a ` +
+    `verdict on their business, or a number you were not given (do not turn "fewer than 5 reviews" ` +
+    `into "no reviews", "no website linked on their listing" into "you have no online presence", or ` +
+    `a missing item into "your profile is incomplete"). Never say or imply that they are losing ` +
+    `customers, money or ranking — that was not measured. If the user message says NO problem was ` +
+    `verified, then you must name NO problem at all: no gap, no weakness, no "I noticed that...", ` +
+    `not even as a question or a soft hint. In that case the entire angle is that a free preview ` +
+    `website was already built for them and they are being offered a look at it — that alone is the ` +
+    `reason for the contact, and it is enough. `
+  );
+}
+
 interface AnthropicResponse {
   content?: { type: string; text?: string }[];
 }
@@ -180,9 +274,10 @@ export function emailSystemPrompt(lang: string, identity: OutreachIdentity = {})
     `never a related variety of it. Max ~120 words. Professional, no hype, no fake urgency. ` +
     identityRules("sender", identity.callerName) +
     honestyRules("sender", lang) +
+    observationRules() +
     `The email MUST: (1) identify the sender by name (see IDENTITY) as an independent web professional, ` +
     `(2) briefly say why you're contacting them (relevant to their business), ` +
-    `(3) name the SPECIFIC gap noticed, (4) include the preview link exactly once, ` +
+    `(3) stay inside the OBSERVATIONS rule above, (4) include the preview link exactly once, ` +
     `(5) end with a one-line opt-out (e.g. reply "stop" to not be contacted again). ` +
     `Return STRICT JSON only: {"subject": string, "body": string}. No markdown.`
   );
@@ -205,41 +300,401 @@ export function callScriptSystemPrompt(lang: string, identity: OutreachIdentity 
     `"script" stays in ${lang} and only "translation" is pt-BR. ` +
     identityRules("caller", identity.callerName) +
     honestyRules("caller", lang) +
-    `The call MUST: (1) open by identifying the caller BY NAME (see IDENTITY), (2) name the SPECIFIC gap ` +
-    `noticed, (3) mention a free preview website already built for them, (4) end by EXPLICITLY asking ` +
-    `for permission to send it by email or WhatsApp. ` +
+    observationRules() +
+    `The call MUST: (1) open by identifying the caller BY NAME (see IDENTITY), (2) stay inside the ` +
+    `OBSERVATIONS rule above, (3) mention a free preview website already built for them, (4) end by ` +
+    `EXPLICITLY asking for permission to send it by email or WhatsApp. ` +
     `Return STRICT JSON only: {"script": string, "translation": string}. No markdown.`
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Trava EM CÓDIGO sobre a saída do modelo (o prompt não é controle)
+//
+// O teste com IA REAL mostrou desobediência às duas regras mais duras do prompt: o modelo
+// emitiu `[Nombre]` (uma das formas vetadas por nome no prompt) e manteve "aquí en Valencia"
+// (localidade explicitamente proibida). Mesma régua da Fase 2, em que o rodapé de opt-out é
+// injetado por código: o que não se pode confiar ao modelo, verifica-se depois dele.
+//
+// Duas ações com nível de intervenção DIFERENTE, de propósito:
+//   • marcador de nome  → NORMALIZA (determinístico, sem risco: troca um marcador por outro);
+//   • alegação de local → só AVISA. Reescrever automaticamente uma frase em idioma que
+//     ninguém no time lê é pior que sinalizar — a correção errada sai assinada por ela, no
+//     idioma do prospect, sem ninguém capaz de revisar. Quem decide é a humana.
+// ---------------------------------------------------------------------------
+
+/** Campo de saída onde o aviso foi detectado. `null` = aviso sobre a geração, não sobre o texto. */
+export type OutreachField = "subject" | "body" | "script" | "translation";
+
+/**
+ * Código do aviso. `locality-claim`: o texto parece afirmar presença local (falso — quem
+ * escreve está no Brasil). `no-verified-signal`: gerado sem nenhum sinal verificado, então
+ * NÃO alega problema nenhum (a UI pode sugerir rodar o score para um ângulo mais específico).
+ */
+export type OutreachWarningCode = "locality-claim" | "no-verified-signal";
+
+/** Aviso estruturado devolvido junto do texto, para a UI mostrar (nunca some silenciosamente). */
+export interface OutreachWarning {
+  code: OutreachWarningCode;
+  /** Onde apareceu; `null` para avisos que não vêm de um trecho de texto. */
+  field: OutreachField | null;
+  /** Trecho literal que disparou o aviso, com contexto, para a UI destacar. `null` se não houver. */
+  excerpt: string | null;
+  /** Mensagem pronta em pt-BR, auto-contida (não repete o `excerpt`). */
+  message: string;
+}
+
+const FIELD_LABEL_PT: Record<OutreachField, string> = {
+  subject: "no assunto do email",
+  body: "no corpo do email",
+  script: "no script da ligação",
+  translation: "na tradução em pt-BR",
+};
+
+// --- (i) Marcador de nome: normalização determinística -----------------------
+
+/**
+ * Palavras que identificam um marcador de NOME DE PESSOA, nos idiomas dos mercados
+ * (comparadas sem acento e em minúsculas). "[Ihr Name]", "[Prénom Nom]", "[Nombre]",
+ * "[Your name]", "[Uw naam]", "[Ditt namn]" — todas caem aqui.
+ */
+const NAME_PLACEHOLDER_WORDS = new Set([
+  "name",
+  "names",
+  "firstname",
+  "lastname",
+  "fullname",
+  "vorname",
+  "nachname",
+  "nome",
+  "nomes",
+  "nomi",
+  "sobrenome",
+  "cognome",
+  "nombre",
+  "nombres",
+  "apellido",
+  "apellidos",
+  "nom",
+  "noms",
+  "prenom",
+  "prenoms",
+  "naam",
+  "namen",
+  "voornaam",
+  "achternaam",
+  "navn",
+  "fornavn",
+  "etternavn",
+  "efternavn",
+  "namn",
+  "fornamn",
+  "efternamn",
+]);
+
+/**
+ * Palavras que VETAM a troca mesmo havendo palavra de nome: o marcador é de outra coisa.
+ * Sem isto, "[nombre del negocio]" / "[business name]" — marcador legítimo do nome do
+ * PROSPECT — viraria a assinatura de quem liga.
+ */
+const NOT_A_PERSON_WORDS = new Set([
+  "business",
+  "company",
+  "brand",
+  "shop",
+  "restaurant",
+  "product",
+  "service",
+  "city",
+  "address",
+  "phone",
+  "email",
+  "link",
+  "url",
+  "site",
+  "website",
+  "webseite",
+  "domain",
+  "date",
+  "negocio",
+  "negocios",
+  "empresa",
+  "empresas",
+  "companhia",
+  "marca",
+  "loja",
+  "tienda",
+  "restaurante",
+  "ristorante",
+  "azienda",
+  "entreprise",
+  "societe",
+  "bedrijf",
+  "firma",
+  "virksomhed",
+  "foretag",
+  "geschaft",
+  "unternehmen",
+  "cidade",
+  "ciudad",
+  "ville",
+  "stadt",
+  "stad",
+  "produto",
+  "producto",
+  "servico",
+  "servicio",
+  "endereco",
+  "direccion",
+  "telefone",
+  "telefono",
+  "dominio",
+  "sitio",
+  "cliente",
+  "client",
+  "data",
+  "dia",
+  "hora",
+]);
+
+/** Minúsculas + sem acento, para comparar palavra a palavra (só em contexto sem índice). */
+function fold(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+/** O conteúdo de `[...]` é um marcador de nome de PESSOA? */
+function isPersonNamePlaceholder(inner: string): boolean {
+  const words = fold(inner)
+    .split(/[^a-z]+/)
+    .filter(Boolean);
+  if (words.some((w) => NOT_A_PERSON_WORDS.has(w))) return false;
+  return words.some((w) => NAME_PLACEHOLDER_WORDS.has(w));
+}
+
+/**
+ * Normaliza QUALQUER marcador de nome entre colchetes para uma única forma.
+ *
+ * Com `callerName` conhecido, resolve para o nome real: o dado existe e é verificado, e o
+ * modelo emitir marcador nesse caso é só desobediência — não há motivo para devolver
+ * trabalho manual à usuária. Sem `callerName`, cai em `NAME_PLACEHOLDER` (`[seu nome]`), que
+ * é português no meio de um texto estrangeiro justamente para ser impossível de ler no
+ * automático. Nada mais é tocado: um marcador que não é de pessoa fica como está.
+ */
+export function normalizeNamePlaceholder(text: string, callerName?: string): string {
+  const replacement = callerName?.trim() || NAME_PLACEHOLDER;
+  return text.replace(/\[([^[\]\n]{1,60})\]/g, (full, inner: string) =>
+    isPersonNamePlaceholder(inner) ? replacement : full,
+  );
+}
+
+// --- (ii) Alegação de localidade: detecção (nunca reescrita) ------------------
+
+/**
+ * Construções de PRIMEIRA PESSOA + lugar, por idioma do texto.
+ *
+ * Escopadas por idioma de propósito: o italiano "qui a" ("aqui em") é, em francês, o pronome
+ * relativo mais comum da língua ("un site qui a besoin"). Um detector global dispararia em
+ * todo email francês, e um aviso que dispara sempre é um aviso que ninguém lê. Os acentos
+ * entram como classe ([íi]) em vez de normalização porque o índice do match vira o trecho
+ * mostrado à usuária — dobrar o texto mudaria as posições.
+ */
+const LOCALITY_PATTERNS: Record<string, RegExp[]> = {
+  English: [
+    /\bhere in\b/gi,
+    /\bbased (?:in|here|near)\b/gi,
+    /\bi(?:'m| am) (?:local|based|here|nearby)\b/gi,
+    /\b(?:near|local to) you\b/gi,
+    /\bin (?:your|the) area\b/gi,
+  ],
+  Spanish: [
+    /\baqu[íi] (?:en|cerca|mismo)\b/gi,
+    /\bestoy en\b/gi,
+    /\bsoy (?:de|local)\b/gi,
+    /\bpor aqu[íi]\b/gi,
+    /\bcerca de (?:usted|ustedes|ti|vosotros)\b/gi,
+    /\ben (?:su|tu) (?:zona|barrio|ciudad|[áa]rea)\b/gi,
+    /\b(?:afincad[oa]|con sede) en\b/gi,
+  ],
+  Italian: [
+    /\bqui (?:a|in|da voi|vicino)\b/gi,
+    /\bsono (?:a(?! disposizione)|in|di)\b/gi,
+    /\bnella vostra (?:zona|citt[àa]|area)\b/gi,
+    /\bcon sede a\b/gi,
+    /\bdalle vostre parti\b/gi,
+  ],
+  French: [
+    /\bici (?:[àa]|en|au|dans)\b/gi,
+    /\bje suis (?:[àa]|dans|du coin)\b/gi,
+    /\bbas[ée]e? [àa]\b/gi,
+    /\bimplant[ée]e? [àa]\b/gi,
+    /\bpr[èe]s de chez vous\b/gi,
+    /\bdans votre (?:r[ée]gion|ville|quartier)\b/gi,
+  ],
+  German: [
+    /\bhier (?:in|bei)\b/gi,
+    /\bich bin in\b/gi,
+    /\bans[äa]ssig in\b/gi,
+    /\bin Ihrer N[äa]he\b/gi,
+    /\bvor Ort\b/gi,
+  ],
+  Dutch: [
+    /\bhier (?:in|bij)\b/gi,
+    /\bik (?:zit|ben|woon) in\b/gi,
+    /\bgevestigd in\b/gi,
+    /\bbij u in de buurt\b/gi,
+    /\bin uw (?:buurt|regio|omgeving)\b/gi,
+  ],
+  Danish: [
+    /\bher i\b/gi,
+    /\bjeg er i\b/gi,
+    /\bbaseret i\b/gi,
+    /\bi n[æa]rheden\b/gi,
+    /\bi jeres omr[åa]de\b/gi,
+  ],
+  Norwegian: [
+    /\bher i\b/gi,
+    /\bjeg er i\b/gi,
+    /\bbasert i\b/gi,
+    /\bi n[æa]rheten\b/gi,
+    /\bi omr[åa]det deres\b/gi,
+  ],
+  Swedish: [
+    /\bh[äa]r i\b/gi,
+    /\bjag [äa]r i\b/gi,
+    /\bbaserad i\b/gi,
+    /\bi n[äa]rheten\b/gi,
+    /\bi ert omr[åa]de\b/gi,
+  ],
+  [PT_PT]: [
+    /\baqui (?:em|n[oa]s?|perto)\b/gi,
+    /\bc[áa] (?:em|n[oa]s?)\b/gi,
+    /\bestou (?:em|n[oa]s?|aqui)\b/gi,
+    /\bsou (?:de|d[oa]s?|daqui)\b/gi,
+    /\bsediad[oa] em\b/gi,
+    /\bperto (?:de si|de voc[êe]|daqui)\b/gi,
+  ],
+};
+
+/**
+ * Marcador de primeira pessoa/proximidade imediatamente ANTES do nome da cidade do lead —
+ * a rede que pega o caso real ("aquí en Valencia", "ici à Genève") mesmo se a construção
+ * exata não estiver na lista do idioma. `[^.!?]{0,25}$` prende o marcador à mesma frase.
+ */
+const CITY_PROXIMITY_MARKER =
+  /\b(?:here|aqui|aqu[íi]|c[áa]|ici|hier|qui|her|h[äa]r|based|bas[ée]e?|sediad[oa]|afincad[oa]|ans[äa]ssig|gevestigd|baseret|basert|baserad|estou|sou|soy|estoy|i am|i'm|je suis|ich bin|sono|ik zit|ik ben|jeg er|jag [äa]r|local|lokal)\b[^.!?]{0,25}$/i;
+
+/** Trecho com contexto para a UI destacar (fronteira em espaço, com reticências). */
+function excerptAround(text: string, start: number, end: number): string {
+  const from = Math.max(0, start - 40);
+  const to = Math.min(text.length, end + 40);
+  const raw = text.slice(from, to).replace(/\s+/g, " ").trim();
+  return `${from > 0 ? "…" : ""}${raw}${to < text.length ? "…" : ""}`;
+}
+
+/**
+ * Procura alegações de presença local no texto do modelo. NÃO altera nada — devolve avisos.
+ *
+ * `lang` é o idioma DO TEXTO analisado (para a tradução pt-BR passe `PT_PT`), e `city` é a
+ * cidade do lead, que entra na busca por proximidade. Trechos sobrepostos colapsam: uma frase
+ * que casa com o padrão do idioma E com a cidade vira um aviso só.
+ */
+export function detectLocalityClaims(
+  text: string,
+  opts: { lang: string; city?: string | null; field: OutreachField },
+): OutreachWarning[] {
+  if (!text.trim()) return [];
+  const hits: { start: number; end: number }[] = [];
+
+  for (const pattern of LOCALITY_PATTERNS[opts.lang] ?? []) {
+    for (const m of text.matchAll(pattern)) {
+      if (m.index !== undefined) hits.push({ start: m.index, end: m.index + m[0].length });
+    }
+  }
+
+  const city = opts.city?.trim();
+  if (city) {
+    const cityRe = new RegExp(city.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+    for (const m of text.matchAll(cityRe)) {
+      if (m.index === undefined) continue;
+      const before = text.slice(Math.max(0, m.index - 45), m.index);
+      if (CITY_PROXIMITY_MARKER.test(before)) {
+        hits.push({ start: Math.max(0, m.index - 45), end: m.index + m[0].length });
+      }
+    }
+  }
+
+  // Um aviso por TRECHO: "aquí en Valencia" casa com o padrão do espanhol E com a busca por
+  // cidade. Dois avisos para a mesma frase é ruído — colapsa por sobreposição de intervalo.
+  const warnings: OutreachWarning[] = [];
+  let lastEnd = -1;
+  for (const hit of hits.sort((a, b) => a.start - b.start)) {
+    if (hit.start < lastEnd) continue;
+    lastEnd = hit.end;
+    const excerpt = excerptAround(text, hit.start, hit.end);
+    warnings.push({
+      code: "locality-claim",
+      field: opts.field,
+      excerpt,
+      message:
+        `Possível alegação de presença local ${FIELD_LABEL_PT[opts.field]}. ` +
+        `Quem assina está no Brasil e nunca esteve na cidade do prospect — leia o trecho e ` +
+        `reescreva ou apague antes de usar (o texto NÃO foi alterado automaticamente).`,
+    });
+    if (warnings.length >= 5) break; // teto: aviso demais vira ruído e ninguém lê nenhum
+  }
+  return warnings;
+}
+
+/** Aviso de "nada verificado" — a mensagem foi escrita sem alegar problema nenhum. */
+function noVerifiedSignalWarning(): OutreachWarning {
+  return {
+    code: "no-verified-signal",
+    field: null,
+    excerpt: null,
+    message:
+      "Nenhum sinal verificado neste lead: o texto foi escrito SEM apontar qualquer problema " +
+      "(o ângulo é só a prévia pronta). Rode o score do lead para uma abordagem mais específica.",
+  };
+}
+
+/** Cabeçalho factual do lead na mensagem de usuário (nome, cidade, categoria — nada inferido). */
+function businessLine(lead: Doc<"leads">): string {
+  return (
+    `Business: ${lead.name}` +
+    `${lead.city ? ` in ${lead.city}` : ""}` +
+    `${lead.category ? `, a ${lead.category.replace(/_/g, " ")}` : ""}. `
   );
 }
 
 /**
  * Draft a short, compliant B2B cold email via Claude. Compliant-by-design:
- * sender identity, relevance-to-business, the specific gap, the preview link,
- * and a one-line opt-out. Returns { subject, body }.
+ * sender identity, relevance-to-business, only VERIFIED observations, the preview link,
+ * and a one-line opt-out. Returns { subject, body, warnings }.
  *
  * `identity.callerName` = quem assina. O rodapé de opt-out já carrega a identidade por
  * CÓDIGO (`optOutFooter`), mas o CORPO é escrito pela IA — sem esta trava o modelo
  * inventava nome e alegava ser local, exatamente como no script de ligação.
+ *
+ * `warnings` NUNCA pode ser descartado pelo chamador: é o que sobra do que o prompt não
+ * conseguiu impedir (ver a seção de trava em código acima).
  */
 export async function writeEmail(
   apiKey: string,
   lead: Doc<"leads">,
   previewUrl: string,
   identity: OutreachIdentity = {},
-): Promise<{ subject: string; body: string }> {
+): Promise<{ subject: string; body: string; warnings: OutreachWarning[] }> {
   const lang = langForLead(lead);
-  const s = lead.signals;
-  const pains = s
-    ? (Object.keys(SIGNAL_TEXT) as (keyof Signals)[]).filter((k) => s[k]).map((k) => SIGNAL_TEXT[k])
-    : [];
+  const observations = observationsPrompt(lead.signals);
 
   const system = emailSystemPrompt(lang, identity);
 
   const user =
-    `Business: ${lead.name}` +
-    `${lead.city ? ` in ${lead.city}` : ""}` +
-    `${lead.category ? `, a ${lead.category.replace(/_/g, " ")}` : ""}. ` +
-    `Issues noticed: ${pains.length ? pains.join("; ") : "weak online presence"}. ` +
+    businessLine(lead) +
+    observations +
     `I already built a free preview website for them: ${previewUrl}. Write the email.`;
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -265,15 +720,34 @@ export async function writeEmail(
   const data = (await res.json()) as AnthropicResponse;
   const text = (data.content ?? []).map((b) => b.text ?? "").join("").trim();
 
+  let subject: string;
+  let body: string;
   try {
     const parsed = JSON.parse(text) as { subject: string; body: string };
-    if (parsed.subject && parsed.body) return parsed;
+    if (parsed.subject && parsed.body) {
+      subject = parsed.subject;
+      body = parsed.body;
+    } else {
+      throw new Error("campos ausentes");
+    }
   } catch {
-    // fall through
+    // Fallback de parse: o corpo cru veio no idioma do prospect — o assunto TEM que
+    // acompanhar, senão o alemão recebe assunto em inglês com corpo em alemão.
+    subject = fallbackSubject(lang, lead.name);
+    body = text;
   }
-  // Fallback de parse: o corpo cru veio no idioma do prospect — o assunto TEM que
-  // acompanhar, senão o alemão recebe assunto em inglês com corpo em alemão.
-  return { subject: fallbackSubject(lang, lead.name), body: text };
+
+  // A trava roda no caminho normal E no de fallback: o texto cru é justamente o menos revisado.
+  subject = normalizeNamePlaceholder(subject, identity.callerName);
+  body = normalizeNamePlaceholder(body, identity.callerName);
+
+  const warnings: OutreachWarning[] = [
+    ...(signalObservations(lead.signals).length === 0 ? [noVerifiedSignalWarning()] : []),
+    ...detectLocalityClaims(subject, { lang, city: lead.city, field: "subject" }),
+    ...detectLocalityClaims(body, { lang, city: lead.city, field: "body" }),
+  ];
+
+  return { subject, body, warnings };
 }
 
 /**
@@ -282,26 +756,22 @@ export async function writeEmail(
  *
  * `identity.callerName` é o nome que a usuária dirá em voz alta. Sem ele o prompt emite
  * `NAME_PLACEHOLDER` nos dois campos — nunca um nome inventado pelo modelo.
+ *
+ * `warnings` NUNCA pode ser descartado pelo chamador: aqui vale dobrado, porque a usuária lê
+ * o script EM VOZ ALTA num idioma que não fala — se o texto alegar ser local, ela diz isso.
  */
 export async function writeCallScript(
   apiKey: string,
   lead: Doc<"leads">,
   identity: OutreachIdentity = {},
-): Promise<{ script: string; translation: string }> {
+): Promise<{ script: string; translation: string; warnings: OutreachWarning[] }> {
   const lang = langForLead(lead);
-  const s = lead.signals;
-  const pains = s
-    ? (Object.keys(SIGNAL_TEXT) as (keyof Signals)[]).filter((k) => s[k]).map((k) => SIGNAL_TEXT[k])
-    : [];
+  const observations = observationsPrompt(lead.signals);
 
   const system = callScriptSystemPrompt(lang, identity);
 
   const user =
-    `Business: ${lead.name}` +
-    `${lead.city ? ` in ${lead.city}` : ""}` +
-    `${lead.category ? `, a ${lead.category.replace(/_/g, " ")}` : ""}. ` +
-    `Issues noticed: ${pains.length ? pains.join("; ") : "weak online presence"}. ` +
-    `Write the call script and its pt-BR translation.`;
+    businessLine(lead) + observations + `Write the call script and its pt-BR translation.`;
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -326,15 +796,36 @@ export async function writeCallScript(
   const data = (await res.json()) as AnthropicResponse;
   const text = (data.content ?? []).map((b) => b.text ?? "").join("").trim();
 
+  let script: string;
+  let translation: string;
   try {
     const parsed = JSON.parse(text) as { script: string; translation: string };
-    if (parsed.script && parsed.translation) return parsed;
+    if (parsed.script && parsed.translation) {
+      script = parsed.script;
+      translation = parsed.translation;
+    } else {
+      throw new Error("campos ausentes");
+    }
   } catch {
-    // fall through
+    // Fallback de parse: devolve o texto cru como script, mas a tradução fica VAZIA de propósito.
+    // Repetir o texto estrangeiro na coluna "Tradução (pt-BR)" seria uma tradução falsa — e como
+    // quem liga não fala o idioma, isso é pior que não ter tradução. "" = tradução indisponível
+    // (a UI trata esse caso); nunca finja que traduziu.
+    script = text;
+    translation = "";
   }
-  // Fallback de parse: devolve o texto cru como script, mas a tradução fica VAZIA de propósito.
-  // Repetir o texto estrangeiro na coluna "Tradução (pt-BR)" seria uma tradução falsa — e como
-  // quem liga não fala o idioma, isso é pior que não ter tradução. "" = tradução indisponível
-  // (a UI trata esse caso); nunca finja que traduziu.
-  return { script: text, translation: "" };
+
+  script = normalizeNamePlaceholder(script, identity.callerName);
+  translation = normalizeNamePlaceholder(translation, identity.callerName);
+
+  // A tradução é analisada com os padrões PORTUGUESES (ela sai em pt-BR, não no idioma do
+  // prospect) — e é o campo que a usuária realmente entende: um "aqui em Valência" ali é o
+  // aviso mais acionável dos dois.
+  const warnings: OutreachWarning[] = [
+    ...(signalObservations(lead.signals).length === 0 ? [noVerifiedSignalWarning()] : []),
+    ...detectLocalityClaims(script, { lang, city: lead.city, field: "script" }),
+    ...detectLocalityClaims(translation, { lang: PT_PT, city: lead.city, field: "translation" }),
+  ];
+
+  return { script, translation, warnings };
 }

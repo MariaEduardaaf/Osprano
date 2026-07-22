@@ -4,11 +4,17 @@ import {
   LANG,
   NAME_PLACEHOLDER,
   PT_PT,
+  SIGNAL_TEXT,
   callScriptSystemPrompt,
+  detectLocalityClaims,
   emailSystemPrompt,
   fallbackSubject,
   langForLead,
+  normalizeNamePlaceholder,
+  observationsPrompt,
+  signalObservations,
 } from "../convex/lib/outreachAi.ts";
+import type { Signals } from "../convex/lib/domain.ts";
 import { unsubscribePageHtml, optOutFooter, callerNameFrom } from "../convex/lib/compliance.ts";
 import { SEARCHABLE_MARKETS } from "../convex/lib/domain.ts";
 
@@ -217,6 +223,19 @@ for (const [nome, build] of PROMPTS) {
     );
   });
 
+  test(`${nome}: não exige mais nomear um defeito, e proíbe inventar um`, () => {
+    const prompt = build("Spanish", { callerName: "Duda" });
+    // A exigência antiga ("name the SPECIFIC gap noticed") era impossível de cumprir sem
+    // mentir num lead sem defeito — o modelo inventava o defeito para obedecer.
+    assert.ok(!/SPECIFIC gap/.test(prompt), "o prompt não pode mais exigir um defeito específico");
+    assert.ok(/OBSERVATIONS/.test(prompt), "o prompt precisa da regra de observações");
+    assert.ok(/NO problem was verified/.test(prompt), "o caso 'nada verificado' precisa estar coberto");
+    assert.ok(/name NO problem at all/.test(prompt));
+    assert.ok(/not even as a question or a soft hint/.test(prompt), "nem em forma de pergunta");
+    assert.ok(/you must not sharpen them/.test(prompt), "proibido endurecer a observação");
+    assert.ok(/losing customers, money or ranking/.test(prompt), "dano não medido é proibido");
+  });
+
   test(`${nome}: o idioma do prospect continua entrando cru no prompt`, () => {
     for (const cc of SEARCHABLE_MARKETS) {
       const lang = LANG[cc];
@@ -267,4 +286,270 @@ test("as três regiões suíças têm copy própria e distinta entre si", () => 
     assert.notEqual(unsubscribePageHtml(lang), unsubscribePageHtml(UNKNOWN), `${lang} em inglês`);
     assert.notEqual(optOutFooter(lang, url, "Ana"), optOutFooter(UNKNOWN, url, "Ana"), lang);
   }
+});
+
+// ---------------------------------------------------------------------------
+// Só se afirma o que se verificou
+//
+// Dois defeitos que saíam para negócios REAIS:
+//   • sem `pains`, a mensagem mandava literalmente "Issues noticed: weak online presence" —
+//     um defeito INVENTADO num negócio com site rápido, HTTPS ok e perfil completo;
+//   • `sparseProfile` (= sem telefone OU sem rating OU < 5 avaliações, convex/scoring.ts)
+//     virava "their Google Business profile is incomplete" — veredito que o dado não sustenta.
+// ---------------------------------------------------------------------------
+
+const NO_SIGNALS: Signals = {
+  noSite: false,
+  socialOnly: false,
+  noHttps: false,
+  notMobile: false,
+  slow: false,
+  sparseProfile: false,
+};
+const withSignals = (over: Partial<Signals>): Signals => ({ ...NO_SIGNALS, ...over });
+
+test("SIGNAL_TEXT descreve a OBSERVAÇÃO, nunca o diagnóstico", () => {
+  const entries = Object.entries(SIGNAL_TEXT);
+  assert.equal(entries.length, Object.keys(NO_SIGNALS).length, "todo sinal precisa de texto");
+  for (const [key, texto] of entries) {
+    assert.ok(
+      !/\b(incomplete|weak|poor|bad|outdated|unprofessional|losing|broken)\b/i.test(texto),
+      `SIGNAL_TEXT.${key} está diagnosticando ("${texto}")`,
+    );
+    assert.ok(texto.trim().length > 20, `SIGNAL_TEXT.${key} vago demais`);
+  }
+  // O caso que motivou a rodada: o sinal é uma DISJUNÇÃO, então a frase enumera as três
+  // causas em vez de escolher uma (um negócio com 4 avaliações não tem "perfil incompleto").
+  assert.match(SIGNAL_TEXT.sparseProfile, /phone number/);
+  assert.match(SIGNAL_TEXT.sparseProfile, /rating/);
+  assert.match(SIGNAL_TEXT.sparseProfile, /reviews/);
+  assert.ok(
+    !/profile is incomplete/i.test(SIGNAL_TEXT.sparseProfile),
+    "o veredito 'perfil incompleto' não pode voltar",
+  );
+  // "no website at all" afirmava mais do que se checou: o que se viu é a ficha do Google.
+  assert.ok(!/no website at all/i.test(SIGNAL_TEXT.noSite));
+  assert.match(SIGNAL_TEXT.noSite, /Google Business listing/);
+  // Sinais medidos por ferramenta citam a ferramenta (é ela que sustenta a frase).
+  assert.match(SIGNAL_TEXT.slow, /PageSpeed/);
+  assert.match(SIGNAL_TEXT.notMobile, /PageSpeed/);
+});
+
+test("signalObservations: só entra sinal VERIFICADO (true), na ordem de SIGNAL_TEXT", () => {
+  assert.deepEqual(signalObservations(undefined), [], "lead sem score não observou nada");
+  assert.deepEqual(signalObservations(null), []);
+  assert.deepEqual(signalObservations(NO_SIGNALS), [], "tudo ok = nenhuma observação");
+  assert.deepEqual(signalObservations(withSignals({ sparseProfile: true })), [
+    SIGNAL_TEXT.sparseProfile,
+  ]);
+  assert.deepEqual(signalObservations(withSignals({ slow: true, noHttps: true })), [
+    SIGNAL_TEXT.noHttps,
+    SIGNAL_TEXT.slow,
+  ]);
+});
+
+test("observationsPrompt: sem sinal verificado, NENHUM defeito é alegado", () => {
+  const semSinal = observationsPrompt(undefined);
+  // A string que o sistema mandava sozinho — a fabricação que originou o achado.
+  assert.ok(!/weak online presence/i.test(semSinal), "o defeito inventado não pode voltar");
+  assert.ok(!/issues noticed/i.test(semSinal), "não há 'issues' a noticiar");
+  assert.match(semSinal, /NONE/);
+  assert.match(semSinal, /do NOT claim, imply, hint at or ask about/);
+  assert.match(semSinal, /free preview website already built/, "o ângulo honesto é a prévia");
+  // Lead não scorado e lead sem nenhum problema são o MESMO caso: nada verificado, nada a alegar.
+  assert.equal(observationsPrompt(NO_SIGNALS), semSinal);
+  assert.equal(observationsPrompt(null), semSinal);
+});
+
+test("observationsPrompt: com sinal, entrega só o que foi verificado", () => {
+  const p = observationsPrompt(withSignals({ slow: true }));
+  assert.ok(p.includes(SIGNAL_TEXT.slow), "a observação verificada precisa entrar");
+  assert.ok(!p.includes(SIGNAL_TEXT.noSite), "sinal não verificado não vira observação");
+  assert.match(p, /ONLY facts/);
+  assert.match(p, /not state them more strongly than they are written/);
+  assert.ok(!/NONE/.test(p), "com sinal, não é o caminho do 'nada verificado'");
+});
+
+// ---------------------------------------------------------------------------
+// Trava EM CÓDIGO (o prompt não segura): marcador de nome + alegação de localidade
+//
+// Com IA REAL, o modelo desobedeceu as duas regras mais duras do prompt: emitiu `[Nombre]`
+// (forma vetada por nome no prompt) e manteve "aquí en Valencia".
+// ---------------------------------------------------------------------------
+
+test("normalizeNamePlaceholder: todo marcador de nome vira o marcador canônico", () => {
+  const emitidos = [
+    "[Nombre]",
+    "[Name]",
+    "[NOME]",
+    "[Prénom Nom]",
+    "[Your name]",
+    "[Your Name Here]",
+    "[Ihr Name]",
+    "[Uw naam]",
+    "[Ditt namn]",
+    "[Dit navn]",
+    "[Il tuo nome]",
+    "[Votre nom]",
+    "[Nombre y apellido]",
+    "[Vorname Nachname]",
+    "[seu nome]",
+  ];
+  for (const marcador of emitidos) {
+    const saida = normalizeNamePlaceholder(`Buenos días, me llamo ${marcador} y le escribo.`);
+    assert.ok(
+      saida.includes(NAME_PLACEHOLDER),
+      `${marcador} não foi normalizado para ${NAME_PLACEHOLDER}`,
+    );
+    assert.ok(!/\[(?!seu nome\])/.test(saida), `sobrou outro marcador em "${saida}"`);
+  }
+});
+
+test("normalizeNamePlaceholder: com nome real conhecido, resolve para o nome", () => {
+  const saida = normalizeNamePlaceholder("Mi nombre es [Nombre].", "Duda");
+  assert.equal(saida, "Mi nombre es Duda.");
+  // Nome só de espaço = sem nome (mesma regra do prompt).
+  assert.equal(normalizeNamePlaceholder("Ich bin [Ihr Name].", "  "), `Ich bin ${NAME_PLACEHOLDER}.`);
+  assert.equal(normalizeNamePlaceholder("Ich bin [Ihr Name].", undefined), `Ich bin ${NAME_PLACEHOLDER}.`);
+});
+
+test("normalizeNamePlaceholder: marcador que NÃO é de pessoa fica intacto", () => {
+  const casos = [
+    "Sobre [nombre del negocio], vi su ficha.",
+    "About [business name] — a quick note.",
+    "Em [nome do negócio], na [cidade].",
+    "Veja [link] e [website].",
+    "Sobre [il nome dell'azienda].",
+  ];
+  for (const texto of casos) {
+    assert.equal(normalizeNamePlaceholder(texto), texto, `marcador alheio foi trocado: ${texto}`);
+    assert.equal(normalizeNamePlaceholder(texto, "Duda"), texto);
+  }
+});
+
+test("normalizeNamePlaceholder: idempotente e cobre todas as ocorrências", () => {
+  const uma = normalizeNamePlaceholder("Sou [Nombre]. Atenciosamente, [Your name]");
+  assert.equal(uma, `Sou ${NAME_PLACEHOLDER}. Atenciosamente, ${NAME_PLACEHOLDER}`);
+  assert.equal(normalizeNamePlaceholder(uma), uma, "rodar de novo não muda nada");
+  assert.equal(normalizeNamePlaceholder(""), "");
+});
+
+test("detectLocalityClaims: pega a alegação de local em cada idioma do mercado", () => {
+  const casos: [string, string, string][] = [
+    ["Spanish", "Buenos días, le llamo aquí en Valencia para hablar de su web.", "Valencia"],
+    ["French", "Bonjour, je travaille ici à Genève avec des commerces.", "Genève"],
+    ["English", "Hi — I'm based in Dublin and noticed your listing.", "Dublin"],
+    ["German", "Guten Tag, ich bin hier in Zürich unterwegs.", "Zürich"],
+    ["Italian", "Buongiorno, sono qui a Milano e ho visto il vostro profilo.", "Milano"],
+    [PT_PT, "Bom dia, estou aqui em Lisboa e vi a vossa página.", "Lisboa"],
+    ["Dutch", "Goedendag, ik zit in Amsterdam en zag uw vermelding.", "Amsterdam"],
+    ["Danish", "Hej, jeg arbejder her i København med hjemmesider.", "København"],
+    ["Norwegian", "Hei, jeg er i Oslo og så oppføringen deres.", "Oslo"],
+    ["Swedish", "Hej, jag jobbar här i Stockholm med webbplatser.", "Stockholm"],
+  ];
+  for (const [lang, texto, city] of casos) {
+    const avisos = detectLocalityClaims(texto, { lang, city, field: "script" });
+    assert.equal(avisos.length, 1, `${lang}: esperava 1 aviso, veio ${avisos.length} — "${texto}"`);
+    const [aviso] = avisos;
+    assert.equal(aviso.code, "locality-claim");
+    assert.equal(aviso.field, "script");
+    assert.ok(aviso.excerpt && aviso.excerpt.length > 0, `${lang}: aviso sem trecho`);
+    assert.ok(aviso.message.includes("no script da ligação"), `${lang}: mensagem sem o campo`);
+    assert.ok(/Brasil/.test(aviso.message), `${lang}: a mensagem precisa dizer o fato`);
+    // NUNCA reescreve: quem não lê o idioma não pode editar o texto do prospect.
+    assert.ok(!("text" in aviso), "o detector não devolve texto corrigido");
+  }
+});
+
+test("detectLocalityClaims: o par exato que a IA real produziu dispara aviso", () => {
+  // ES/Valencia e CH/Genebra — os dois casos observados em produção.
+  assert.equal(
+    detectLocalityClaims("Mi nombre es [seu nome] y estoy aquí en Valencia.", {
+      lang: "Spanish",
+      city: "Valencia",
+      field: "body",
+    }).length,
+    1,
+  );
+  assert.equal(
+    detectLocalityClaims("Je m'appelle [seu nome], ici à Genève.", {
+      lang: "French",
+      city: "Genève",
+      field: "script",
+    }).length,
+    1,
+  );
+});
+
+test("detectLocalityClaims: a cidade sozinha não é alegação de local", () => {
+  const semAviso = [
+    ["Spanish", "Le escribo sobre su restaurante en Valencia.", "Valencia"],
+    ["English", "I noticed your listing for your shop in Dublin.", "Dublin"],
+    [PT_PT, "Vi a página do vosso restaurante em Lisboa.", "Lisboa"],
+    ["German", "Ich habe Ihren Eintrag in Zürich gesehen.", "Zürich"],
+  ] as const;
+  for (const [lang, texto, city] of semAviso) {
+    assert.deepEqual(
+      detectLocalityClaims(texto, { lang, city, field: "body" }),
+      [],
+      `falso positivo em ${lang}: "${texto}"`,
+    );
+  }
+});
+
+test("detectLocalityClaims: os padrões são por idioma (senão o aviso vira ruído)", () => {
+  // "qui a" é o pronome relativo mais comum do francês — se o padrão italiano valesse para
+  // todo idioma, TODO email francês dispararia e ninguém leria mais nenhum aviso.
+  assert.deepEqual(
+    detectLocalityClaims("Un site qui a besoin d'une mise à jour, comme le vôtre.", {
+      lang: "French",
+      city: "Genève",
+      field: "body",
+    }),
+    [],
+  );
+  // "Sono a disposizione" é fórmula de cortesia italiana, não "estou em".
+  assert.deepEqual(
+    detectLocalityClaims("Resto sono a disposizione per qualsiasi domanda.", {
+      lang: "Italian",
+      city: "Milano",
+      field: "script",
+    }),
+    [],
+  );
+  // Idioma sem padrões cadastrados: ainda assim a cidade + marcador é pega.
+  const desconhecido = detectLocalityClaims("Estou aqui em Faro, junto ao mercado.", {
+    lang: "__idioma_inexistente__",
+    city: "Faro",
+    field: "translation",
+  });
+  assert.equal(desconhecido.length, 1);
+  assert.ok(desconhecido[0].message.includes("na tradução em pt-BR"));
+});
+
+test("detectLocalityClaims: um aviso por trecho, com teto (aviso demais é aviso nenhum)", () => {
+  // A mesma frase casa com o padrão do espanhol E com a busca por cidade — um aviso só.
+  const um = detectLocalityClaims(
+    "Hola. Le llamo porque estoy aquí en Valencia esta semana y vi su ficha.",
+    { lang: "Spanish", city: "Valencia", field: "body" },
+  );
+  assert.equal(um.length, 1);
+
+  const muitos = detectLocalityClaims(
+    Array.from({ length: 12 }, (_, i) => `Frase ${i}: aquí en Valencia trabajamos así.`).join(" "),
+    { lang: "Spanish", city: "Valencia", field: "body" },
+  );
+  assert.ok(muitos.length <= 5, `teto de avisos furado: ${muitos.length}`);
+  assert.ok(muitos.length > 0);
+});
+
+test("detectLocalityClaims: texto vazio ou lead sem cidade não quebra", () => {
+  assert.deepEqual(detectLocalityClaims("", { lang: "Spanish", city: "Valencia", field: "body" }), []);
+  assert.deepEqual(detectLocalityClaims("   ", { lang: "Spanish", field: "body" }), []);
+  assert.equal(
+    detectLocalityClaims("Le llamo aquí en su ciudad.", { lang: "Spanish", city: null, field: "body" })
+      .length,
+    1,
+    "sem cidade em mãos, o padrão do idioma ainda vale",
+  );
 });

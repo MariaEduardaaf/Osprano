@@ -28,6 +28,13 @@ export function PreviewSite({ content }: { content: PreviewContent }) {
   const locale = localeForLead(countryCode, city);
   const tr = DICTS[locale];
 
+  // Só o que veio do Places para ESTE lead. Rótulo traduzido, valor sempre do
+  // dado — dicionário nunca fornece valor de fato aqui.
+  const facts: { label: string; value: string }[] = [
+    ...(phone ? [{ label: tr.phoneLabel, value: phone }] : []),
+    ...(city ? [{ label: tr.whereLabel, value: city }] : []),
+  ];
+
   return (
     // O documento raiz é pt-BR (app da usuária brasileira). Este conteúdo é o que
     // o prospect europeu lê: declarar o idioma real aqui sobrepõe o lang do <html>
@@ -147,24 +154,25 @@ export function PreviewSite({ content }: { content: PreviewContent }) {
               {tr.visitBody({ name, category: cat, city })}
             </p>
           </div>
-          <dl className="space-y-4 text-sm">
-            {phone && (
-              <div className="flex justify-between border-b border-white/10 pb-4">
-                <dt className="text-[#f4f1e9]/50">{tr.phoneLabel}</dt>
-                <dd className="font-medium">{phone}</dd>
-              </div>
-            )}
-            {city && (
-              <div className="flex justify-between border-b border-white/10 pb-4">
-                <dt className="text-[#f4f1e9]/50">{tr.whereLabel}</dt>
-                <dd className="font-medium">{city}</dd>
-              </div>
-            )}
-            <div className="flex justify-between border-b border-white/10 pb-4">
-              <dt className="text-[#f4f1e9]/50">{tr.hoursLabel}</dt>
-              <dd className="font-medium">{tr.hoursValue}</dd>
-            </div>
-          </dl>
+          {/*
+            Bloco de FATOS: cada linha se apresenta como registro do negócio, numa
+            página pública com o nome real dele. Por isso a lista é montada a partir
+            de `facts` — só entra o que veio do Places e existe neste lead. Não
+            acrescente linha cujo valor saia do dicionário (era o caso do horário
+            fixo "Seg–Sáb · 9h–19h", removido: não há horário no field mask, então
+            era invenção que podia mandar o cliente do prospect a uma porta
+            fechada). Dado novo entra por `PreviewContent`, nunca por `tr.*`.
+          */}
+          {facts.length > 0 && (
+            <dl className="divide-y divide-white/10 border-y border-white/10 text-sm">
+              {facts.map((f) => (
+                <div key={f.label} className="flex justify-between py-4">
+                  <dt className="text-[#f4f1e9]/50">{f.label}</dt>
+                  <dd className="font-medium">{f.value}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
         </div>
       </section>
 

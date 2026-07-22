@@ -453,7 +453,7 @@ function ObjectionCard({ o }: { o: Objection }) {
           {([
             ["1. Empatia", o.empatia, "var(--brand)"],
             ["2. Argumento", o.argumento, "var(--hot)"],
-            ["3. Evidência", o.evidencia, "var(--warm)"],
+            ["3. Reforço", o.reforco, "var(--warm)"],
             ["4. Pergunta de retorno", o.pergunta, "var(--brand)"],
           ] as const).map(([k, v, c]) => (
             <div key={k}>

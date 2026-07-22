@@ -5,6 +5,7 @@ import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { requireOrgId } from "./model/tenant";
 import { writeEmail, writeCallScript, langForLead } from "./lib/outreachAi";
+import type { OutreachWarning } from "./lib/outreachAi";
 import { normalizeEmail, canContactByEmail } from "./lib/domain";
 import { optOutFooter, senderIdentityFrom, callerNameFrom } from "./lib/compliance";
 import { addSuppression, isEmailSuppressed } from "./suppressions";
@@ -188,10 +189,16 @@ export const langForUnsubToken = internalQuery({
   },
 });
 
-/** Draft a compliant cold email with AI. Gated by canContactByEmail (emailable OU consentimento). */
+/** Draft a compliant cold email with AI. Gated by canContactByEmail (emailable OU consentimento).
+    Devolve também os `warnings` de `writeEmail` (alegação de localidade, lead sem sinal
+    verificado): a assinatura antiga os apagava no limite da action, e um aviso que some é o
+    mesmo que não ter aviso. Quem chama decide como exibir — mas recebe. */
 export const draft = action({
   args: { leadId: v.id("leads") },
-  handler: async (ctx, { leadId }): Promise<{ subject: string; body: string }> => {
+  handler: async (
+    ctx,
+    { leadId },
+  ): Promise<{ subject: string; body: string; warnings: OutreachWarning[] }> => {
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.runQuery(internal.leads.getInternal, { leadId });
     if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
@@ -235,13 +242,27 @@ export const draft = action({
     pedir para não ser contatado por telefone, isso é tratado como opt-out manual do lead, não aqui. */
 export const callScript = action({
   args: { leadId: v.id("leads") },
-  handler: async (ctx, { leadId }): Promise<{ script: string; translation: string }> => {
+  handler: async (
+    ctx,
+    { leadId },
+  ): Promise<{ script: string; translation: string; warnings: OutreachWarning[] }> => {
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.runQuery(internal.leads.getInternal, { leadId });
     if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
     if (!lead.phone) throw new Error("Lead sem telefone.");
     const key = process.env.ANTHROPIC_API_KEY;
     if (!key) throw new Error("ANTHROPIC_API_KEY não configurada no deployment Convex.");
+
+    // A PRÉVIA TEM QUE EXISTIR ANTES DO TEXTO. O prompt do script manda dizer, EM VOZ ALTA e
+    // no passado, que "um site de prévia já foi feito para vocês" (item (3) de
+    // `callScriptSystemPrompt`) — e esta action nunca criava a prévia: a frase era falsa no
+    // instante em que ela era dita ao prospect, e a promessa do fecho ("posso te mandar por
+    // email/WhatsApp?") não tinha o que mandar. Mesmo caminho de `draft`:
+    // `previews.ensureForLead` é idempotente (devolve o token existente se já houver) e NÃO
+    // consome cota — quem cobra usage é `previews.publish`, não a prévia rastreada. O token
+    // não entra no texto de propósito: numa ligação ninguém dita URL, e o link segue depois
+    // pelo canal que o prospect autorizar.
+    await ctx.runMutation(internal.previews.ensureForLead, { leadId });
 
     // Quem liga se apresenta com o nome do RESEND_FROM (mesma fonte de verdade da
     // identidade do email). Ausente/sem display name → o script sai com `[seu nome]`,

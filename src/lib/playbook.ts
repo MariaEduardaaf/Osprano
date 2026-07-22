@@ -1,3 +1,19 @@
+/**
+ * Playbook de vendas: copy ESTÁTICA que a usuária lê e repete para um prospect
+ * real (ligação ou reunião). Nada aqui é gerado por IA e nada aqui é verificado
+ * contra dados do negócio do prospect.
+ *
+ * REGRA DE OURO DESTE ARQUIVO: só se afirma o que se verificou.
+ * É PROIBIDO escrever neste arquivo:
+ *   - percentuais, "a maioria", "quase sempre", "em média", "boa parte", "vários donos";
+ *   - promessa de resultado ("vai trazer X clientes", "se paga em Y");
+ *   - afirmação sobre o passado ou a operação do prospect que ninguém checou
+ *     ("você pagou adiantado e ficou na mão") — use condicional ou pergunte;
+ *   - comparação com concorrentes que a usuária não mediu ("na maioria dos outros lugares...").
+ * O que é permitido: argumento, raciocínio, o que a usuária de fato entrega,
+ * e convite para o próprio prospect verificar (ex.: "pesquisa no Google e vê").
+ */
+
 export type ObjectionCategory = "universal" | "site";
 
 export interface Objection {
@@ -6,7 +22,12 @@ export interface Objection {
   category: ObjectionCategory;
   empatia: string;
   argumento: string;
-  evidencia: string;
+  /**
+   * Segundo argumento, que reforça o primeiro por outro ângulo.
+   * NÃO é evidência: não existe dado medido por trás. Nunca preencher com
+   * estatística, percentual ou promessa de resultado — veja a regra no topo.
+   */
+  reforco: string;
   pergunta: string;
 }
 
@@ -31,8 +52,8 @@ export const OBJECTIONS: Objection[] = [
       "Faz total sentido pensar no bolso, ninguém quer colocar dinheiro numa coisa sem ter certeza do retorno.",
     argumento:
       "Justamente por isso eu não vou te pedir nada agora: o site já está pronto e você pode ver ele funcionando sem pagar nem se comprometer com nada. Você só decide seguir depois de olhar e gostar.",
-    evidencia:
-      "A maioria dos donos que abre a prévia já montada muda de ideia sobre preço na hora, porque para de imaginar um custo e passa a ver uma coisa concreta.",
+    reforco:
+      "Enquanto você não vê, o site é só um custo imaginário na sua cabeça. Com a prévia aberta na sua frente você julga uma coisa concreta e decide sabendo exatamente o que está comprando.",
     pergunta:
       "Posso te mostrar como ficou primeiro, e aí você me diz se faz sentido pro seu momento?",
   },
@@ -44,8 +65,8 @@ export const OBJECTIONS: Objection[] = [
       "Eu sei que o dia de quem toca o próprio negócio é corrido e você tem mil coisas pra resolver antes disso.",
     argumento:
       "Por isso o trabalho pesado eu já fiz por você: o site está pronto, não precisa reunião longa nem você preparar nada. Em poucos minutos eu te mostro e você decide sem esforço.",
-    evidencia:
-      "Quem começa vendo a prévia pronta gasta bem menos tempo do que imagina, porque não precisa explicar nada, é só olhar o que já existe.",
+    reforco:
+      "Você não precisa preparar nada, nem me explicar o negócio, nem me mandar material: o que eu montei já está de pé. É só olhar e me dizer o que achou.",
     pergunta:
       "Qual horário fica mais leve pra você essa semana, começo da manhã ou fim do dia?",
   },
@@ -56,9 +77,9 @@ export const OBJECTIONS: Objection[] = [
     empatia:
       "Sem problema, e faz sentido você querer olhar com calma no seu tempo.",
     argumento:
-      "Vou te mandar o link da prévia por email sim, esse é o combinado. Só que ela ganha muito mais quando eu passo com você por cima e te mostro o porquê de cada parte, então prefiro te mandar e reservar cinco minutinhos pra ver junto.",
-    evidencia:
-      "O email sozinho costuma ficar pra depois no meio da correria; quem olha junto comigo entende o valor muito mais rápido.",
+      "Vou te mandar o link da prévia por email sim, esse é o combinado. Só que pelo email você vê o site, mas não o porquê de cada escolha, então prefiro te mandar e reservar cinco minutinhos pra ver junto.",
+    reforco:
+      "Olhando junto, qualquer dúvida você tira na hora comigo e qualquer ajuste eu já anoto ali mesmo, em vez de você ficar com a pergunta guardada.",
     pergunta:
       "Te mando agora o link e marcamos uma call rápida pra ver juntos, pode ser?",
   },
@@ -70,8 +91,8 @@ export const OBJECTIONS: Objection[] = [
       "Claro, é uma decisão sua e você tem todo o direito de pensar com calma.",
     argumento:
       "Só quero garantir que você vai pensar com a coisa certa na mão: em vez de decidir no abstrato, deixa eu te mostrar o site pronto agora, aí você pensa em cima de algo real e não de uma ideia.",
-    evidencia:
-      "Normalmente o que trava a decisão é dúvida sobre como vai ficar, e isso some no instante em que a pessoa vê a prévia funcionando.",
+    reforco:
+      "Se parte da sua dúvida é como ficaria, isso eu resolvo em dois minutos: a prévia já existe e você pode ver antes de pensar, sem custo e sem compromisso nenhum.",
     pergunta:
       "O que exatamente você gostaria de pensar melhor, o preço ou se combina com o seu negócio?",
   },
@@ -83,8 +104,8 @@ export const OBJECTIONS: Objection[] = [
       "Ótimo que você já tem alguém cuidando, isso mostra que você leva a presença online a sério.",
     argumento:
       "Eu não venho pra brigar com quem já te ajuda, venho como uma segunda opinião sem custo. Você vê o que eu montei, compara com o que já tem, e fica com o que for melhor pro seu negócio.",
-    evidencia:
-      "Vários donos que já tinham alguém cuidando acabam ficando com a prévia porque veem na hora que ela resolve melhor, sem depender de ninguém pra atualizar.",
+    reforco:
+      "Comparar não te custa nada e não te obriga a trocar nada. Se o que você já tem resolver melhor, você fica com ele e eu saio da sua frente sem insistir.",
     pergunta:
       "Topa comparar lado a lado o que você já tem com o que eu montei, só pra você decidir com clareza?",
   },
@@ -93,11 +114,11 @@ export const OBJECTIONS: Objection[] = [
     label: "Eu já tenho um site",
     category: "site",
     empatia:
-      "Que bom que você já se preocupou com isso, muita gente do seu ramo nem chegou nesse ponto.",
+      "Que bom que você já se preocupou com isso, então a gente já parte de um ponto em comum: você sabe que estar visível conta.",
     argumento:
-      "Ter um site é meio caminho; o que importa é se ele traz cliente hoje. Eu montei uma versão pensada pra aparecer no Google, funcionar bem no celular e converter quem chega, e você pode comparar com o seu sem gastar nada.",
-    evidencia:
-      "Boa parte dos donos que já tinham site acaba trocando quando vê a prévia, porque percebe que o antigo estava lento, desatualizado ou invisível na busca.",
+      "Ter um site é meio caminho; o que importa é se ele traz cliente hoje. Eu montei uma versão pensada pra aparecer no Google, funcionar bem no celular e facilitar o contato de quem chega, e você pode comparar com o seu sem gastar nada.",
+    reforco:
+      "Vale olhar os dois lado a lado com critério: qual abre rápido no celular, qual aparece quando alguém pesquisa o seu tipo de negócio na sua cidade e em qual dá pra te chamar em um toque. Se o seu ganhar nesses pontos, ótimo.",
     pergunta:
       "Quando foi a última vez que o seu site atual te trouxe um cliente novo de fato?",
   },
@@ -108,9 +129,9 @@ export const OBJECTIONS: Objection[] = [
     empatia:
       "O Instagram é ótimo mesmo e faz sentido você investir onde já tem público.",
     argumento:
-      "O site não substitui o Instagram, ele completa: quando alguém te procura no Google ou quer ver preço, horário e reservar, é o site que fecha. Um trabalha pra descobrirem você, o outro pra decidirem por você.",
-    evidencia:
-      "Muito cliente pesquisa no Google antes de ir, e quem só tem Instagram some dessa busca; quem tem os dois costuma ser encontrado com muito mais facilidade.",
+      "O site não substitui o Instagram, ele completa: quando alguém quer ver preço, horário, endereço ou reservar, é o site que responde isso de forma direta, sem a pessoa ter que rolar o feed ou te mandar mensagem.",
+    reforco:
+      "Faz o teste você mesmo agora: pesquisa no Google o seu tipo de negócio na sua cidade e vê o que aparece. O que estiver lá é exatamente o que um cliente novo encontra.",
     pergunta:
       "Se um cliente novo te procura no Google agora, o que ele encontra sobre o seu negócio?",
   },
@@ -122,8 +143,8 @@ export const OBJECTIONS: Objection[] = [
       "Entendo a frustração, e se você já sentiu isso é porque provavelmente teve uma experiência que não deu retorno.",
     argumento:
       "Site parado é enfeite, você tem razão; a diferença é um site feito pra ser achado no Google e pra converter, com botão de contato, reserva e localização claros. Não é ter um site, é ter o site certo trabalhando por você.",
-    evidencia:
-      "A maioria dos casos de site que não traz cliente é porque ninguém o encontrava; quando o site aparece na busca da região, a história muda.",
+    reforco:
+      "Um site só pode trazer cliente se ele for encontrado e se o próximo passo for fácil. Dá pra checar isso no seu em um minuto: ele aparece quando você pesquisa o seu serviço na sua cidade, e dá pra te chamar em um toque pelo celular?",
     pergunta:
       "Posso te mostrar como a prévia foi pensada pra aparecer pra quem procura o seu tipo de negócio na sua cidade?",
   },
@@ -134,9 +155,9 @@ export const OBJECTIONS: Objection[] = [
     empatia:
       "Sinto que você já se decepcionou com isso antes, e é justo ficar com o pé atrás.",
     argumento:
-      "Da última vez você provavelmente pagou adiantado e ficou na mão sem ver resultado. Aqui é o contrário: o site já está pronto pra você ver funcionando antes de qualquer decisão, e a manutenção fica comigo, você não fica sozinho.",
-    evidencia:
-      "Quase sempre o site anterior falhou por abandono, ninguém atualizava nem cuidava; começar já vendo a prévia pronta e com suporte contínuo evita exatamente isso.",
+      "Se da última vez você pagou adiantado e só depois viu no que dava, aqui a ordem é o contrário: o site já está pronto pra você ver funcionando antes de qualquer decisão, e a manutenção fica comigo, você não fica sozinho.",
+    reforco:
+      "E me conta o que travou naquela vez que eu te digo com honestidade se aqui seria diferente ou não. Se for a mesma história, eu prefiro te falar isso agora do que depois.",
     pergunta:
       "O que deu errado da última vez, foi o resultado ou foi ficar sem suporte depois de pronto?",
   },
@@ -147,9 +168,9 @@ export const OBJECTIONS: Objection[] = [
     empatia:
       "Entendo, quando o negócio é enxuto a gente quer cortar tudo que parece supérfluo.",
     argumento:
-      "Negócio pequeno é justamente quem mais ganha aparecendo, porque compete com os grandes na hora que o cliente pesquisa perto. Um site simples e bem feito te coloca no mapa sem você precisar de estrutura nenhuma.",
-    evidencia:
-      "Muitos donos de negócio pequeno que acham que não precisam mudam de ideia ao ver a prévia, porque percebem que ficam do lado dos concorrentes maiores na busca.",
+      "Na hora que alguém pesquisa perto, o que aparece na tela é quem está na busca, não quem é maior. Um site simples e bem feito te coloca nessa lista sem você precisar de estrutura nenhuma.",
+    reforco:
+      "Olhar a prévia não te compromete com nada e te mostra na prática como o seu negócio ficaria nessa vitrine, ao lado de quem o seu cliente já encontra hoje.",
     pergunta:
       "Se ser encontrado te trouxesse só alguns clientes novos por mês, já valeria pra você?",
   },
@@ -160,7 +181,7 @@ export const MEETING_PLAYBOOK: MeetingStep[] = [
     n: 1,
     title: "Quebra-gelo e rapport",
     body:
-      "Comece humano, não com discurso de venda. Elogie algo real do negócio (uma avaliação boa, o tempo de casa, uma foto) e pergunte como anda o movimento. Deixe a pessoa falar primeiro; o objetivo aqui é baixar a guarda e criar confiança, não vender.",
+      "Comece humano, não com discurso de venda. Elogie algo que você de fato viu no negócio (uma avaliação, o tempo de casa, uma foto) — nunca um elogio genérico ou um detalhe que você supôs, porque o dono percebe na hora. Depois pergunte como anda o movimento e deixe a pessoa falar primeiro; o objetivo aqui é criar confiança, não vender.",
   },
   {
     n: 2,
@@ -184,13 +205,13 @@ export const MEETING_PLAYBOOK: MeetingStep[] = [
     n: 5,
     title: "\"Qualquer mudança a gente faz\"",
     body:
-      "Assim que surgir um \"mas eu mudaria isso\", comemore por dentro: é sinal de interesse. Reforce que tudo é ajustável, cor, foto, texto, ordem das seções, e que ele não está preso a nada do que viu. Tirar o medo de ficar com algo imperfeito derruba a maior barreira antes do preço.",
+      "Assim que surgir um \"mas eu mudaria isso\", comemore por dentro: é sinal de interesse. Reforce que tudo é ajustável, cor, foto, texto, ordem das seções, e que ele não está preso a nada do que viu. Tirar o medo de ficar com algo imperfeito remove uma barreira antes mesmo de falar de preço.",
   },
   {
     n: 6,
     title: "A oferta — ancoragem, mensal e silêncio",
     body:
-      "Ancore no valor cheio primeiro (\"um site assim, feito do zero, sairia por bem mais\") e só então apresente a condição real em euros, puxando pro mensal ou parcelado pra caber no caixa dele. Diga o preço com firmeza e faça silêncio total depois. Quem falar primeiro depois do preço perde; segure e deixe ele responder.",
+      "Ancore no SEU valor cheio primeiro (\"o projeto avulso, do zero, é X\") e só então apresente a condição real em euros, puxando pro mensal ou parcelado pra caber no caixa dele. Ancore só em número que você pratica de verdade: não invente quanto \"o mercado cobra\", porque você não mediu isso e ele pode ter cotado ontem. Diga o preço com firmeza e faça silêncio depois — não preencha o vazio com desconto nem justificativa, deixe ele responder.",
   },
 ];
 
@@ -199,7 +220,7 @@ export const CLOSING_OBJECTIONS: ClosingObjection[] = [
     id: "ta-caro-sem-dinheiro",
     label: "Tá caro, não tenho esse dinheiro agora",
     response:
-      "Eu entendo, e é por isso que trabalho no mensal, pra virar um custo pequeno que cabe no seu caixa em vez de um valor grande de uma vez. Pensa que basta um ou dois clientes novos vindos do site pra ele já se pagar sozinho. Quer que eu te mostre a condição parcelada que fica mais leve?",
+      "Eu entendo, e é por isso que trabalho no mensal, pra virar um custo pequeno que cabe no seu caixa em vez de um valor grande de uma vez. Faz a conta com o seu número: quanto vale pra você um cliente novo? Aí você mesmo vê quantos precisariam vir pra isso valer a pena. Quer que eu te mostre a condição parcelada que fica mais leve?",
   },
   {
     id: "vou-pensar-falar-socio",
@@ -211,13 +232,13 @@ export const CLOSING_OBJECTIONS: ClosingObjection[] = [
     id: "vou-deixar-pra-depois",
     label: "Vou deixar pra depois",
     response:
-      "Entendo, só que o site já está pronto agora e cada semana sem ele é cliente pesquisando e não te encontrando. Como não tem custo pra começar a ver funcionando, adiar não te protege de nada, só adia o resultado. Que tal a gente deixar tudo no ar hoje e você já começa a colher, sem risco?",
+      "Entendo, só que o site já está pronto agora e enquanto ele não está no ar quem pesquisa encontra outros e não você. Como não tem custo pra ver funcionando, adiar não te protege de nada, só empurra a decisão pra frente. Que tal a gente deixar no ar hoje e você acompanha de perto o que acontece?",
   },
   {
     id: "quero-ver-mais-opcoes-cotar",
     label: "Quero ver mais opções / cotar em outro lugar",
     response:
-      "Super justo comparar, é o seu dinheiro. Só lembra que na maioria dos outros lugares você vai pagar adiantado pra só depois ver como fica, e aqui você já está vendo o resultado pronto de graça. Compara com calma, mas me diz: o que você viu hoje deixou faltando alguma coisa?",
+      "Super justo comparar, é o seu dinheiro. Só compara também uma coisa além do preço: o quanto cada um te pede antes de te mostrar o resultado. Aqui você já viu o site pronto sem pagar nada e sem assinar nada. Compara com calma, mas me diz: o que você viu hoje deixou faltando alguma coisa?",
   },
   {
     id: "nao-sei-se-vai-funcionar",
@@ -229,6 +250,6 @@ export const CLOSING_OBJECTIONS: ClosingObjection[] = [
     id: "continuar-com-site-atual",
     label: "Vou continuar com o meu site atual",
     response:
-      "Perfeito, e se o seu atual estivesse te trazendo cliente eu seria o primeiro a dizer pra ficar com ele. A gente acabou de ver lado a lado a diferença de como o novo aparece e converte, então a pergunta não é trocar por trocar, é escolher o que te traz mais gente. Quer que eu te mostre de novo o ponto exato onde eles se diferenciam?",
+      "Perfeito, e se o seu atual estivesse te trazendo cliente eu seria o primeiro a dizer pra ficar com ele. A gente acabou de ver lado a lado como cada um se apresenta e como é entrar em contato por ele, então a pergunta não é trocar por trocar, é escolher o que deixa mais fácil pro cliente chegar até você. Quer que eu te mostre de novo o ponto exato onde eles se diferenciam?",
   },
 ];

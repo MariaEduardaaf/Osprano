@@ -59,20 +59,37 @@ export interface PreviewDict {
   featureServiceTitle: string;
   featureServiceBody: string;
   featureLocationTitle: string;
+  /**
+   * Só nomeia a cidade, que vem do Places. Não diga "em pleno centro de X": a
+   * base não tem endereço nem coordenada que sustente isso, e metade dos leads
+   * fica em bairro ou periferia — seria fato inventado sobre o negócio alheio.
+   */
   featureLocationBodyWithCity: (city: string) => string;
   featureLocationBodyNoCity: string;
   visitHeading: string;
   visitBody: (o: { name: string; category: string | null; city: string | null }) => string;
   phoneLabel: string;
   whereLabel: string;
-  hoursLabel: string;
-  hoursValue: string;
+  // NÃO EXISTE chave de horário aqui (hoursLabel/hoursValue), e não deve voltar a
+  // existir. O bloco de contato da prévia é publicado com o nome do negócio REAL:
+  // cada linha dele se apresenta como registro, não como marketing. O Places
+  // (convex/places.ts) não pede `regularOpeningHours` no field mask, então não há
+  // fonte de verdade — qualquer valor fixo ("Seg–Sáb · 9h–19h") é invenção sobre o
+  // negócio de terceiro e pode mandar o cliente dele para uma porta fechada. Se um
+  // dia o horário vier do Places por lead, ele volta como DADO opcional em
+  // `PreviewContent`, renderizado só quando existir — nunca como string fixa do
+  // dicionário. Mesma régua do rodapé de opt-out: a trava mora no código.
   /**
    * Título da aba do navegador. É o nome do NEGÓCIO, nunca a marca Osprano:
    * o prospect abre o que parece ser o site dele, não uma página do produto.
    */
   metaTitle: (o: { name: string; city: string | null }) => string;
-  /** Descrição da aba/preview de link (WhatsApp, messengers), no idioma do lead. */
+  /**
+   * Descrição da aba/preview de link (WhatsApp, messengers), no idioma do lead.
+   * Recebe só nome e cidade — os dois dados verificados — e não pode prometer o
+   * que a página não tem: nada de "Horário, telefone e como chegar", que anuncia
+   * um horário inexistente e um telefone que nem todo lead tem.
+   */
   metaDescription: (o: { name: string; city: string | null }) => string;
 }
 
@@ -87,19 +104,17 @@ const en: PreviewDict = {
   featureQualityBody: "Made with care, from start to finish.",
   featureServiceTitle: "Service",
   featureServiceBody: "Close to you, just the way you like it.",
-  featureLocationTitle: "In the heart of the city",
-  featureLocationBodyWithCity: (city) => `Right in the centre of ${city}.`,
+  featureLocationTitle: "Where to find us",
+  featureLocationBodyWithCity: (city) => `You'll find us in ${city}.`,
   featureLocationBodyNoCity: "Easy to reach.",
   visitHeading: "Come and visit us",
   visitBody: ({ name, category, city }) =>
     `${name} is a name to know${category ? ` in ${category}` : " in the neighbourhood"}${city ? `, in ${city}` : ""}. We're ready to welcome you.`,
   phoneLabel: "Phone",
   whereLabel: "Where",
-  hoursLabel: "Hours",
-  hoursValue: "Mon–Sat · 9am–7pm",
   metaTitle: ({ name, city }) => (city ? `${name} · ${city}` : name),
   metaDescription: ({ name, city }) =>
-    `Opening hours, phone and how to find ${name}${city ? ` in ${city}` : ""}. Call us or drop by.`,
+    `Get to know ${name}${city ? ` in ${city}` : ""}. Come and visit us.`,
 };
 
 const nl: PreviewDict = {
@@ -113,19 +128,17 @@ const nl: PreviewDict = {
   featureQualityBody: "Met zorg gemaakt, van begin tot eind.",
   featureServiceTitle: "Service",
   featureServiceBody: "Dichtbij, precies zoals u het wilt.",
-  featureLocationTitle: "In het hart van de stad",
-  featureLocationBodyWithCity: (city) => `Midden in het centrum van ${city}.`,
+  featureLocationTitle: "Waar u ons vindt",
+  featureLocationBodyWithCity: (city) => `U vindt ons in ${city}.`,
   featureLocationBodyNoCity: "Makkelijk te bereiken.",
   visitHeading: "Kom langs",
   visitBody: ({ name, category, city }) =>
     `${name} is een begrip${category ? ` in ${category}` : " in de buurt"}${city ? `, in ${city}` : ""}. We heten u graag welkom.`,
   phoneLabel: "Telefoon",
   whereLabel: "Waar",
-  hoursLabel: "Openingstijden",
-  hoursValue: "Ma–Za · 9.00–19.00",
   metaTitle: ({ name, city }) => (city ? `${name} · ${city}` : name),
   metaDescription: ({ name, city }) =>
-    `Openingstijden, telefoonnummer en route naar ${name}${city ? ` in ${city}` : ""}. Bel ons of loop even binnen.`,
+    `Maak kennis met ${name}${city ? ` in ${city}` : ""}. Kom gerust langs.`,
 };
 
 const sv: PreviewDict = {
@@ -139,19 +152,17 @@ const sv: PreviewDict = {
   featureQualityBody: "Gjort med omsorg, från början till slut.",
   featureServiceTitle: "Service",
   featureServiceBody: "Nära dig, precis som du vill ha det.",
-  featureLocationTitle: "Mitt i stan",
-  featureLocationBodyWithCity: (city) => `Mitt i centrala ${city}.`,
+  featureLocationTitle: "Var du hittar oss",
+  featureLocationBodyWithCity: (city) => `Du hittar oss i ${city}.`,
   featureLocationBodyNoCity: "Lätt att hitta.",
   visitHeading: "Kom och besök oss",
   visitBody: ({ name, category, city }) =>
     `${name} är ett namn att känna till${category ? ` inom ${category}` : " i området"}${city ? `, i ${city}` : ""}. Vi tar gärna emot dig.`,
   phoneLabel: "Telefon",
   whereLabel: "Var",
-  hoursLabel: "Öppettider",
-  hoursValue: "Mån–Lör · 09.00–19.00",
   metaTitle: ({ name, city }) => (city ? `${name} · ${city}` : name),
   metaDescription: ({ name, city }) =>
-    `Öppettider, telefonnummer och vägbeskrivning till ${name}${city ? ` i ${city}` : ""}. Ring oss eller kom förbi.`,
+    `Lär känna ${name}${city ? ` i ${city}` : ""}. Kom gärna förbi.`,
 };
 
 const no: PreviewDict = {
@@ -165,19 +176,17 @@ const no: PreviewDict = {
   featureQualityBody: "Laget med omtanke, fra start til slutt.",
   featureServiceTitle: "Service",
   featureServiceBody: "Nær deg, slik du liker det.",
-  featureLocationTitle: "Midt i sentrum",
-  featureLocationBodyWithCity: (city) => `Midt i sentrum av ${city}.`,
+  featureLocationTitle: "Her finner du oss",
+  featureLocationBodyWithCity: (city) => `Du finner oss i ${city}.`,
   featureLocationBodyNoCity: "Lett å finne.",
   visitHeading: "Kom og besøk oss",
   visitBody: ({ name, category, city }) =>
     `${name} er et navn å kjenne til${category ? ` innen ${category}` : " i nabolaget"}${city ? `, i ${city}` : ""}. Vi tar gjerne imot deg.`,
   phoneLabel: "Telefon",
   whereLabel: "Hvor",
-  hoursLabel: "Åpningstider",
-  hoursValue: "Man–Lør · 09.00–19.00",
   metaTitle: ({ name, city }) => (city ? `${name} · ${city}` : name),
   metaDescription: ({ name, city }) =>
-    `Åpningstider, telefonnummer og veibeskrivelse til ${name}${city ? ` i ${city}` : ""}. Ring oss eller stikk innom.`,
+    `Bli kjent med ${name}${city ? ` i ${city}` : ""}. Kom gjerne innom.`,
 };
 
 const es: PreviewDict = {
@@ -191,19 +200,17 @@ const es: PreviewDict = {
   featureQualityBody: "Hecho con cuidado, de principio a fin.",
   featureServiceTitle: "Atención",
   featureServiceBody: "Cerca de usted, tal y como le gusta.",
-  featureLocationTitle: "En el corazón de la ciudad",
-  featureLocationBodyWithCity: (city) => `En pleno centro de ${city}.`,
+  featureLocationTitle: "Dónde encontrarnos",
+  featureLocationBodyWithCity: (city) => `Nos encontrará en ${city}.`,
   featureLocationBodyNoCity: "Fácil de encontrar.",
   visitHeading: "Venga a visitarnos",
   visitBody: ({ name, category, city }) =>
     `${name} es un nombre a tener en cuenta${category ? ` en ${category}` : " en el barrio"}${city ? `, en ${city}` : ""}. Le esperamos.`,
   phoneLabel: "Teléfono",
   whereLabel: "Dónde",
-  hoursLabel: "Horario",
-  hoursValue: "Lun–Sáb · 9:00–19:00",
   metaTitle: ({ name, city }) => (city ? `${name} · ${city}` : name),
   metaDescription: ({ name, city }) =>
-    `Horario, teléfono y cómo llegar a ${name}${city ? ` en ${city}` : ""}. Llámenos o pásese a vernos.`,
+    `Conozca ${name}${city ? ` en ${city}` : ""}. Venga a visitarnos.`,
 };
 
 const it: PreviewDict = {
@@ -219,19 +226,17 @@ const it: PreviewDict = {
   // Lei/Le maiúsculos: forma de cortesia, igual a "La aspettiamo" e "Ci chiami"
   // no mesmo dicionário — minúsculo aqui era alternância de tratamento.
   featureServiceBody: "Vicino a Lei, proprio come Le piace.",
-  featureLocationTitle: "Nel cuore della città",
-  featureLocationBodyWithCity: (city) => `In pieno centro a ${city}.`,
+  featureLocationTitle: "Dove trovarci",
+  featureLocationBodyWithCity: (city) => `Ci trova a ${city}.`,
   featureLocationBodyNoCity: "Facile da raggiungere.",
   visitHeading: "Venga a trovarci",
   visitBody: ({ name, category, city }) =>
     `${name} è un nome da conoscere${category ? ` nel settore ${category}` : " nel quartiere"}${city ? `, a ${city}` : ""}. La aspettiamo.`,
   phoneLabel: "Telefono",
   whereLabel: "Dove",
-  hoursLabel: "Orari",
-  hoursValue: "Lun–Sab · 9:00–19:00",
   metaTitle: ({ name, city }) => (city ? `${name} · ${city}` : name),
   metaDescription: ({ name, city }) =>
-    `Orari, telefono e come raggiungere ${name}${city ? ` a ${city}` : ""}. Ci chiami o passi a trovarci.`,
+    `Scopra ${name}${city ? ` a ${city}` : ""}. Venga a trovarci.`,
 };
 
 /** Português europeu (PT), não pt-BR: é a língua do prospect, não da usuária. */
@@ -246,19 +251,17 @@ const pt: PreviewDict = {
   featureQualityBody: "Feito com cuidado, do início ao fim.",
   featureServiceTitle: "Atendimento",
   featureServiceBody: "Perto de si, tal como gosta.",
-  featureLocationTitle: "No coração da cidade",
-  featureLocationBodyWithCity: (city) => `Mesmo no centro de ${city}.`,
+  featureLocationTitle: "Onde nos encontra",
+  featureLocationBodyWithCity: (city) => `Encontra-nos em ${city}.`,
   featureLocationBodyNoCity: "Fácil de encontrar.",
   visitHeading: "Venha visitar-nos",
   visitBody: ({ name, category, city }) =>
     `${name} é um nome a conhecer${category ? ` em ${category}` : " no bairro"}${city ? `, em ${city}` : ""}. Teremos todo o gosto em recebê-lo.`,
   phoneLabel: "Telefone",
   whereLabel: "Onde",
-  hoursLabel: "Horário",
-  hoursValue: "Seg–Sáb · 9h00–19h00",
   metaTitle: ({ name, city }) => (city ? `${name} · ${city}` : name),
   metaDescription: ({ name, city }) =>
-    `Horário, telefone e como chegar a ${name}${city ? `, em ${city}` : ""}. Ligue-nos ou passe por cá.`,
+    `Conheça ${name}${city ? `, em ${city}` : ""}. Venha visitar-nos.`,
 };
 
 /** Alemão padrão (Hochdeutsch) — serve DE e CH (B2B suíço usa alemão padrão). */
@@ -273,19 +276,17 @@ const de: PreviewDict = {
   featureQualityBody: "Mit Sorgfalt gemacht, von Anfang bis Ende.",
   featureServiceTitle: "Service",
   featureServiceBody: "Nah bei Ihnen, ganz wie Sie es mögen.",
-  featureLocationTitle: "Im Herzen der Stadt",
-  featureLocationBodyWithCity: (city) => `Mitten im Zentrum von ${city}.`,
+  featureLocationTitle: "Wo Sie uns finden",
+  featureLocationBodyWithCity: (city) => `Sie finden uns in ${city}.`,
   featureLocationBodyNoCity: "Gut zu erreichen.",
   visitHeading: "Besuchen Sie uns",
   visitBody: ({ name, category, city }) =>
     `${name} ist ein Name, den man kennt${category ? ` in der Branche ${category}` : " im Viertel"}${city ? `, in ${city}` : ""}. Wir freuen uns auf Sie.`,
   phoneLabel: "Telefon",
   whereLabel: "Wo",
-  hoursLabel: "Öffnungszeiten",
-  hoursValue: "Mo–Sa · 9–19 Uhr",
   metaTitle: ({ name, city }) => (city ? `${name} · ${city}` : name),
   metaDescription: ({ name, city }) =>
-    `Öffnungszeiten, Telefonnummer und Anfahrt zu ${name}${city ? ` in ${city}` : ""}. Rufen Sie uns an oder schauen Sie vorbei.`,
+    `Lernen Sie ${name}${city ? ` in ${city}` : ""} kennen. Besuchen Sie uns.`,
 };
 
 const da: PreviewDict = {
@@ -299,19 +300,17 @@ const da: PreviewDict = {
   featureQualityBody: "Lavet med omhu, fra start til slut.",
   featureServiceTitle: "Service",
   featureServiceBody: "Tæt på dig, præcis som du vil have det.",
-  featureLocationTitle: "Midt i byen",
-  featureLocationBodyWithCity: (city) => `Midt i centrum af ${city}.`,
+  featureLocationTitle: "Sådan finder du os",
+  featureLocationBodyWithCity: (city) => `Du finder os i ${city}.`,
   featureLocationBodyNoCity: "Nemt at finde.",
   visitHeading: "Kom og besøg os",
   visitBody: ({ name, category, city }) =>
     `${name} er et navn, man kender${category ? ` inden for ${category}` : " i kvarteret"}${city ? `, i ${city}` : ""}. Vi tager gerne imod dig.`,
   phoneLabel: "Telefon",
   whereLabel: "Hvor",
-  hoursLabel: "Åbningstider",
-  hoursValue: "Man–Lør · 9.00–19.00",
   metaTitle: ({ name, city }) => (city ? `${name} · ${city}` : name),
   metaDescription: ({ name, city }) =>
-    `Åbningstider, telefonnummer og vejvisning til ${name}${city ? ` i ${city}` : ""}. Ring til os, eller kig forbi.`,
+    `Lær ${name}${city ? ` i ${city}` : ""} at kende. Kig gerne forbi.`,
 };
 
 /**
@@ -337,10 +336,10 @@ const fr: PreviewDict = {
   featureQualityBody: "Fait avec soin, du début à la fin.",
   featureServiceTitle: "Service",
   featureServiceBody: "Près de vous, comme vous l'entendez.",
-  featureLocationTitle: "Au cœur de la ville",
-  featureLocationBodyWithCity: (city) => `En plein centre de ${city}.`,
+  featureLocationTitle: "Où nous trouver",
+  featureLocationBodyWithCity: (city) => `Vous nous trouvez à ${city}.`,
   // Chave de acessibilidade ("Easy to reach"), não de localização: "d'accès",
-  // não "à trouver" — este último repetiria a ideia do título.
+  // não "à trouver" — este último repetiria o verbo do título.
   featureLocationBodyNoCity: "Facile d'accès.",
   visitHeading: "Venez nous rendre visite",
   // `en ${category}`: a categoria vem crua do Places ("boulangerie"), e
@@ -349,12 +348,9 @@ const fr: PreviewDict = {
     `${name} est une adresse à connaître${category ? ` en ${category}` : " dans le quartier"}${city ? `, à ${city}` : ""}. Nous vous attendons.`,
   phoneLabel: "Téléphone",
   whereLabel: "Où",
-  hoursLabel: "Horaires",
-  hoursValue: "Lun–Sam · 9h00–19h00",
   metaTitle: ({ name, city }) => (city ? `${name} · ${city}` : name),
-  // "itinéraire VERS": em francês o destino pede `vers`/`jusqu'à`, não `pour`.
   metaDescription: ({ name, city }) =>
-    `Horaires, téléphone et itinéraire vers ${name}${city ? ` à ${city}` : ""}. Appelez-nous ou passez nous voir.`,
+    `Découvrez ${name}${city ? ` à ${city}` : ""}. Venez nous rendre visite.`,
 };
 
 export const DICTS: Record<Locale, PreviewDict> = { en, nl, sv, no, es, it, pt, de, da, fr };

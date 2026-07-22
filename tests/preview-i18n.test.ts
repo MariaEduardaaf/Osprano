@@ -56,6 +56,63 @@ test("preview-i18n: fora da Suíça a cidade é ignorada", () => {
   }
 });
 
+/**
+ * Toda a copy de um locale, com as funções já materializadas: é o texto que o
+ * prospect realmente lê, não só as chaves fixas.
+ */
+function allCopy(locale: keyof typeof DICTS): string[] {
+  const d = DICTS[locale];
+  return [
+    ...Object.values(d).filter((v): v is string => typeof v === "string"),
+    d.featureLocationBodyWithCity("Madrid"),
+    d.visitBody({ name: "Casa Nova", category: "café", city: "Madrid" }),
+    d.visitBody({ name: "Casa Nova", category: null, city: null }),
+    d.metaTitle({ name: "Casa Nova", city: "Madrid" }),
+    d.metaDescription({ name: "Casa Nova", city: "Madrid" }),
+    d.metaDescription({ name: "Casa Nova", city: null }),
+  ];
+}
+
+/** Fonte do componente sem comentários: o que é RENDERIZADO, não o que se explica. */
+function previewSiteCode(): string {
+  const src = readFileSync(new URL("../src/components/preview-site.tsx", import.meta.url), "utf8");
+  return src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+}
+
+test("preview-i18n: nenhum dicionário afirma horário de funcionamento", () => {
+  // O horário NUNCA veio de dado: o field mask do Places (convex/places.ts) não
+  // pede `regularOpeningHours`. A prévia é pública e leva o nome do negócio real,
+  // então um horário fixo do dicionário mandava o cliente do prospect à porta
+  // fechada. A chave foi removida; este teste impede que volte, em qualquer idioma.
+  const hoursWord =
+    /hour|horári|horario|orari|horaire|öppettid|åpningstid|åbningstid|openingstijd|öffnungszeit/i;
+  // "9:00–19:00", "9h00", "9am", "9–19 Uhr" — valor com cara de horário.
+  const hoursValue = /\d{1,2}\s*[:.h]\s*\d{2}|\b\d{1,2}\s*(am|pm)\b|\bUhr\b/i;
+  for (const l of Object.keys(DICTS) as (keyof typeof DICTS)[]) {
+    for (const key of Object.keys(DICTS[l])) {
+      assert.equal(hoursWord.test(key), false, `${l}: chave de horário de volta (${key})`);
+    }
+    for (const s of allCopy(l)) {
+      assert.equal(hoursWord.test(s), false, `${l}: copy promete horário: ${JSON.stringify(s)}`);
+      assert.equal(hoursValue.test(s), false, `${l}: copy afirma horário: ${JSON.stringify(s)}`);
+    }
+  }
+});
+
+test("preview-i18n: a copy não afirma localização que a base não tem", () => {
+  // Do lead só se sabe a CIDADE (Places). "Em pleno centro de X" / "no coração da
+  // cidade" é endereço inventado — boa parte dos leads fica em bairro ou periferia.
+  // Heurística com as formas que já estiveram no dicionário, uma por idioma —
+  // pega o copiar/colar da versão antiga, que é como isto voltaria.
+  const centreClaim =
+    /pleno centro|pieno centro|plein centre|centro de|centre of|centre de|centrum|zentrum|herzen der stadt|heart of|cœur de|cuore della|corazón de|coração|mitt i stan|mitt i centrala|midt i sentrum|midt i byen/i;
+  for (const l of Object.keys(DICTS) as (keyof typeof DICTS)[]) {
+    for (const s of allCopy(l)) {
+      assert.equal(centreClaim.test(s), false, `${l}: afirma centralidade: ${JSON.stringify(s)}`);
+    }
+  }
+});
+
 test("preview-i18n: todos os locales têm as mesmas chaves", () => {
   const keys = Object.keys(DICTS.en).sort();
   for (const l of Object.keys(DICTS) as (keyof typeof DICTS)[]) {
@@ -154,6 +211,19 @@ test("preview-i18n: funções interpoladas incluem os argumentos", () => {
 });
 
 test("preview-site: nenhuma string PT hardcoded permanece", () => {
-  const src = readFileSync(new URL("../src/components/preview-site.tsx", import.meta.url), "utf8");
-  assert.equal(src.match(/Venha|Tradição|Seg–Sáb/), null);
+  assert.equal(previewSiteCode().match(/Venha|Tradição|Seg–Sáb/), null);
+});
+
+test("preview-site: o bloco de fatos só renderiza dado do lead", () => {
+  const code = previewSiteCode();
+  // Nenhuma referência a horário sobrou (nem via dicionário, nem hardcoded).
+  assert.equal(code.match(/hours/i), null, "referência a horário de volta no componente");
+  // Sem separador "." aqui: classe Tailwind (`tracking-[0.22em]`) daria falso positivo.
+  assert.equal(code.match(/\b\d{1,2}\s*[:h]\s*\d{2}\b|\b\d{1,2}\s*(am|pm)\b|\d{1,2}[.:h]\d{2}\s*[–-]/i), null);
+  // Todo <dd> do bloco de contato sai de `facts`, que é montado só com o que veio
+  // do Places para este lead. Um `<dd>` com `tr.` seria valor vindo do dicionário
+  // — foi exatamente assim que o horário inventado entrou.
+  for (const dd of code.match(/<dd[^>]*>[\s\S]*?<\/dd>/g) ?? []) {
+    assert.equal(dd.match(/\btr\./), null, `<dd> com valor do dicionário: ${dd}`);
+  }
 });

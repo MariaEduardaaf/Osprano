@@ -10,13 +10,19 @@ import {
   isEmailable,
   type Signals,
 } from "./lib/domain";
-import { checkHttps, fetchPageSpeed, extractEmail } from "./lib/enrich";
+import { checkHttps, fetchPageSpeed, extractEmail, isSlow, isNotMobile } from "./lib/enrich";
 
 /**
  * Refine a lead after discovery: live Digital Presence signals (HTTPS, PageSpeed)
  * plus compliance enrichment — infer legal form from the name, discover a contact
  * email from the business's own site, classify role vs named, and recompute
  * whether the lead is defensibly emailable.
+ *
+ * INVARIANTE DE SINAL: cada flag de `Signals` significa "pain VERIFICADA".
+ * Medição que não voltou (timeout, bloqueio anti-bot, PageSpeed fora do ar) fica
+ * `false` — não pontua, não vira frase no email. Nunca escreva `!medida` aqui:
+ * foi assim (`noHttps = !https`) que qualquer falha de rede virou a acusação
+ * "o site deste negócio não tem HTTPS".
  */
 export const scoreLead = internalAction({
   args: { leadId: v.id("leads") },
@@ -37,11 +43,13 @@ export const scoreLead = internalAction({
         fetchPageSpeed(lead.website, key),
         discoveredEmail ? Promise.resolve(discoveredEmail) : extractEmail(lead.website),
       ]);
-      noHttps = !https;
-      if (ps) {
-        if (ps.perf !== null) slow = ps.perf < 0.5;
-        notMobile = !ps.mobileFriendly;
+      // Só evidência positiva de ausência de TLS vira pain; "unknown" fica false.
+      noHttps = https.status === "insecure";
+      if (https.status === "unknown") {
+        console.log(`[scoring] HTTPS indeterminado para ${lead.website} (${https.reason})`);
       }
+      slow = isSlow(ps);
+      notMobile = isNotMobile(ps);
       if (email) discoveredEmail = email;
     }
 
