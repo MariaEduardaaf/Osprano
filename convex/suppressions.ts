@@ -62,23 +62,13 @@ export const isSuppressed = internalQuery({
   handler: async (ctx, args) => isEmailSuppressed(ctx, args),
 });
 
-/**
- * Só-leitura: país do lead por trás do token de unsubscribe, para a página de
- * confirmação sair no idioma do prospect (COMP-02) em vez de inglês fixo.
- * Não escreve nada. Token desconhecido ou lead sumido → null (a página cai no inglês).
+/*
+ * `countryForUnsubToken` viveu aqui e foi REMOVIDA de propósito: ela resolvia o idioma
+ * da página de unsubscribe só pelo país, e na Suíça isso mandava o prospect de Genebra
+ * para uma página em alemão. Quem faz esse trabalho agora é
+ * `outreach.langForUnsubToken`, que devolve o idioma já resolvido por (país, cidade).
+ * Não reintroduzir uma versão country-only: dois resolvedores de idioma divergem.
  */
-export const countryForUnsubToken = internalQuery({
-  args: { token: v.string() },
-  handler: async (ctx, { token }): Promise<string | null> => {
-    const row = await ctx.db
-      .query("outreach")
-      .withIndex("by_unsub_token", (q) => q.eq("unsubscribeToken", token))
-      .first();
-    if (!row) return null;
-    const lead = await ctx.db.get(row.leadId);
-    return lead?.countryCode ?? null;
-  },
-});
 
 /** Chamado pelo endpoint público (plano 02-03). No-leak: token desconhecido = no-op. */
 export const unsubscribeByToken = internalMutation({

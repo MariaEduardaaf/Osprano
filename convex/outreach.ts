@@ -1,10 +1,10 @@
-import { action, mutation, query, internalMutation } from "./_generated/server";
+import { action, mutation, query, internalMutation, internalQuery } from "./_generated/server";
 import type { QueryCtx } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { requireOrgId } from "./model/tenant";
-import { writeEmail, writeCallScript, LANG } from "./lib/outreachAi";
+import { writeEmail, writeCallScript, langForLead } from "./lib/outreachAi";
 import { normalizeEmail, canContactByEmail } from "./lib/domain";
 import { optOutFooter, senderIdentityFrom } from "./lib/compliance";
 import { addSuppression, isEmailSuppressed } from "./suppressions";
@@ -107,7 +107,8 @@ function withOptOutFooter(body: string, lead: Doc<"leads"> | null, token: string
   const url = buildUnsubscribeUrl(token);
   if (body.includes(url)) return body; // idempotente
   const sender = senderIdentityFrom(process.env.RESEND_FROM ?? "Osprano");
-  const lang = LANG[lead?.countryCode ?? ""] ?? "English";
+  // País E cidade: na Suíça o idioma é regional (Genebra = francês). Sem lead → inglês.
+  const lang = lead ? langForLead(lead) : "English";
   return `${body}${optOutFooter(lang, url, sender)}`;
 }
 
@@ -158,6 +159,32 @@ export const setUnsubscribeToken = internalMutation({
   args: { outreachId: v.id("outreach"), unsubscribeToken: v.string() },
   handler: async (ctx, { outreachId, unsubscribeToken }) => {
     await ctx.db.patch(outreachId, { unsubscribeToken });
+  },
+});
+
+/**
+ * Só-leitura: IDIOMA do prospect por trás de um token de unsubscribe, para a página de
+ * confirmação (COMP-02) sair no idioma em que o rodapé foi escrito.
+ *
+ * Devolve o idioma já resolvido (não o país) por dois motivos: `langForLead` precisa da
+ * CIDADE além do país — na Suíça o idioma é regional — e o endpoint público não tem por
+ * que receber dado do lead que não vai usar. Token desconhecido ou lead sumido → null,
+ * e o handler cai no inglês.
+ *
+ * Substitui `suppressions.countryForUnsubToken`, que só conhecia o país (Genebra recebia
+ * a página em alemão). Vive aqui porque lê a tabela `outreach`.
+ */
+export const langForUnsubToken = internalQuery({
+  args: { token: v.string() },
+  handler: async (ctx, { token }): Promise<string | null> => {
+    const row = await ctx.db
+      .query("outreach")
+      .withIndex("by_unsub_token", (q) => q.eq("unsubscribeToken", token))
+      .first();
+    if (!row) return null;
+    const lead = await ctx.db.get(row.leadId);
+    if (!lead) return null;
+    return langForLead(lead);
   },
 });
 
@@ -347,7 +374,9 @@ export const send = action({
     const unsubscribeUrl = `${process.env.CONVEX_SITE_URL}/unsubscribe?token=${unsubscribeToken}`;
     let body = row.body;
     if (!body.includes(unsubscribeUrl)) {
-      const lang = LANG[lead.countryCode] ?? "English";
+      // `lead` é o doc completo (leads.getInternal), então tem `city` — o rodapé do
+      // prospect de Genebra sai em francês, não no alemão do país.
+      const lang = langForLead(lead);
       body = `${body}${optOutFooter(lang, unsubscribeUrl, senderIdentityFrom(from))}`;
     }
 
