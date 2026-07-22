@@ -11,6 +11,7 @@ import {
   computeScore,
   tierFromScore,
   isEmailable,
+  canContactByEmail,
   inferLegalForm,
   inferContactType,
   type Signals,
@@ -88,7 +89,10 @@ export const stats = query({
     let noSite = 0;
     for (const lead of leads) {
       byStage[lead.stage] += 1;
-      if (lead.emailable) emailable += 1;
+      // canContactByEmail, não lead.emailable cru: o consentimento explícito
+      // (contactOptInAt) destrava o email e o app inteiro trata esses leads como
+      // abordáveis — contar só `emailable` faria a métrica mentir para baixo.
+      if (canContactByEmail(lead)) emailable += 1;
       if (lead.signals?.noSite || lead.signals?.socialOnly) noSite += 1;
     }
     return { total: leads.length, byStage, emailable, noSite };
@@ -187,6 +191,41 @@ export const recordWaOptIn = mutation({
     await ctx.db.insert("events", {
       orgId,
       type: "wa_opt_in",
+      leadId,
+      at: now,
+      meta: { source, ...(note ? { note } : {}) },
+    });
+    return { optInAt: now };
+  },
+});
+
+/** OPTIN-04: consentimento de contato generalizado (email + WhatsApp). Origem + timestamp + evento. */
+export const recordContactOptIn = mutation({
+  args: {
+    leadId: v.id("leads"),
+    // Vocabulário FECHADO: o consentimento é a prova legal do envio, então a origem
+    // precisa ser auditável — string livre permitiria gravar qualquer coisa.
+    source: v.union(
+      v.literal("phone_call"),
+      v.literal("in_person"),
+      v.literal("reply"),
+      v.literal("other"),
+    ),
+    note: v.optional(v.string()),
+  },
+  handler: async (ctx, { leadId, source, note }) => {
+    const orgId = await requireOrgId(ctx);
+    const lead = await ctx.db.get(leadId);
+    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    const now = Date.now();
+    await ctx.db.patch(leadId, {
+      contactOptInAt: now,
+      contactOptInSource: source,
+      ...(note ? { contactOptInNote: note } : {}),
+    });
+    await ctx.db.insert("events", {
+      orgId,
+      type: "contact_opt_in",
       leadId,
       at: now,
       meta: { source, ...(note ? { note } : {}) },
@@ -315,6 +354,18 @@ export const applyScore = internalMutation({
       contactType: args.contactType,
       emailable: args.emailable,
       scoredAt: Date.now(),
+    });
+  },
+});
+
+/** OPTIN-03: persiste o script de ligação gerado pela IA no lead. */
+export const setCallScript = internalMutation({
+  args: { leadId: v.id("leads"), script: v.string(), translation: v.string() },
+  handler: async (ctx, { leadId, script, translation }) => {
+    await ctx.db.patch(leadId, {
+      callScript: script,
+      callScriptPt: translation,
+      callScriptAt: Date.now(),
     });
   },
 });

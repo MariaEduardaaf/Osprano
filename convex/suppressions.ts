@@ -1,5 +1,5 @@
 import { internalMutation, internalQuery } from "./_generated/server";
-import type { MutationCtx } from "./_generated/server";
+import type { MutationCtx, QueryCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { normalizeEmail } from "./lib/domain";
@@ -39,15 +39,44 @@ export const add = internalMutation({
   handler: async (ctx, args) => addSuppression(ctx, args),
 });
 
+/**
+ * Fonte ÚNICA da regra de supressão (dual-scope: row da própria org OU global,
+ * orgId undefined). Actions usam a internalQuery abaixo (ctx.runQuery); mutations
+ * chamam este helper direto, porque uma mutation não pode ctx.runQuery.
+ * email DEVE vir normalizado (normalizeEmail).
+ */
+export async function isEmailSuppressed(
+  ctx: QueryCtx,
+  { email, orgId }: { email: string; orgId: string },
+): Promise<boolean> {
+  const rows = await ctx.db
+    .query("suppressions")
+    .withIndex("by_email", (q) => q.eq("email", email))
+    .collect();
+  return rows.some((r) => r.orgId === orgId || r.orgId === undefined);
+}
+
 /** Dual-scope: suprimido se houver row da própria org OU global (orgId undefined). */
 export const isSuppressed = internalQuery({
   args: { email: v.string(), orgId: v.string() },
-  handler: async (ctx, { email, orgId }) => {
-    const rows = await ctx.db
-      .query("suppressions")
-      .withIndex("by_email", (q) => q.eq("email", email))
-      .collect();
-    return rows.some((r) => r.orgId === orgId || r.orgId === undefined);
+  handler: async (ctx, args) => isEmailSuppressed(ctx, args),
+});
+
+/**
+ * Só-leitura: país do lead por trás do token de unsubscribe, para a página de
+ * confirmação sair no idioma do prospect (COMP-02) em vez de inglês fixo.
+ * Não escreve nada. Token desconhecido ou lead sumido → null (a página cai no inglês).
+ */
+export const countryForUnsubToken = internalQuery({
+  args: { token: v.string() },
+  handler: async (ctx, { token }): Promise<string | null> => {
+    const row = await ctx.db
+      .query("outreach")
+      .withIndex("by_unsub_token", (q) => q.eq("unsubscribeToken", token))
+      .first();
+    if (!row) return null;
+    const lead = await ctx.db.get(row.leadId);
+    return lead?.countryCode ?? null;
   },
 });
 

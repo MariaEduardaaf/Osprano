@@ -6,9 +6,13 @@ import { hasWaOptIn } from "./lib/domain";
 
 /**
  * Send a WhatsApp follow-up. COMPLIANCE: allowed ONLY after the prospect has a
- * registered opt-in (lead.waOptInAt, set via leads.recordWaOptIn with an explicit
- * source + timestamp). Kanban stage does NOT unlock WhatsApp — moving a card never
- * grants consent. Cold WhatsApp is unlawful in the EU without prior opt-in.
+ * registered opt-in, checked via hasWaOptIn(lead). Two equivalent legal bases:
+ *  - lead.waOptInAt — opt-in específico de WhatsApp (leads.recordWaOptIn);
+ *  - lead.contactOptInAt — consentimento de contato generalizado (OPTIN-04,
+ *    leads.recordContactOptIn), que destrava email E WhatsApp com um único registro.
+ * Ambos gravam origem + timestamp + evento, que são a prova de consentimento.
+ * Kanban stage does NOT unlock WhatsApp — moving a card never grants consent.
+ * Cold WhatsApp is unlawful in the EU without prior opt-in.
  */
 export const sendFollowup = action({
   args: { leadId: v.id("leads"), message: v.string() },
