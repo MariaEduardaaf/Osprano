@@ -19,15 +19,12 @@ requirements: [OPTIN-01, OPTIN-02, OPTIN-03, OPTIN-04, OPTIN-05, OPTIN-06]
 
 Baseline antes da fase: 44 testes. Depois: 69 (+25).
 
-> **Limitação de ambiente:** `npx convex codegen` não roda nesta máquina
-> ("You don't have access to the selected project" — o deployment do
-> `.env.local` é local e não está acessível). Os arquivos de
-> `convex/_generated/` derivam genericamente do schema
-> (`DataModel = DataModelFromSchemaDefinition<typeof schema>`), então o
-> typecheck valida os campos novos ponta a ponta. **Pendência operacional:**
-> rodar `npx convex dev` (passo 1 do `docs/CHECKLIST-MODO-REAL.md`) para o
-> schema novo chegar ao banco antes do primeiro uso real. Todos os campos
-> adicionados são opcionais → migração não-quebra.
+> **RESOLVIDO em 2026-07-22.** `npx convex codegen` falhava com "You don't
+> have access to the selected project" porque o `CONVEX_DEPLOYMENT` apontava
+> para o projeto `sitescout` (nome antigo do repo), inexistente na conta.
+> Reconfigurado com `npx convex dev --once --configure new --project osprano
+> --dev-deployment local`. Codegen roda, o schema da Fase 4 está no banco e
+> os testes de runtime abaixo passaram.
 
 ## Critérios de sucesso da fase
 
@@ -108,17 +105,41 @@ devolve tradução vazia e o painel avisa que ela não pôde ser gerada.
 mercados opt-in — validar juridicamente a Espanha (exatamente o que OPTIN-06
 promete) quebraria a suíte. Reescrito para travar a invariante.
 
-## Verificação manual pendente (exige chaves/deployment)
+## Verificação de runtime (executada 2026-07-22)
 
-Nada abaixo bloqueia o merge; são confirmações de ponta a ponta que só rodam
-com o ambiente real. Roteiro no `docs/CHECKLIST-MODO-REAL.md` §8.
+Rodada contra o deployment local, com `DEMO_MODE=1` e o seed. Até aqui o
+backend só tinha typecheck — estes são os primeiros testes de execução real
+das mutations/actions.
+
+| # | Teste | Resultado |
+|---|-------|-----------|
+| 1 | `outreach.draft` em lead ES sem consentimento | ✅ recusa: "Mercado opt-in: registre o consentimento…" |
+| 2 | `outreach.markSent` no mesmo lead (o 3º caminho, que era o buraco) | ✅ recusa com o mesmo erro |
+| 3 | `outreach.updateDraft` no mesmo lead | ✅ recusa com o mesmo erro |
+| 4 | `outreach.upsertDraft` (defesa em profundidade) em lead CH sem consentimento | ✅ recusa |
+| 5 | `outreach.draft` em lead DE **com** consentimento | ✅ passa o gate (para só na falta de `ANTHROPIC_API_KEY`) |
+| 6 | `outreach.callScript` em lead ES **sem** consentimento | ✅ NÃO é bloqueado — a ligação é o que conquista o consentimento |
+| 7 | `leads.recordContactOptIn` e depois `draft` no mesmo lead ES | ✅ consentimento destrava o gate |
+| 8 | `recordContactOptIn` com origem fora do vocabulário | ✅ `ArgumentValidationError` — a prova legal não aceita string livre |
+| 9 | **Supressão vence consentimento:** lead DE com consentimento que pediu opt-out | ✅ `draft` e `markSent` recusam por opt-out, não por mercado |
+| 10 | Página de unsubscribe do lead DE (Leipzig) | ✅ `<html lang="de">`, título "Abgemeldet" |
+| 11 | Token inválido na página de unsubscribe | ✅ cai no inglês (fallback) |
+| 12 | Resolução suíça ponta a ponta (Genève / Lugano / Zürich) | ✅ `lang="fr"` / `"it"` / `"de"` |
+| 13 | Subúrbio de Genebra ("Chêne-Bougeries") — o risco real do Foursquare | ✅ `lang="fr"` |
+| 14 | Cidade suíça desconhecida | ✅ `lang="de"` (fallback deliberado) |
+
+O teste 9 é o mais importante: prova que o consentimento destrava o regime do
+mercado mas **nunca** relaxa a supressão.
+
+Dados do demo restaurados ao final (`demo.seed` limpa a org antes de semear).
+
+### Ainda pendente — exige chave externa
 
 | O quê | Precisa de |
 |-------|-----------|
 | Busca real em Madrid → leads com `emailable=false` | `GOOGLE_PLACES_API_KEY` |
-| Script de ligação em espanhol + tradução pt-BR | `ANTHROPIC_API_KEY` |
-| Consentimento → composer destrava; sem consentimento → erro pt-BR | deployment Convex |
-| Email localizado + rodapé + página de unsubscribe no idioma | `RESEND_API_KEY` |
+| Script de ligação em espanhol + tradução pt-BR, e o francês de Genebra | `ANTHROPIC_API_KEY` |
+| Email realmente entregue com rodapé localizado | `RESEND_API_KEY` |
 
 ## Limitações conhecidas (deliberadas)
 

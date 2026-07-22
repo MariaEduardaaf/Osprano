@@ -123,5 +123,7 @@ Resume file: .planning/phases/04-modo-opt-in-liga-o-primeiro-para-mercados-onde-
 
 ## Pendências operacionais (não são código)
 
-- `npx convex codegen`/`deploy` não rodam nesta máquina (deployment do `.env.local` é local e inacessível). O schema da Fase 4 só chega ao banco ao rodar `npx convex dev` — passo 1 do `docs/CHECKLIST-MODO-REAL.md`. Campos novos são todos opcionais → migração não-quebra.
+- RESOLVIDO 2026-07-22: o `CONVEX_DEPLOYMENT` apontava para o projeto `sitescout` (nome antigo do repo), que não existe mais na conta — daí "You don't have access to the selected project" em todo comando Convex. Reconfigurado para o projeto `osprano` com deployment LOCAL (`npx convex dev --once --configure new --project osprano --dev-deployment local`). Codegen roda, schema da Fase 4 no banco, guardrails validados em runtime (ver 04-VERIFICATION.md §Verificação de runtime).
+- Deployment atual é LOCAL (grátis, offline). Para uso real com Clerk/Resend, trocar para nuvem — passo 1 do `docs/CHECKLIST-MODO-REAL.md`.
+- Falta ainda: `GOOGLE_PLACES_API_KEY` (busca real), `ANTHROPIC_API_KEY` (script/email por IA), `RESEND_API_KEY` (envio).
 - `pnpm test/typecheck/lint` abortam neste terminal (`ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY`). Usar `npx tsc --noEmit`, `npx eslint`, `node --experimental-strip-types --test tests/*.test.ts`.

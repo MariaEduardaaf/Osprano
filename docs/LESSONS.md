@@ -83,5 +83,27 @@ alemão silencioso. Bélgica e Canadá teriam o mesmo problema.
 `sintoma:` campo novo tipado, typecheck verde, e em runtime o dado não grava.
 `causa:` `convex/_generated/` deriva genericamente do schema, então o
 typecheck valida SEM o deployment ter visto a mudança.
-`fix:` `npx convex dev` (passo 1 do `docs/CHECKLIST-MODO-REAL.md`) antes do
-primeiro uso real. Ver também `~/.claude/licoes.md` §Convex.
+`fix:` `npx convex dev` antes do primeiro uso real. Ver também
+`~/.claude/licoes.md` §Convex.
+
+**"You don't have access to the selected project" depois de renomear o repo**
+`sintoma:` TODO comando Convex (`dev`, `codegen`, `run`) morre com essa
+mensagem e pede input interativo. Parece problema de login — não é: o token
+autentica normalmente.
+`causa:` o `CONVEX_DEPLOYMENT` do `.env.local` carrega o nome do PROJETO
+(`local:local-<team>-<projeto>  # team: X, project: Y`). O projeto tinha o
+nome antigo do repo (`sitescout`); depois do rename para `osprano` a conta
+não tinha mais nada com aquele nome, e o CLI só sabe perguntar.
+`fix:` `npx convex dev --once --configure new --project osprano
+--dev-deployment local` reconfigura sem prompt. Passar `--team` só atrapalha
+se o slug não bater — omita e ele resolve sozinho. `Diagnóstico 1º:`
+`grep "^CONVEX_DEPLOYMENT" .env.local` — o comentário na própria linha diz
+qual projeto ele está procurando.
+
+**`npx convex run` sobe e derruba o backend a cada chamada**
+`sintoma:` `convex run` funciona, mas `curl` no endpoint HTTP (porta 3211)
+devolve resposta vazia e nada aparece escutando na porta.
+`causa:` em deployment local, `run` e `codegen` iniciam o backend, executam e
+encerram. Só `npx convex dev` (sem `--once`) o mantém de pé.
+`fix:` para testar httpAction (unsubscribe, webhooks), deixe `npx convex dev`
+rodando em background e use `curl --retry-connrefused` para esperar a porta.
