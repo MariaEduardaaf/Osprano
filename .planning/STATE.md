@@ -105,6 +105,8 @@ None yet.
 - [Phase 4]: OPTIN-06: o aviso jurídico deriva de `MARKETS[país].legalReview`, não da aba — senão validar um país não muda nada
 - [Phase 4]: i18n: `LANG.PT` é "European Portuguese (pt-PT)" e o prompt separa as audiências — o prospect português lê pt-PT, só a tradução da usuária é pt-BR
 - [Phase 4]: bug pré-existente: `outreach` é compartilhada com o WhatsApp; toda leitura por `by_lead` precisa filtrar `channel === "email"`
+- [Pós-fase 4]: Suíça multilíngue — idioma vem de `(país, cidade)` via `swissLanguage`; `langForLead`/`localeForLead` são as fontes de verdade, `LANG[countryCode]` cru só vale para país monolíngue
+- [Pós-fase 4]: o campo `city` tem 3 origens (select da UI = forma local · foursquare locality = subúrbio · criação manual = texto livre). O Places NÃO é origem do nome da cidade — `places.ts` grava `args.city`
 
 ### Blockers/Concerns
 
@@ -116,7 +118,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-07-22
-Stopped at: Phase 4 executada, verificada e commitada na branch feat/fase-4-modo-opt-in
+Stopped at: Phase 4 mergeada na main; Suíça multilíngue (de/fr/it) na branch feat/suica-multilingue
 Resume file: .planning/phases/04-modo-opt-in-liga-o-primeiro-para-mercados-onde-cold-email-ilegal/04-VERIFICATION.md
 
 ## Pendências operacionais (não são código)

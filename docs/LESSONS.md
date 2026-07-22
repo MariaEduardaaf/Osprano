@@ -48,6 +48,30 @@ usuária.
 completa quebra a suíte em vez de sair silenciosamente em inglês. Ao abrir um
 mercado, rode a suíte antes de qualquer coisa.
 
+**O campo `city` tem TRÊS origens diferentes — não projete em cima de uma**
+`sintoma:` você desenha um mapa de cidades a partir de "como o dado chega" e
+erra a premissa inteira. Custou uma rodada de trabalho baseada em algo falso.
+`causa:` `convex/places.ts` pede `languageCode: "en"` ao Google, o que parece
+implicar que o lead chega com "Geneva". Não chega: a linha que grava é
+`city: args.city` — a forma LOCAL que a usuária escolheu no select. O
+`languageCode` só afeta `displayName` e `formattedAddress`, e o field mask
+nem pede `addressComponents`. As três origens reais são: select da UI (forma
+local), `foursquare.ts` com `p.location?.locality` (única origem externa — e
+aí vem o SUBÚRBIO: "Chêne-Bougeries", "Paradiso"), e criação manual (texto
+livre, qualquer exônimo).
+`fix:` antes de modelar em cima de um campo, `grep` a linha que o GRAVA, não
+a que o consulta. `Diagnóstico 1º:` `grep -n "city:" convex/*.ts`.
+
+**Suíça não é monolíngue — e nenhum país "óbvio" é seguro**
+`sintoma:` prospect em Genebra recebe script de ligação, email e prévia em
+alemão. Nada falha, nada loga.
+`causa:` `LANG.CH = "German"` tratava um país trilíngue como um idioma só.
+`fix:` `swissLanguage(city)` em `convex/lib/domain.ts` resolve de/fr/it, e
+`langForLead`/`localeForLead` são as fontes de verdade — `LANG[countryCode]`
+cru só serve para país monolíngue. O teste distingue "cidade está no mapa" de
+"caiu no fallback" (`isKnownSwissCity`), senão uma cidade nova no select vira
+alemão silencioso. Bélgica e Canadá teriam o mesmo problema.
+
 ## Ambiente
 
 **`pnpm <script>` aborta neste repo (`..._NO_TTY`)**
