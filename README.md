@@ -83,9 +83,14 @@ pnpm dev                     # http://localhost:3000
   npx convex env set GOOGLE_PLACES_API_KEY <key>     # descoberta de leads
   npx convex env set ANTHROPIC_API_KEY <key>         # abordagem por IA
   npx convex env set APP_URL http://localhost:3000   # link dos previews
+  npx convex env set CONVEX_ENV development          # obrigatório no deployment local (ver abaixo)
   npx convex env set CLERK_JWT_ISSUER_DOMAIN https://<seu-app>.clerk.accounts.dev
   # opcionais: RESEND_API_KEY / RESEND_FROM, STRIPE_*, FSQ_API_KEY, GOOGLE_PAGESPEED_API_KEY
   ```
+
+  `CONVEX_ENV=development` libera o `localhost` no link da prévia. Sem ela o deployment é
+  tratado como produção (default-deny, `convex/lib/env.ts`) e a abordagem por IA recusa
+  `APP_URL` local — é o mesmo gate que impede link quebrado de chegar ao prospect.
 
   Veja o cabeçalho do [`.env.example`](./.env.example) para a lista completa.
 

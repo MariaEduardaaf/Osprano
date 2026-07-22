@@ -8,6 +8,14 @@ import { writeEmail, writeCallScript, langForLead } from "./lib/outreachAi";
 import type { OutreachWarning } from "./lib/outreachAi";
 import { normalizeEmail, canContactByEmail } from "./lib/domain";
 import { optOutFooter, senderIdentityFrom, callerNameFrom } from "./lib/compliance";
+import {
+  requireAppUrl,
+  requireUnsubscribeBaseUrl,
+  requireSenderFrom,
+  unsubscribeUrlFrom,
+  hasUnsubscribeLink,
+  draftLinkIssue,
+} from "./lib/env";
 import { addSuppression, isEmailSuppressed } from "./suppressions";
 
 /**
@@ -99,15 +107,22 @@ export const outbox = query({
   },
 });
 
-function buildUnsubscribeUrl(token: string): string {
-  return `${process.env.CONVEX_SITE_URL}/unsubscribe?token=${token}`;
-}
-
-/** Anexa o rodapé de opt-out se ainda não estiver presente (marcador = a URL única). */
+/**
+ * Anexa o rodapé de opt-out se ainda não estiver presente (marcador = caminho + token, que
+ * não muda se a base do CONVEX_SITE_URL for reconfigurada — ver `hasUnsubscribeLink`).
+ *
+ * A URL é montada ANTES do teste de idempotência de propósito: assim a validação de
+ * ambiente roda em toda escrita, inclusive quando o rodapé já está lá.
+ *
+ * LANÇA quando CONVEX_SITE_URL/RESEND_FROM faltam (ver convex/lib/env.ts): o rodapé é
+ * PERSISTIDO no rascunho, então um valor inventado aqui fica gravado e viaja para o
+ * prospect. Falhar a escrita é o comportamento certo — antes nenhum rascunho do que um
+ * rascunho com `undefined/unsubscribe` no rodapé de compliance.
+ */
 function withOptOutFooter(body: string, lead: Doc<"leads"> | null, token: string): string {
-  const url = buildUnsubscribeUrl(token);
-  if (body.includes(url)) return body; // idempotente
-  const sender = senderIdentityFrom(process.env.RESEND_FROM ?? "Osprano");
+  const url = unsubscribeUrlFrom(token);
+  if (hasUnsubscribeLink(body, token)) return body; // idempotente
+  const sender = senderIdentityFrom(requireSenderFrom());
   // País E cidade: na Suíça o idioma é regional (Genebra = francês). Sem lead → inglês.
   const lang = lead ? langForLead(lead) : "English";
   return `${body}${optOutFooter(lang, url, sender)}`;
@@ -215,8 +230,19 @@ export const draft = action({
     const key = process.env.ANTHROPIC_API_KEY;
     if (!key) throw new Error("ANTHROPIC_API_KEY não configurada no deployment Convex.");
 
+    // PRÉ-CONDIÇÕES DE LINK, resolvidas ANTES da chamada de IA — de propósito.
+    // As duas variáveis produzem texto que o PROSPECT lê: o link da prévia (corpo) e o de
+    // opt-out (rodapé + header List-Unsubscribe). Checar aqui em cima resolve os dois lados
+    // do problema: (1) não gasta tokens da Anthropic para descobrir no fim que o email não
+    // pode sair, e (2) não deixa um rascunho pela metade — "gerar rascunho sem poder enviar"
+    // é tão ruim quanto falhar tarde, porque o rascunho é o artefato que a usuária copia e
+    // manda pelo email dela. CONVEX_SITE_URL só seria usada lá embaixo, no `upsertDraft`
+    // (que também a exige, colado na escrita); antecipar aqui é o que evita o desperdício.
+    const appUrl = requireAppUrl();
+    requireUnsubscribeBaseUrl();
+    requireSenderFrom();
+
     const token = await ctx.runMutation(internal.previews.ensureForLead, { leadId });
-    const appUrl = process.env.APP_URL ?? "http://localhost:3000";
     // Mesma identidade do rodapé de opt-out (RESEND_FROM), agora também no CORPO: sem
     // isso a IA inventava quem assina. Sem display name no RESEND_FROM → undefined, e o
     // prompt emite o marcador `[seu nome]` em vez de um nome falso.
@@ -391,6 +417,12 @@ export const send = action({
     const row = await ctx.runQuery(api.outreach.getForLead, { leadId });
     if (!row?.subject || !row?.body) throw new Error("Escreva a abordagem primeiro.");
 
+    // O corpo pode ter sido gravado ANTES destas travas existirem (há rascunhos no banco com
+    // `undefined/unsubscribe` no rodapé) ou num ambiente de desenvolvimento. Como o bloco
+    // abaixo só ANEXA rodapé quando o correto falta, o link quebrado antigo iria junto.
+    const issue = draftLinkIssue(row.body);
+    if (issue) throw new Error(issue);
+
     const apiKey = process.env.RESEND_API_KEY;
     const from = process.env.RESEND_FROM;
     if (!apiKey || !from) throw new Error("RESEND_API_KEY / RESEND_FROM não configurados.");
@@ -403,9 +435,11 @@ export const send = action({
         unsubscribeToken,
       });
     }
-    const unsubscribeUrl = `${process.env.CONVEX_SITE_URL}/unsubscribe?token=${unsubscribeToken}`;
+    // Recheca CONVEX_SITE_URL no momento do envio (não confia no que o draft viu): esta URL
+    // vai no header List-Unsubscribe de TODO email, inclusive quando o corpo já tem rodapé.
+    const unsubscribeUrl = unsubscribeUrlFrom(unsubscribeToken);
     let body = row.body;
-    if (!body.includes(unsubscribeUrl)) {
+    if (!hasUnsubscribeLink(body, unsubscribeToken)) {
       // `lead` é o doc completo (leads.getInternal), então tem `city` — o rodapé do
       // prospect de Genebra sai em francês, não no alemão do país.
       const lang = langForLead(lead);

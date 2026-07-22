@@ -253,11 +253,78 @@ test("callScriptSystemPrompt: a tradução pt-BR e o papel de 'caller' seguem in
   assert.ok(prompt.includes(`"script" stays in German`), "script no idioma do prospect");
 });
 
-test("emailSystemPrompt: o corpo se identifica pelo nome e mantém o opt-out", () => {
+test("emailSystemPrompt: o corpo se identifica pelo nome e delega o opt-out ao rodapé", () => {
   const prompt = emailSystemPrompt("Dutch");
   assert.ok(/identify the sender by name/.test(prompt));
-  assert.ok(/one-line opt-out/.test(prompt), "o corpo continua exigindo opt-out");
   assert.ok(/ENTIRE email \(subject included\) in Dutch/.test(prompt));
+  // A regra de opt-out continua no prompt — invertida: quem escreve o opt-out é o CÓDIGO
+  // (optOutFooter, anexado em convex/outreach.ts), não a IA.
+  assert.ok(/OPT-OUT/.test(prompt), "a regra de opt-out precisa continuar no prompt");
+  assert.ok(
+    /appends its own opt-out footer in Dutch/.test(prompt),
+    "o prompt precisa dizer que o rodapé é injetado (e no idioma do prospect)",
+  );
+  assert.ok(
+    /do NOT write any opt-out/.test(prompt),
+    "o corpo não pode escrever o próprio opt-out — duplicaria o rodapé",
+  );
+});
+
+// ---------------------------------------------------------------------------
+// INVARIANTE: nenhum prompt pode prometer uma AÇÃO POR RESPOSTA DE EMAIL
+//
+// Não existe handler de email de entrada no projeto — o webhook de inbound do Resend é
+// backlog (GDPR-02, .planning/REQUIREMENTS.md). O prompt do email pedia literalmente
+// `end with a one-line opt-out (e.g. reply "stop" to not be contacted again)`: o prospect
+// que respondesse "stop" cairia numa caixa pessoal, sem supressão nenhuma, achando que
+// tinha saído da lista. Opt-out é obrigação legal (COMP-03), então esta trava fica.
+// Se um dia existir inbound processado, é ESTE teste que se atualiza primeiro.
+// ---------------------------------------------------------------------------
+
+/** Corte grosseiro em frases (ponto final + espaço) — basta para checar o escopo da negação. */
+function sentences(prompt: string): string[] {
+  return prompt.split(/(?<=\.)\s+/).filter((s) => s.trim().length > 0);
+}
+
+for (const [nome, build] of PROMPTS) {
+  test(`${nome}: nenhuma frase manda o prospect responder (não há inbound que processe)`, () => {
+    for (const identity of [undefined, { callerName: "Duda" }]) {
+      for (const cc of SEARCHABLE_MARKETS) {
+        const prompt = build(LANG[cc], identity);
+        for (const frase of sentences(prompt)) {
+          if (!/\brepl(?:y|ies|ying)\b/i.test(frase)) continue;
+          // Negação FORTE de propósito: um "to not be contacted again" solto (a redação
+          // antiga) não conta como proibição — ali "reply" ainda era uma INSTRUÇÃO.
+          assert.match(
+            frase,
+            /\b(?:NEVER|never|do NOT|must NOT|must not|are NOT|is NOT)\b/,
+            `${cc}: frase manda o prospect responder — não existe handler de email de ` +
+              `entrada que processe isso (GDPR-02): "${frase}"`,
+          );
+        }
+      }
+    }
+  });
+}
+
+test("emailSystemPrompt: a instrução de opt-out por resposta não volta", () => {
+  const prompt = emailSystemPrompt("Spanish", { callerName: "Duda" });
+  // A frase exata que estava em produção, e a forma genérica dela.
+  assert.ok(!/one-line opt-out/.test(prompt), 'o prompt não pode mais pedir "a one-line opt-out"');
+  assert.ok(
+    !/end with a one-line opt-out/i.test(prompt),
+    "a exigência antiga de fechar o email com opt-out próprio não pode voltar",
+  );
+  // E a proibição precisa ser explícita: o modelo só obedece o que está escrito.
+  assert.ok(/NEVER tell them to reply to this email/.test(prompt));
+  assert.ok(
+    /incoming replies are NOT processed by any system/.test(prompt),
+    "o prompt precisa dizer POR QUE a promessa é falsa",
+  );
+  // As palavras-gatilho aparecem no prompt apenas dentro da PROIBIÇÃO.
+  for (const palavra of ["stop", "unsubscribe", "remove"]) {
+    assert.ok(prompt.includes(`"${palavra}"`), `a palavra "${palavra}" precisa estar vetada`);
+  }
 });
 
 test("callerNameFrom: só um nome HUMANO chega ao prompt (email cru vira marcador)", () => {

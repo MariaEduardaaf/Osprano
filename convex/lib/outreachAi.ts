@@ -258,6 +258,43 @@ function observationRules(): string {
   );
 }
 
+/**
+ * Regra de OPT-OUT do email — o corpo NÃO escreve opt-out nenhum.
+ *
+ * O único opt-out que existe de fato é o rodapé injetado por CÓDIGO (`optOutFooter`,
+ * convex/lib/compliance.ts), anexado nos dois pontos de escrita do email em
+ * convex/outreach.ts (`withOptOutFooter` no rascunho e a mesma injeção no envio): link
+ * único por lead, no idioma do prospect, que grava na tabela de supressão — mais os
+ * headers `List-Unsubscribe` / one-click do envio.
+ *
+ * A versão anterior desta regra mandava a IA `end with a one-line opt-out (e.g. reply
+ * "stop" to not be contacted again)`, ou seja, prometia um SEGUNDO caminho de saída que
+ * ninguém percorre: não existe handler de email de ENTRADA no projeto (webhook de inbound
+ * do Resend é backlog — GDPR-02 em .planning/REQUIREMENTS.md). Quem respondesse "stop"
+ * cairia na caixa pessoal de quem enviou, sem supressão nenhuma, achando que tinha se
+ * descadastrado — e continuaria recebendo email. Opt-out é obrigação legal (COMP-03): uma
+ * promessa quebrada aqui é pior do que não prometer nada.
+ *
+ * DECISÃO (o corpo não aponta nem para o rodapé): a alternativa era pedir uma linha do
+ * tipo "se preferir não receber mais, use o link abaixo". Seria verdadeira — o rodapé está
+ * mesmo logo abaixo, e já no idioma do prospect —, mas repete em ~120 palavras o que a
+ * linha seguinte diz melhor, e reintroduz o risco de o modelo parafrasear o mecanismo
+ * errado. O rodapé se explica sozinho. Se um dia existir handler de inbound (GDPR-02), é
+ * esta função que muda — não o corpo do email.
+ */
+function optOutRules(lang: string): string {
+  return (
+    `OPT-OUT — do NOT write any opt-out, unsubscribe or "how to stop hearing from me" line ` +
+    `yourself, and do not reference one: the system appends its own opt-out footer in ${lang} ` +
+    `directly below your text, with the only unsubscribe link that actually works. ` +
+    `NEVER tell them to reply to this email — or to reply with a word such as "stop", ` +
+    `"unsubscribe" or "remove", or the ${lang} equivalent of any of those — in order to be ` +
+    `removed, and never promise that answering, writing back or "just letting me know" will ` +
+    `take them off any list: incoming replies are NOT processed by any system, so that ` +
+    `promise would be false. `
+  );
+}
+
 interface AnthropicResponse {
   content?: { type: string; text?: string }[];
 }
@@ -275,10 +312,11 @@ export function emailSystemPrompt(lang: string, identity: OutreachIdentity = {})
     identityRules("sender", identity.callerName) +
     honestyRules("sender", lang) +
     observationRules() +
+    optOutRules(lang) +
     `The email MUST: (1) identify the sender by name (see IDENTITY) as an independent web professional, ` +
     `(2) briefly say why you're contacting them (relevant to their business), ` +
-    `(3) stay inside the OBSERVATIONS rule above, (4) include the preview link exactly once, ` +
-    `(5) end with a one-line opt-out (e.g. reply "stop" to not be contacted again). ` +
+    `(3) stay inside the OBSERVATIONS rule above, (4) include the preview link exactly once and ` +
+    `end there — the opt-out is not yours to write (see OPT-OUT). ` +
     `Return STRICT JSON only: {"subject": string, "body": string}. No markdown.`
   );
 }
@@ -671,8 +709,12 @@ function businessLine(lead: Doc<"leads">): string {
 
 /**
  * Draft a short, compliant B2B cold email via Claude. Compliant-by-design:
- * sender identity, relevance-to-business, only VERIFIED observations, the preview link,
- * and a one-line opt-out. Returns { subject, body, warnings }.
+ * sender identity, relevance-to-business, only VERIFIED observations and the preview link.
+ * Returns { subject, body, warnings }.
+ *
+ * O OPT-OUT não sai daqui: o corpo é proibido de prometer qualquer forma de saída
+ * (ver `optOutRules`) e quem anexa o caminho real — o rodapé com link de unsubscribe — é
+ * o código, em `convex/outreach.ts`.
  *
  * `identity.callerName` = quem assina. O rodapé de opt-out já carrega a identidade por
  * CÓDIGO (`optOutFooter`), mas o CORPO é escrito pela IA — sem esta trava o modelo

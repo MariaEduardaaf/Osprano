@@ -32,6 +32,7 @@ npx convex env set CLERK_JWT_ISSUER_DOMAIN https://<sua-app>.clerk.accounts.dev
 npx convex env set GOOGLE_PLACES_API_KEY   <chave>
 npx convex env set ANTHROPIC_API_KEY       <chave>
 npx convex env set APP_URL                 http://localhost:3000
+npx convex env set CONVEX_ENV              development   # obrigatório no deployment local
 # billing (V2):
 npx convex env set STRIPE_SECRET_KEY <chave>
 npx convex env set STRIPE_PRICE_PRO <price_id> && npx convex env set STRIPE_PRICE_AGENCY <price_id>
@@ -42,6 +43,14 @@ npx convex env set FSQ_API_KEY <chave>                 # 2ª fonte de descoberta
 npx convex env set RESEND_API_KEY <chave> && npx convex env set RESEND_FROM "Você <voce@dominio.com>"
 npx convex env set WHATSAPP_TOKEN <token> && npx convex env set WHATSAPP_PHONE_ID <id>  # follow-up pós-opt-in
 ```
+
+> **`CONVEX_ENV=development` não é opcional no deployment local.** As variáveis que viram
+> texto lido pelo PROSPECT (link da prévia, link de opt-out, identidade de quem envia) são
+> validadas em código, em `convex/lib/env.ts`, com **default-deny**: um deployment sem
+> `CONVEX_ENV` é tratado como produção, e aí `APP_URL=http://localhost:3000` é recusado —
+> a abordagem por IA falha com "APP_URL aponta para um endereço local". É esse mesmo gate
+> que impede um link `localhost` (ou um `undefined/unsubscribe`) de sair para o prospect em
+> produção. Nunca setar `development` em deployment de produção.
 
 Em outro terminal:
 
