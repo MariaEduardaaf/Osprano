@@ -23,10 +23,17 @@ function waLink(phone: string): string {
 export function PreviewSite({ content }: { content: PreviewContent }) {
   const { name, category, city, phone, rating, reviewsCount, countryCode } = content;
   const cat = category ? category.replace(/_/g, " ") : null;
-  const tr = DICTS[localeForCountry(countryCode)];
+  const locale = localeForCountry(countryCode);
+  const tr = DICTS[locale];
 
   return (
-    <div className="min-h-dvh bg-[#0e0d0a] text-[#f4f1e9] [font-family:var(--font-geist-sans)]">
+    // O documento raiz é pt-BR (app da usuária brasileira). Este conteúdo é o que
+    // o prospect europeu lê: declarar o idioma real aqui sobrepõe o lang do <html>
+    // para toda a subárvore — leitor de tela e tradutor do navegador acertam.
+    <div
+      lang={locale}
+      className="min-h-dvh bg-[#0e0d0a] text-[#f4f1e9] [font-family:var(--font-geist-sans)]"
+    >
       {/* Sticky header */}
       <header className="sticky top-0 z-20 border-b border-white/10 bg-[#0e0d0a]/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
