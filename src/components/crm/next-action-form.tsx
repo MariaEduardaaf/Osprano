@@ -50,6 +50,7 @@ export function NextActionForm({ lead, autoFocus = false }: { lead: Doc<"leads">
     run("clear", async () => {
       await clearNextAction({ id: lead._id });
       setNote("");
+      setDate(toDateInputValue(now)); // senão a próxima nasce na data da ação antiga, já atrasada
     });
 
   return (
