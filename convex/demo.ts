@@ -1,6 +1,6 @@
 import { mutation } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import { computeScore, tierFromScore, isEmailable, type Signals } from "./lib/domain";
 import { isDemoEnabled } from "./model/tenant";
 
@@ -173,6 +173,44 @@ const STAGES: Stage[] = [
   "lost",
 ];
 
+const DAY = 86_400_000;
+
+/**
+ * CRM (fluxo do dia e informação do lead), por posição em NAMES. Só dados: quem decide
+ * "atrasada/hoje/parado" é o domínio, no navegador. A ação de HOJE usa o instante `now`,
+ * nunca uma meia-noite calculada aqui: o Convex roda em UTC.
+ */
+type CrmExtra = Partial<
+  Pick<
+    Doc<"leads">,
+    | "nextActionAt"
+    | "nextActionNote"
+    | "stageUpdatedAt"
+    | "stage"
+    | "lostReason"
+    | "lostNote"
+    | "contactName"
+    | "contactRole"
+    | "dealSetup"
+    | "dealMonthly"
+  >
+>;
+
+function crmExtras(now: number): Record<number, CrmExtra> {
+  return {
+    // ação atrasada
+    2: { nextActionAt: now - 2 * DAY, nextActionNote: "ligar de novo" }, // The Copper Pot (abordado)
+    8: { nextActionAt: now - 5 * DAY, nextActionNote: "mandar proposta" }, // Olive & Thyme (follow up)
+    // ação hoje
+    3: { nextActionAt: now, nextActionNote: "confirmar reunião" }, // De Gouden Lepel BV (agendado)
+    20: { nextActionAt: now, nextActionNote: "enviar prévia do site" }, // Sharp Cuts (abordado)
+    // parados: estágio sem mudar há 10+ dias e sem ação
+    7: { stageUpdatedAt: now - 12 * DAY }, // Trattoria Roma (abordado)
+    12: { stageUpdatedAt: now - 15 * DAY }, // The Bruncherie (follow up)
+    16: { stageUpdatedAt: now - 10 * DAY }, // Whiskey & Co (agendado)
+  };
+}
+
 function phone(cc: string, i: number): string {
   const p: Record<string, string> = {
     GB: "+44 20 7946", NL: "+31 20 555", IE: "+353 1 555", SE: "+46 8 555", NO: "+47 21 555",
@@ -216,13 +254,15 @@ export const seed = mutation({
     });
 
     const ids = [];
+    const extras = crmExtras(now);
     for (let i = 0; i < NAMES.length; i++) {
       const [name, category] = NAMES[i];
       const cc = COUNTRY_SEQ[i % COUNTRY_SEQ.length];
       const cities = CITY[cc];
       const city = cities[i % cities.length];
       const p = PROFILES[i % PROFILES.length];
-      const stage = STAGES[(i * 5) % STAGES.length];
+      const extra = extras[i] ?? {};
+      const stage = extra.stage ?? STAGES[(i * 5) % STAGES.length];
 
       const signals: Signals = { ...NONE, ...p.s };
       const score = computeScore(signals);
@@ -253,6 +293,7 @@ export const seed = mutation({
         stage,
         stageUpdatedAt: now,
         fetchedAt: now,
+        ...extra, // por último: sobrescreve stage/stageUpdatedAt quando a tabela manda
       });
       ids.push({ id, name, category, city, cc, stage, phone: phone(cc, i), rating: Math.round(rating * 10) / 10, reviews });
     }
