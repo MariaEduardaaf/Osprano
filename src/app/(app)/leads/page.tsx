@@ -129,7 +129,7 @@ export default function LeadsPage() {
 
       <form
         onSubmit={onSearch}
-        className="mb-6 flex flex-wrap items-center gap-2 rounded-[var(--radius)] border border-border bg-surface p-3 shadow-[var(--shadow-sm)]"
+        className="glass mb-6 flex flex-wrap items-center gap-2 rounded-[var(--radius)] p-3"
       >
         <select
           value={country}
@@ -137,7 +137,7 @@ export default function LeadsPage() {
             setCountry(e.target.value);
             setCity("");
           }}
-          className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm"
+          className="rounded-lg border border-border bg-surface-solid px-3 py-2 text-sm"
         >
           {markets.map((code) => (
             <option key={code} value={code}>
@@ -148,7 +148,7 @@ export default function LeadsPage() {
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          className="min-w-40 flex-1 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm"
+          className="min-w-40 flex-1 rounded-lg border border-border bg-surface-solid px-3 py-2 text-sm"
         >
           <option value="">Categoria…</option>
           {CATEGORY_OPTIONS.map((c) => (
@@ -160,7 +160,7 @@ export default function LeadsPage() {
         <select
           value={city}
           onChange={(e) => setCity(e.target.value)}
-          className="min-w-40 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm"
+          className="min-w-40 rounded-lg border border-border bg-surface-solid px-3 py-2 text-sm"
         >
           <option value="">Cidade…</option>
           {(CITIES_BY_COUNTRY[country] ?? []).map((c) => (
@@ -169,7 +169,7 @@ export default function LeadsPage() {
             </option>
           ))}
         </select>
-        <label className="flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2">
+        <label className="flex items-center gap-2 rounded-lg border border-border bg-surface-solid px-3 py-2">
           <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-faint">
             Máx
           </span>

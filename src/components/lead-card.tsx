@@ -76,10 +76,10 @@ export function LeadCard({
   return (
     <div
       onClick={selectable ? onToggle : undefined}
-      className={`group flex flex-col rounded-2xl border bg-surface p-6 shadow-[var(--shadow-sm)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)] ${
+      className={`glass-lite group flex flex-col rounded-2xl p-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)] ${
         selectable ? "cursor-pointer" : ""
       } ${
-        selected ? "border-brand ring-2 ring-brand/40" : "border-border hover:border-border-strong"
+        selected ? "border-brand ring-2 ring-brand/40 shadow-[var(--shadow-sm)]" : "hover:border-border-strong"
       }`}
     >
       {/* name + select */}
