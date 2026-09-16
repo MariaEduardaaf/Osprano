@@ -208,6 +208,11 @@ function crmExtras(now: number): Record<number, CrmExtra> {
     7: { stageUpdatedAt: now - 12 * DAY }, // Trattoria Roma (abordado)
     12: { stageUpdatedAt: now - 15 * DAY }, // The Bruncherie (follow up)
     16: { stageUpdatedAt: now - 10 * DAY }, // Whiskey & Co (agendado)
+    // perdidos com motivo (13 Kaffebar Oslo e 35 QuickFix Plumbing seguem em lost SEM motivo: caso legado)
+    21: { stage: "lost", lostReason: "too_expensive", lostNote: "Achou a mensalidade alta para o tamanho do salão" }, // The Grooming Room
+    33: { stage: "lost", lostReason: "has_site" }, // City Physio
+    // contato e valores preenchidos (GB: libra)
+    25: { contactName: "Emma Larsen", contactRole: "Dona", dealSetup: 900, dealMonthly: 340 }, // Klippet Nordic (agendado)
   };
 }
 
