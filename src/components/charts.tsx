@@ -13,7 +13,7 @@ export function ChartCard({
 }) {
   return (
     <div
-      className={`glass rounded-[var(--radius)] p-6 hover:shadow-[var(--shadow-lg)] ${className}`}
+      className={`glass rounded-[var(--radius)] p-6 transition-shadow duration-300 hover:shadow-[var(--shadow-lg)] ${className}`}
     >
       <div className="flex items-center justify-between">
         <h2 className="font-display text-base font-semibold">{title}</h2>
