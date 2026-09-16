@@ -51,7 +51,7 @@ export function WhatsAppFollowup({
           <select
             value={source}
             onChange={(e) => setSource(e.target.value)}
-            className="flex-1 rounded-md border border-border bg-surface px-2 py-1 text-[11px]"
+            className="flex-1 rounded-md border border-border bg-surface-solid px-2 py-1 text-[11px]"
             aria-label="Origem do opt-in"
           >
             {OPT_IN_SOURCES.map((s) => (
@@ -90,7 +90,7 @@ export function WhatsAppFollowup({
         onChange={(e) => setMessage(e.target.value)}
         rows={2}
         placeholder="Mensagem…"
-        className="w-full resize-y rounded-md border border-border bg-surface px-2 py-1 text-[11px]"
+        className="w-full resize-y rounded-md border border-border bg-surface-solid px-2 py-1 text-[11px]"
       />
       <div className="flex items-center gap-1.5">
         <button

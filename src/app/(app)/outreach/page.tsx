@@ -114,7 +114,7 @@ export default function OutreachPage() {
         </EmptyState>
       ) : (
         <>
-          <div className="overflow-x-auto rounded-[var(--radius)] border border-border shadow-[var(--shadow-sm)]">
+          <div className="glass overflow-x-auto rounded-[var(--radius)]">
             <table className="w-full min-w-[720px] text-sm">
               <thead>
                 <tr className="border-b border-border bg-surface-2/50 text-left font-mono text-[10px] uppercase tracking-wider text-faint">

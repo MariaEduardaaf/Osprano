@@ -338,7 +338,7 @@ export default function SettingsPage() {
         subtitle="Gerencie seu perfil, segurança e plano"
       />
 
-      <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-sm)] md:grid md:grid-cols-[248px_1fr]">
+      <div className="glass overflow-hidden rounded-2xl md:grid md:grid-cols-[248px_1fr]">
         {/* left sub-nav */}
         <aside className="border-b border-border p-5 md:border-b-0 md:border-r">
           <div className="font-display text-lg font-bold">Conta</div>

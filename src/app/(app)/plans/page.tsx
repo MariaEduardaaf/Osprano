@@ -60,10 +60,8 @@ export default function PlansPage() {
           return (
             <div
               key={plan.id}
-              className={`relative flex flex-col rounded-[var(--radius)] bg-surface p-6 shadow-[var(--shadow-sm)] ${
-                featured
-                  ? "border-2 border-brand shadow-[var(--shadow-md)]"
-                  : "border border-border"
+              className={`glass relative flex flex-col rounded-[var(--radius)] p-6 ${
+                featured ? "border-2 border-brand" : ""
               }`}
             >
               {featured && (

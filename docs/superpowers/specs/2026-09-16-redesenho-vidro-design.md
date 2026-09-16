@@ -184,24 +184,25 @@ Popular é só `border border-border` e sai inteiro.
     border: 1px solid var(--glass-border);
     box-shadow: var(--shadow-md);
     backdrop-filter: blur(var(--glass-blur));
-    -webkit-backdrop-filter: blur(var(--glass-blur));
   }
   .glass-lite {            /* itens em lista longa: card de lead */
     background: var(--surface);
     border: 1px solid var(--glass-border);
     box-shadow: var(--shadow-sm);
     backdrop-filter: blur(var(--glass-blur-lite));
-    -webkit-backdrop-filter: blur(var(--glass-blur-lite));
   }
   .glass-dense {           /* drawer e modais, sobre overlay */
     background: var(--elevated);
     border: 1px solid var(--glass-border);
     box-shadow: var(--shadow-lg);
     backdrop-filter: blur(var(--glass-blur));
-    -webkit-backdrop-filter: blur(var(--glass-blur));
   }
 }
 ```
+
+Só a forma sem prefixo de `backdrop-filter`: o Lightning CSS do Turbopack gera o
+`-webkit-` sozinho e, com o par escrito à mão nessa ordem, descartava a forma sem
+prefixo (Firefox ficava sem blur; verificado com o `lightningcss` do repo).
 
 Raio não entra na classe: cada uso escolhe `rounded-xl` (18px) ou `rounded-2xl`
 (22px). Hover em card que "sobe" (StatCard, ChartCard): `hover:shadow-[var(--shadow-lg)]`
@@ -217,7 +218,7 @@ Raio não entra na classe: cada uso escolhe `rounded-xl` (18px) ou `rounded-2xl`
   :root[data-theme="dark"]:has(.app-shell) {
     --surface: rgba(22,28,40,.97); --elevated: #1d2531; --glass-border: var(--border);
   }
-  .glass, .glass-lite, .glass-dense { backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .glass, .glass-lite, .glass-dense { backdrop-filter: none; }
 }
 ```
 
