@@ -228,6 +228,38 @@ export const markLost = mutation({
   },
 });
 
+/** null limpa; negativo, NaN ou infinito é erro. */
+function cleanAmount(value: number | null): number | undefined {
+  if (value === null) return undefined;
+  if (!Number.isFinite(value) || value < 0) throw new Error("Valor inválido");
+  return value;
+}
+
+/**
+ * Contato e valores do negócio: patch SÓ dos campos enviados. String: trim, vazia limpa.
+ * Número: null limpa. Valores ficam na moeda do país (currencyForCountry), sem campo de moeda.
+ */
+export const updateInfo = mutation({
+  args: {
+    id: v.id("leads"),
+    contactName: v.optional(v.string()),
+    contactRole: v.optional(v.string()),
+    dealSetup: v.optional(v.union(v.number(), v.null())),
+    dealMonthly: v.optional(v.union(v.number(), v.null())),
+  },
+  handler: async (ctx, args) => {
+    const orgId = await requireOrgId(ctx);
+    const lead = await ctx.db.get(args.id);
+    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    const patch: { contactName?: string; contactRole?: string; dealSetup?: number; dealMonthly?: number } = {};
+    if (args.contactName !== undefined) patch.contactName = args.contactName.trim() || undefined;
+    if (args.contactRole !== undefined) patch.contactRole = args.contactRole.trim() || undefined;
+    if (args.dealSetup !== undefined) patch.dealSetup = cleanAmount(args.dealSetup);
+    if (args.dealMonthly !== undefined) patch.dealMonthly = cleanAmount(args.dealMonthly);
+    await ctx.db.patch(args.id, patch); // chave presente com undefined = remove o campo
+  },
+});
+
 /** Marca uma reunião com o lead e move-o para "Agendado". */
 export const schedule = mutation({
   args: { id: v.id("leads"), at: v.number(), note: v.optional(v.string()) },

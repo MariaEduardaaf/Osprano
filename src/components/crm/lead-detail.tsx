@@ -25,6 +25,7 @@ import {
   type Stage,
 } from "@convex/lib/domain";
 import { NextActionForm } from "@/components/crm/next-action-form";
+import { LeadInfoFields } from "@/components/crm/lead-info-fields";
 import { LostReasonModal } from "@/components/crm/lost-reason-modal";
 import { OutreachComposer } from "@/components/outreach-composer";
 import { GeneratePreviewButton } from "@/components/generate-preview-button";
@@ -202,6 +203,7 @@ function InfoTab({
         </p>
       )}
       <NextActionForm lead={lead} autoFocus={autoFocusAction} />
+      <LeadInfoFields lead={lead} />
 
       <section>
         <Row label="Categoria">{(lead.category ?? "—").replace(/_/g, " ")}</Row>
