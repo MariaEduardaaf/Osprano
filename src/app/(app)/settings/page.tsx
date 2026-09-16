@@ -16,6 +16,7 @@ import {
 import { useUser, useClerk } from "@clerk/nextjs";
 import { api } from "@convex/_generated/api";
 import { PageHeader } from "@/components/ui";
+import { errorMessage } from "@/lib/errors";
 
 const DEMO = process.env.NEXT_PUBLIC_DEMO === "1";
 
@@ -310,7 +311,7 @@ function PlanPanel() {
                 const { url } = await portal({});
                 window.location.assign(url);
               } catch (e) {
-                setErr(e instanceof Error ? e.message : "Falha");
+                setErr(errorMessage(e, "Falha"));
                 setBusy(false);
               }
             }}

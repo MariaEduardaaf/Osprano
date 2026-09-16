@@ -17,10 +17,7 @@ import type { Id } from "@convex/_generated/dataModel";
 import type { Doc } from "@convex/_generated/dataModel";
 import { NAME_PLACEHOLDER, langForLead, detectLocalityClaims } from "@convex/lib/outreachAi";
 import type { OutreachWarning } from "@convex/lib/outreachAi";
-
-function errMsg(e: unknown): string {
-  return e instanceof Error ? e.message : "Falha";
-}
+import { errorMessage } from "@/lib/errors";
 
 /**
  * Caixa de aviso — MESMO formato visual do painel de script (componente `Note` em
@@ -194,7 +191,7 @@ function ComposerBody({
     try {
       await fn();
     } catch (e) {
-      setMsg(errMsg(e));
+      setMsg(errorMessage(e, "Falha"));
     } finally {
       setBusy(null);
     }

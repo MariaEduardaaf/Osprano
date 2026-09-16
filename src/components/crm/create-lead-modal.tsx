@@ -11,6 +11,7 @@ import {
   MARKETS,
   LAUNCH_MARKETS,
 } from "@convex/lib/domain";
+import { errorMessage } from "@/lib/errors";
 
 const LEGAL = [
   { v: "unknown", l: "Não sei" },
@@ -91,7 +92,7 @@ export function CreateLeadModal({ onClose }: { onClose: () => void }) {
       });
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao criar lead.");
+      setError(errorMessage(err, "Erro ao criar lead."));
     } finally {
       setSaving(false);
     }

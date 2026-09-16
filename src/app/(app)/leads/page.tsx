@@ -16,6 +16,7 @@ import { MdOutlineSearch, MdOutlineSend, MdOutlineGavel } from "react-icons/md";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { LeadCard } from "@/components/lead-card";
 import { GeneratePreviewButton } from "@/components/generate-preview-button";
+import { errorMessage } from "@/lib/errors";
 
 /** OPTIN-02: cada aba controla o select de países, o filtro da lista e a variante do card. */
 const TABS = [
@@ -92,7 +93,7 @@ export default function LeadsPage() {
       });
       setMsg(`Encontrados ${res.found} · adicionados ${res.inserted}. Pontuando em segundo plano…`);
     } catch (err) {
-      setMsg(err instanceof Error ? err.message : "Falha na busca");
+      setMsg(errorMessage(err, "Falha na busca"));
     } finally {
       setBusy(false);
     }

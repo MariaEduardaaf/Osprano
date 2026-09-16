@@ -34,6 +34,7 @@ import { PublishButton } from "@/components/publish-button";
 import { CallScriptPanel } from "@/components/call-script-panel";
 import { ContactOptInButton } from "@/components/contact-opt-in-button";
 import { OBJECTIONS, MEETING_PLAYBOOK, CLOSING_OBJECTIONS, type Objection } from "@/lib/playbook";
+import { errorMessage } from "@/lib/errors";
 
 const TIER: Record<string, { label: string; color: string }> = {
   hot: { label: "Quente", color: "var(--hot)" },
@@ -353,7 +354,7 @@ function ApproachTab({ lead }: { lead: Doc<"leads"> }) {
     try {
       await fn();
     } catch (e) {
-      setMsg(e instanceof Error ? e.message : "Falha");
+      setMsg(errorMessage(e, "Falha"));
     } finally {
       setBusy(null);
     }

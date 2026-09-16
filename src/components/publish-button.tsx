@@ -5,6 +5,7 @@ import { MdOutlinePublish, MdOpenInNew } from "react-icons/md";
 import { useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
+import { errorMessage } from "@/lib/errors";
 
 export function PublishButton({ leadId, slug }: { leadId: Id<"leads">; slug: string | null }) {
   const publish = useMutation(api.previews.publish);
@@ -34,7 +35,7 @@ export function PublishButton({ leadId, slug }: { leadId: Id<"leads">; slug: str
           try {
             setCurrent(await publish({ leadId }));
           } catch (e) {
-            setErr(e instanceof Error ? e.message : "Falha");
+            setErr(errorMessage(e, "Falha"));
           } finally {
             setBusy(false);
           }

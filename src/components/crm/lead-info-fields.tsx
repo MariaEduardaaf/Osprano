@@ -5,6 +5,7 @@ import { useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Doc } from "@convex/_generated/dataModel";
 import { currencyForCountry, currencySymbol } from "@convex/lib/domain";
+import { errorMessage } from "@/lib/errors";
 
 const fieldCls =
   "w-full rounded-lg border border-border bg-surface-solid px-3 py-2 text-sm outline-none placeholder:text-faint focus:border-border-strong";
@@ -43,7 +44,7 @@ function InlineField({
     try {
       await onSave(draft.trim());
     } catch (e) {
-      setMsg(e instanceof Error ? e.message : "Falha");
+      setMsg(errorMessage(e, "Falha"));
     }
   }
 

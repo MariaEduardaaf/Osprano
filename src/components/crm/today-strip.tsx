@@ -7,6 +7,7 @@ import type { Doc, Id } from "@convex/_generated/dataModel";
 import { MdCheck, MdKeyboardArrowDown } from "react-icons/md";
 import { addDays, daysBetween, type ActionStatus, type NextAction } from "@convex/lib/domain";
 import { daysAgoLabel } from "./next-action-line";
+import { errorMessage } from "@/lib/errors";
 
 export interface TodayItem {
   lead: Doc<"leads">;
@@ -58,7 +59,7 @@ export function TodayStrip({
     try {
       await fn();
     } catch (e) {
-      setMsg(e instanceof Error ? e.message : "Falha");
+      setMsg(errorMessage(e, "Falha"));
     } finally {
       setBusy(null);
     }

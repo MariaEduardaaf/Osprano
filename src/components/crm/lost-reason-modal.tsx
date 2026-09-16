@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { MdClose } from "react-icons/md";
 import type { Doc } from "@convex/_generated/dataModel";
 import { LOST_REASONS, type LostReason } from "@convex/lib/domain";
+import { errorMessage } from "@/lib/errors";
 
 const fieldCls =
   "w-full rounded-lg border border-border bg-surface-solid px-3 py-2 text-sm outline-none placeholder:text-faint focus:border-border-strong";
@@ -40,7 +41,7 @@ export function LostReasonModal({
       await onConfirm({ reason, note: note.trim() || undefined });
       onClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Falha ao marcar perdido");
+      setError(errorMessage(e, "Falha ao marcar perdido"));
     } finally {
       setBusy(false);
     }

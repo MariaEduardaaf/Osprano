@@ -8,6 +8,7 @@ import { MdCheck, MdOutlineEventAvailable } from "react-icons/md";
 import { nextActionOf, dateInputToTimestamp, toDateInputValue } from "@convex/lib/domain";
 import { ActionStatusText } from "./next-action-line";
 import { useNow } from "@/lib/use-now";
+import { errorMessage } from "@/lib/errors";
 
 const fieldCls =
   "rounded-lg border border-border bg-surface-solid px-3 py-2 text-sm outline-none placeholder:text-faint focus:border-border-strong";
@@ -33,7 +34,7 @@ export function NextActionForm({ lead, autoFocus = false }: { lead: Doc<"leads">
     try {
       await fn();
     } catch (e) {
-      setMsg(e instanceof Error ? e.message : "Falha");
+      setMsg(errorMessage(e, "Falha"));
     } finally {
       setBusy(null);
     }
