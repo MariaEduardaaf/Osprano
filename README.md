@@ -9,9 +9,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
 ![Anthropic](https://img.shields.io/badge/AI-Claude-D97757?logo=anthropic&logoColor=white)
 
-<!-- Hero: salve um screenshot em docs/preview.png (ou me mande a tela que você quer) e descomente:
-![Osprano](docs/preview.png)
--->
+![Osprano: CRM em vidro sobre névoa](docs/redesign/crm-light.png)
 
 Osprano encontra **negócios locais europeus com presença digital fraca**, pontua a "dor"
 de cada um, e a **IA escreve a abordagem por email** — _compliant by design_. Você gera
@@ -30,13 +28,18 @@ recorrente** com hospedagem white-label na sua marca.
   social, sem HTTPS, não-mobile, lento, perfil incompleto. Maior score = lead mais quente.
 - **Guardrail de compliance** — só libera abordagem onde é legal (mercado opt-out) e para
   entidades incorporadas / caixas de função ("a armadilha do autônomo").
-- **CRM Kanban** — arraste os cards pelo funil (Base → Abordado → Agendado → Follow Up →
-  Convertido), com busca, ordenação e detalhe do lead em abas.
+- **CRM Kanban**: arraste os cards pelo funil (Base → Abordado → Agendado → Follow Up →
+  Convertido → Perdido), com busca, filtros e detalhe do lead em abas. Cada lead tem uma
+  **próxima ação** e a faixa **Hoje** lista as atrasadas e as do dia (Feito / Adiar); lead
+  parado há 7+ dias fica marcado; **Perdido** exige motivo; o detalhe guarda contato, valores
+  do negócio (setup + mensal, na moeda do país) e um **Histórico** com notas e eventos.
 - **Outreach por IA** — email personalizado citando a dor + link do preview rastreado, com
   **caixa de saída** que acompanha o status (rascunho → enviado → abriu → respondeu).
 - **Preview de sites** — gera um site do negócio num link único rastreado; publique
   white-label com URL própria.
-- **Tema claro/escuro** e paleta "Product UI Styleguide" (azul vívido + cinzas neutros).
+- **Tema claro/escuro** em "vidro sobre névoa": cards translúcidos com blur sobre um fundo
+  azul-acinzentado (névoa azul-marinho no escuro) e rail de 72px com ícone e nome. A paleta
+  continua a "Product UI Styleguide" (azul vívido + cinzas neutros); a landing fica fora.
 
 ---
 
@@ -128,19 +131,29 @@ pnpm build       # build de produção
 pnpm start       # servir o build
 pnpm typecheck   # tsc --noEmit
 pnpm lint        # eslint
-pnpm test        # testes de unidade do domínio (node --test)
+pnpm test        # testes de unidade do domínio (node --test, 208 testes)
 ```
+
+> Se `pnpm <script>` abortar com `ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY` (o pnpm 11
+> quer purgar o `node_modules` e não tem TTY pra perguntar), chame a ferramenta direto:
+> `./node_modules/.bin/tsc --noEmit`, `./node_modules/.bin/eslint`,
+> `node --experimental-strip-types --test tests/*.test.ts`. Ou rode `pnpm install` num
+> terminal com TTY pra ressincronizar e o wrapper volta a funcionar.
 
 ---
 
 ## 🗂️ Estrutura
 
 ```
-convex/            # schema, queries/mutations/actions, jobs, lógica de domínio (lib/)
-src/app/           # rotas (App Router): landing, (app)/dashboard|leads|crm|outreach|sites|settings
-src/components/    # UI: sidebar, cards, CRM (modal/detalhe), landing, gráficos, tema
-src/lib/           # helpers (playbook de vendas, providers)
-tests/             # testes de unidade do domínio
+convex/              # schema, queries/mutations/actions, jobs, lógica de domínio (lib/)
+src/app/             # rotas (App Router): landing, (app)/dashboard|leads|crm|outreach|sites|settings
+src/components/      # UI: rail (sidebar), cards, landing, gráficos, tema, event-glyph (ícone por evento)
+src/components/crm/  # CRM: create-lead-modal, lead-detail, today-strip, next-action-form,
+                     #      next-action-line, lead-info-fields, lost-reason-modal, lead-timeline
+src/lib/             # helpers (playbook de vendas, providers, use-now: relógio em estado)
+tests/               # testes de unidade do domínio (208)
+docs/redesign/       # screenshots finais da área logada (1440px, claro e escuro)
+docs/superpowers/    # specs e planos do redesenho e do CRM (workflow superpowers)
 ```
 
 ---

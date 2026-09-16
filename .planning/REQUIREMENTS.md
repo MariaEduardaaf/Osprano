@@ -49,6 +49,28 @@ Bloqueadores de produção identificados pela auditoria de 2026-07-11. Cada um m
 - [x] **OPTIN-05**: Guardrail server-side: `outreach.draft` e `outreach.send` recusam lead de mercado opt-in SEM consentimento registrado — nunca confiar só na UI. (`convex/outreach.ts`, `convex/lib/domain.ts`)
 - [x] **OPTIN-06**: Mercados opt-in exibem aviso discreto "validação jurídica pendente" na UI até validação por país (flag por mercado no `MARKETS`).
 
+## v1.1 Requirements
+
+Milestone v1.1 (2026-09-16): visual da área logada e CRM. Executado com o workflow superpowers (specs e planos em `docs/superpowers/`), não com planos GSD. Fases 5 e 6 do roadmap.
+
+### Redesenho vidro sobre névoa (Fase 5)
+
+- [x] **UX-01**: Tokens novos (névoa `--mist`, `--surface` translúcida, `--elevated`, `--glass-border`, `--surface-solid`, `--danger-fg`, raio 18/22px, sombras) escopados a `:root:has(.app-shell)`; landing e páginas públicas de preview ficam com os tokens de antes (screenshots de `/` e `/site/[slug]` iguais antes e depois). (`src/app/globals.css`, `src/app/(app)/layout.tsx`)
+- [x] **UX-02**: Classes `glass`, `glass-lite` e `glass-dense` em `@layer components`, só no primeiro nível (o bloco que encosta na névoa ou no overlay); inputs, selects e blocos internos sólidos (`bg-surface-solid` / `bg-surface-2`); nenhum `glass` dentro de `glass`. (`src/app/globals.css`, `src/components/**`, `src/app/(app)/**`)
+- [x] **UX-03**: Header de 56px removido; rail de 72px em vidro com ícone e nome ("Início, Leads, CRM, Outreach, Sites, Ajustes"), `aria-current="page"` no ativo, ThemeToggle e UserButton (ou chip DEMO) na base; `UsageFooter` apagado (plano e uso já vivem em Settings → "Plano & uso"). (`src/components/sidebar.tsx`, `src/app/(app)/layout.tsx`)
+- [x] **UX-04**: Tema escuro em névoa azul-marinho (não grafite) com `--foreground`/`--muted`/`--cold`/`--hot`/`--danger` em AA sobre a mancha mais escura; `prefers-reduced-transparency` deixa os vidros opacos com contorno; drawer e modal em `glass-dense` sobre overlay `bg-black/30`. (`src/app/globals.css`, `src/components/crm/lead-detail.tsx`, `src/components/crm/create-lead-modal.tsx`)
+- [x] **UX-05**: Commit preparatório: `* { border-color }` movido para `@layer base` (os utilitários de cor de borda voltam a funcionar); `backdrop-filter` só sem prefixo; screenshots finais da área logada em `docs/redesign/` (7 telas, claro e escuro, 1440px). (commits `09fb2da`, `c781a5a`, `92f2704`)
+
+### CRM: fluxo do dia e informação do lead (Fase 6)
+
+- [x] **CRM-01**: Uma próxima ação por lead (`nextActionAt` + `nextActionNote` no documento do lead, sem tabela de tarefas) com `setNextAction`/`clearNextAction`; linha no card do Kanban com status atrasada (`--hot`), hoje (`--warm`) ou futura (`--faint`); `NextActionForm` no detalhe. (`convex/schema.ts`, `convex/leads.ts`, `src/components/crm/next-action-form.tsx`, `next-action-line.tsx`)
+- [x] **CRM-02**: Faixa "Hoje" entre o cabeçalho e a busca, com os grupos Atrasadas e Hoje e as ações Feito (limpa e abre o detalhe com o campo em foco) e Adiar (1/3/7 dias, update otimista); calculada no navegador com `useNow` (60 s), some quando vazia e não muda com busca ou filtro. (`src/components/crm/today-strip.tsx`, `src/lib/use-now.ts`, `src/app/(app)/crm/page.tsx`)
+- [x] **CRM-03**: Lead parado = 7+ dias em `stageUpdatedAt` sem ação e fora de `converted`/`lost` (`stalledDays`, `isStalled`, `STALLED_AFTER_DAYS`); linha "parado há N dias" no card, filtro rápido Parados e ordenação "Próxima ação" (`compareByNextAction`). (`convex/lib/domain.ts`, `src/app/(app)/crm/page.tsx`)
+- [x] **CRM-04**: Coluna "Perdido" recolhida por padrão (cabeçalho é alvo de drop); `markLost` exige motivo (`LOST_REASONS`: Caro demais, Já tem site, Sem resposta, Não quer, Outro) e nota opcional; `setStage` recusa `lost` no servidor ("Use markLost") e limpa o motivo ao sair de `lost`; `LostReasonModal` (role dialog, foco inicial, Esc só fecha o modal) nos quatro pontos de entrada: drop, seletor do card, pílula de Etapa e botão Status. (`convex/leads.ts`, `src/components/crm/lost-reason-modal.tsx`, `lead-detail.tsx`, `crm/page.tsx`)
+- [x] **CRM-05**: Contato (nome, cargo) e valores do negócio (setup, mensal) com `updateInfo` (trim, `null` limpa, negativo/NaN → "Valor inválido"); moeda derivada do país (`currencyForCountry`, `formatMoney`); edição inline (blur/Enter salva, Esc descarta); cabeçalho da coluna soma a mensalidade dos leads visíveis. (`convex/leads.ts`, `convex/lib/domain.ts`, `src/components/crm/lead-info-fields.tsx`, `crm/page.tsx`)
+- [x] **CRM-06**: Notas são eventos (`addNote` → `events` com `type: "note"`); `leads.timeline` via índice `by_lead`; aba "Histórico" com campo de nota (Enter salva, Shift+Enter quebra) e linha do tempo com texto por tipo; `event-glyph.tsx` extraído do Dashboard com o caso `note`; `events.recent` exclui notas. (`convex/events.ts`, `convex/leads.ts`, `src/components/crm/lead-timeline.tsx`, `src/components/event-glyph.tsx`)
+- [x] **CRM-07**: 17 funções puras novas em `convex/lib/domain.ts` (moeda, dia civil local, próxima ação, parado, motivos, formatação relativa) com 17 testes em `tests/crm-domain.test.ts` (suíte 191 → 208, timestamps sempre pelo construtor local); seed do demo cobre atrasadas, de hoje, parados, perdidos com motivo, contato/valores e notas. (`tests/crm-domain.test.ts`, `convex/demo.ts`)
+
 ## v2 Requirements
 
 Fase 2 — "antes de escalar". Rastreados, fora do roadmap atual.
@@ -103,12 +125,25 @@ Which phases cover which requirements. Updated during roadmap creation.
 | OPTIN-04 | Phase 4 | Complete |
 | OPTIN-05 | Phase 4 | Complete |
 | OPTIN-06 | Phase 4 | Complete |
+| UX-01 | Phase 5 | Complete |
+| UX-02 | Phase 5 | Complete |
+| UX-03 | Phase 5 | Complete |
+| UX-04 | Phase 5 | Complete |
+| UX-05 | Phase 5 | Complete |
+| CRM-01 | Phase 6 | Complete |
+| CRM-02 | Phase 6 | Complete |
+| CRM-03 | Phase 6 | Complete |
+| CRM-04 | Phase 6 | Complete |
+| CRM-05 | Phase 6 | Complete |
+| CRM-06 | Phase 6 | Complete |
+| CRM-07 | Phase 6 | Complete |
 
 **Coverage:**
 - v1 requirements: 18 total (12 do milestone de produção + 6 do modo opt-in)
-- Mapped to phases: 18 (see ROADMAP.md)
+- v1.1 requirements: 12 total (5 do redesenho + 7 do CRM)
+- Mapped to phases: 30 (see ROADMAP.md)
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-07-11*
-*Last updated: 2026-07-22 — Phase 4 concluída; 18/18 requisitos v1 completos*
+*Last updated: 2026-09-16: milestone v1.1 (Fases 5 e 6) concluído; 18/18 requisitos v1 e 12/12 v1.1 completos*

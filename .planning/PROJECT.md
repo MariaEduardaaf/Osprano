@@ -6,6 +6,10 @@ SaaS de prospecção e venda de sites para freelancers e agências que atendem o
 
 **Este é um codebase existente e funcional** (Next.js 16 App Router + Convex + Clerk + Resend + Stripe + Tailwind 4). Typecheck, lint, testes (14/14) e build de produção passam. O trabalho atual é o milestone "Pronto para produção — Fase 1: bloqueadores", derivado de uma auditoria de 3 agentes (funcionalidade vs. spec, bugs de backend, segurança/compliance) concluída em 2026-07-11.
 
+## Atualização 2026-09-16
+
+O milestone v1.0 (Fases 1 a 4, os 18 requisitos abaixo em "Active") está fechado desde 2026-07-22. Em 2026-09-16 entrou o milestone **v1.1**, executado com o workflow superpowers (spec + plano em `docs/superpowers/`, não planos GSD): a **Fase 5** redesenha a área logada em "vidro sobre névoa" (cards translúcidos sobre névoa azul-acinzentada, rail de 72px com ícone e nome, tema escuro azul-marinho, landing intocada; screenshots em `docs/redesign/`) e a **Fase 6** dá ao CRM o fluxo do dia (próxima ação por lead, faixa Hoje, leads parados, Perdido com motivo obrigatório) e a informação do lead (contato, valores do negócio na moeda do país, Histórico com notas e eventos). Suíte em 208 testes; requisitos UX-01..05 e CRM-01..07 em REQUIREMENTS.md. O que falta não é código: rotacionar a chave da Anthropic e subir produção (`docs/CHECKLIST-MODO-REAL.md`, seções 3.0 e 9) e o UAT manual da Duda (última tarefa de cada plano em `docs/superpowers/plans/`).
+
 ## Core Value
 
 O usuário prospecta e aborda negócios europeus **sem risco legal** — o compliance ("compliant by design") tem que ser garantido por código, não por promessa, e a contagem de plano/billing tem que ser íntegra.
@@ -86,4 +90,4 @@ Auditoria de 2026-07-11 (3 agentes) encontrou, com verificação manual dos crí
 | Supressão como tabela Convex própria checada em draft/send | Fonte de verdade local, independente do provedor de email | — Pending |
 
 ---
-*Last updated: 2026-07-11 after initialization*
+*Last updated: 2026-09-16: milestone v1.1 (Fases 5 e 6) fechado; v1.0 fechado em 2026-07-22*
