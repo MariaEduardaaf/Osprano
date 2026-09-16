@@ -260,6 +260,50 @@ export const updateInfo = mutation({
   },
 });
 
+/** Nota do CRM = evento `note` com meta { text }. Comentário privado: fora do feed do Dashboard. */
+export const addNote = mutation({
+  args: { id: v.id("leads"), text: v.string() },
+  handler: async (ctx, args) => {
+    const orgId = await requireOrgId(ctx);
+    const lead = await ctx.db.get(args.id);
+    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    const text = args.text.trim();
+    if (!text) throw new Error("Nota vazia");
+    await ctx.db.insert("events", { orgId, type: "note", leadId: args.id, at: Date.now(), meta: { text } });
+  },
+});
+
+/** Forma solta do meta que o Histórico lê (o schema guarda v.any()). */
+type TimelineMeta = {
+  text?: string;
+  from?: string;
+  to?: string;
+  reason?: string;
+  source?: string;
+  channel?: string;
+};
+
+/** Histórico do lead: eventos via by_lead, mais recente primeiro. Outra org ou inexistente: erro. */
+export const timeline = query({
+  args: { leadId: v.id("leads") },
+  handler: async (ctx, { leadId }) => {
+    const orgId = await requireOrgId(ctx);
+    const lead = await ctx.db.get(leadId);
+    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    const events = await ctx.db
+      .query("events")
+      .withIndex("by_lead", (q) => q.eq("leadId", leadId))
+      .order("desc")
+      .take(100);
+    return events.map((e) => ({
+      _id: e._id,
+      type: e.type,
+      at: e.at,
+      meta: (e.meta ?? null) as TimelineMeta | null,
+    }));
+  },
+});
+
 /** Marca uma reunião com o lead e move-o para "Agendado". */
 export const schedule = mutation({
   args: { id: v.id("leads"), at: v.number(), note: v.optional(v.string()) },

@@ -10,9 +10,12 @@ export const recent = query({
       .query("events")
       .withIndex("by_org", (q) => q.eq("orgId", orgId))
       .order("desc")
-      .take(15);
+      .take(30);
+    // Nota é comentário privado do CRM; o feed é atividade do sistema. take(30) e corte em 15
+    // para o feed manter o tamanho de hoje mesmo com notas no meio.
+    const visible = events.filter((e) => e.type !== "note").slice(0, 15);
     return await Promise.all(
-      events.map(async (e) => {
+      visible.map(async (e) => {
         const lead = e.leadId ? await ctx.db.get(e.leadId) : null;
         return {
           _id: e._id,
