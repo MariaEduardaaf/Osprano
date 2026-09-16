@@ -88,6 +88,11 @@
    (0,2,0) e vence no escuro para qualquer token que definir. Regra: todo token
    com valor escuro é repetido no bloco escuro escopado; token que só muda no
    escuro (--muted, --cold, --hot, --danger) entra SÓ no bloco escuro escopado.
+   --border NÃO muda: é o divisor interno em todo lugar (Row, border-t, linhas de
+   tabela, inputs); a borda branca translúcida é só do vidro, em --glass-border.
+   backdrop-filter só na forma sem prefixo: o Lightning CSS do Turbopack gera o
+   -webkit- sozinho, e com o par escrito à mão ele descartava a forma sem prefixo
+   (Firefox ficava sem blur).
    ============================================================ */
 
 :root:has(.app-shell) {
@@ -157,7 +162,6 @@
   .glass-lite,
   .glass-dense {
     backdrop-filter: none;
-    -webkit-backdrop-filter: none;
   }
 }
 
@@ -212,7 +216,6 @@
     border: 1px solid var(--glass-border);
     box-shadow: var(--shadow-md);
     backdrop-filter: blur(var(--glass-blur));
-    -webkit-backdrop-filter: blur(var(--glass-blur));
   }
   .glass-lite {
     /* itens em lista longa: card de lead */
@@ -220,7 +223,6 @@
     border: 1px solid var(--glass-border);
     box-shadow: var(--shadow-sm);
     backdrop-filter: blur(var(--glass-blur-lite));
-    -webkit-backdrop-filter: blur(var(--glass-blur-lite));
   }
   .glass-dense {
     /* drawer e modais, sobre overlay */
@@ -228,7 +230,6 @@
     border: 1px solid var(--glass-border);
     box-shadow: var(--shadow-lg);
     backdrop-filter: blur(var(--glass-blur));
-    -webkit-backdrop-filter: blur(var(--glass-blur));
   }
 }
 

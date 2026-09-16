@@ -24,7 +24,7 @@
 | Testes (todos) | `node --experimental-strip-types --test tests/*.test.ts` | `ℹ fail 0` |
 | Testes (um arquivo) | `node --experimental-strip-types --test tests/crm-domain.test.ts` | `ℹ fail 0` |
 | Build | `./node_modules/.bin/next build` | "Compiled successfully" |
-| Re-seed do demo | `./node_modules/.bin/convex run demo:seed` | `{ "seeded": 51 }` |
+| Re-seed do demo | `./node_modules/.bin/convex run demo:seed > "$OUT/seed.txt" 2>&1; cat "$OUT/seed.txt"` | `{ "seeded": 51 }` |
 | Funções implantadas | `./node_modules/.bin/convex function-spec > "$OUT/spec.json"` | JSON com `.functions[].identifier` |
 
 - Os servidores já rodam em background: `./node_modules/.bin/convex dev` (local, `DEMO_MODE=1`; regenera `convex/_generated` e faz push do schema/funções a cada save) e Next em `http://localhost:3000` (`NEXT_PUBLIC_DEMO=1`). Não suba um segundo `convex dev`.
@@ -89,12 +89,12 @@ curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/crm
 ```
 Esperado: `2` e `200`.
 
-Se `/crm` devolver `500` com "Parsing CSS source code failed" apontando uma classe `shadow-[...]` com uma barra vertical dentro dos colchetes: o Tailwind v4 varre `docs/` (não é gitignored) e a spec do redesenho, na seção 3 ("Padrão de troca"), escreve um exemplo de classe com `sm` e `md` separados por barra vertical dentro de `var(...)`, que vira uma classe arbitrária inválida e derruba o CSS inteiro. Por isso este plano nunca escreve barra vertical dentro de colchetes. Ao escrever este plano a página estava em 500 por esse motivo e voltou a 200 sozinha depois de uma recompilação (o CSS servido deixou de incluir candidatos vindos de `docs/`); é intermitente. Se estiver em 500: force uma recompilação (`touch src/app/globals.css`) e teste de novo; se persistir, a correção é um `@source not "../../docs";` logo após o `@import "tailwindcss";` em `src/app/globals.css` (ou reescrever aquele trecho da spec), e pertence ao redesenho, não a este plano: avise a Duda antes de mexer, senão nenhum screenshot sai.
+O problema do Tailwind varrer `docs/` (500 com "Parsing CSS source code failed") **já foi corrigido** no commit `755a321` (`@source not "../../docs";` na linha 2 de `src/app/globals.css`). Se `/crm` devolver 500, a causa é outra: leia o log do `next dev` antes de mexer em qualquer coisa.
 
 - [ ] **Passo 3: criar a branch**
 
 ```bash
-git checkout -b feat/crm-fluxo-e-informacao
+git checkout -b feat/crm-fluxo-e-informacao   # a partir de `redesenho-vidro` (ou de `main` depois do merge dela); nunca de uma `main` sem o redesenho
 ```
 Esperado: `Switched to a new branch 'feat/crm-fluxo-e-informacao'`.
 
@@ -184,7 +184,7 @@ Depois:
 ./node_modules/.bin/tsc --noEmit -p convex/tsconfig.json && echo OK
 sleep 5; ./node_modules/.bin/convex run leads:list '{}' > "$OUT/leads.json" && jq length "$OUT/leads.json"
 ```
-Esperado: `OK` e `51` (o `convex dev` em background aceitou o schema; se ele tivesse recusado, o `run` falharia com erro de schema). Os campos ainda não aparecem em nenhum lead: normal.
+Esperado: `OK` e `51`. Atenção: isso NÃO prova que o schema subiu (push recusado deixa o schema antigo no ar e `leads:list` continua devolvendo 51). A prova real é o log do `convex dev` sem erro de schema agora, e o `setNextAction` da Tarefa 6 (um patch de `nextActionAt` falharia contra o schema antigo). Os campos ainda não aparecem em nenhum lead: normal.
 
 - [ ] **Passo 5: commit**
 
@@ -813,7 +813,7 @@ Esperado: `OK` e as duas linhas `leads.js:setNextAction`, `leads.js:clearNextAct
 ```bash
 ./node_modules/.bin/convex run leads:list '{}' > "$OUT/leads.json"
 ID=$(jq -r '.[] | select(.name == "Bella Cucina") | ._id' "$OUT/leads.json"); echo "$ID"
-./node_modules/.bin/convex run leads:setNextAction "{\"id\":\"$ID\",\"at\":1789000000000,\"note\":\"   \"}" > "$OUT/set-empty.txt" 2>&1; grep -c "Escreva o que fazer" "$OUT/set-empty.txt"
+./node_modules/.bin/convex run leads:setNextAction "{\"id\":\"$ID\",\"at\":1789000000000,\"note\":\"   \"}" > "$OUT/set-empty.txt" 2>&1; grep -q "Escreva o que fazer" "$OUT/set-empty.txt" && echo OK
 ./node_modules/.bin/convex run leads:setNextAction "{\"id\":\"$ID\",\"at\":1789000000000,\"note\":\"  ligar de novo  \"}" > "$OUT/set.txt" 2>&1
 ./node_modules/.bin/convex run leads:get "{\"id\":\"$ID\"}" > "$OUT/lead.json"; jq -c '{nextActionAt, nextActionNote}' "$OUT/lead.json"
 ./node_modules/.bin/convex run leads:clearNextAction "{\"id\":\"$ID\"}" > "$OUT/clear.txt" 2>&1
@@ -1239,6 +1239,8 @@ git commit -m "feat(crm): faixa Hoje com Feito e Adiar" -m "Feito conclui e reab
 ```
 
 ### Tarefa 10: página do CRM (faixa, `now`, `crmLeads` → `visible`, linha no card, Parados, Próxima ação)
+
+> As Tarefas 10 e 11 formam **uma unidade**: a 10 usa a prop `focusNextAction` que só nasce na 11, então `tsc` fica vermelho entre as duas. Para cada tarefa fechar verde, execute **primeiro os passos da Tarefa 11 que criam `next-action-form.tsx` e a prop no `LeadDetail`**, depois volte e faça a 10, e por fim os passos restantes da 11 (verificação e commit). Um commit só, no fim da 11, cobrindo as duas.
 
 **Files:**
 - Modify: `src/app/(app)/crm/page.tsx:3-12` (imports), `:16-21` (SORTS), `:37-45` (FILTERS), `:47-56` (estado), `:70-84` (cadeia), `:120` (faixa), `:155-159` (contagem), `:167` (`items`), `:217` (abrir), `:246` (linha do card), `:298` (drawer)
@@ -1749,6 +1751,8 @@ jq --argjson now "$NOW" '[.[] | select(.nextActionAt != null and .nextActionAt <
 Esperado: `4` (as duas atrasadas e as duas de hoje têm `at` no passado: ambas entram na faixa; `actionStatus` no navegador separa "overdue" de "today" pelo dia civil).
 
 - [ ] **Passo 2: screenshots (claro e escuro)**
+
+O escuro usa o gancho temporário `?theme=dark` do redesenho (commit `052799c`) **se ele ainda existir** (`grep -c URLSearchParams src/app/layout.tsx`); se já tiver sido removido, capture só o claro e deixe o escuro para o roteiro manual. A opção "Próxima ação" no select "Ordenar" não é verificável com o select fechado: fica no roteiro manual.
 
 ```bash
 CH=$(ls -d ~/Library/Caches/ms-playwright/chromium_headless_shell-*/chrome-headless-shell-mac-arm64/chrome-headless-shell | tail -1)
@@ -3355,7 +3359,7 @@ Abra as duas (Read). No CRM: faixa Hoje em vidro, linhas nos cards, "Agendado" c
 ```bash
 git log --oneline main..HEAD
 ```
-Esperado: 15 commits, na ordem das tarefas. Relate: comandos e resultados, o que o screenshot mostrou ou não, e os desvios conscientes deste plano em relação à spec: (a) `src/lib/use-now.ts` e `src/components/crm/next-action-line.tsx` são arquivos além da tabela 3.4 (pureza do React Compiler e DRY da tabela 2.2); (b) o vazio do Histórico não usa o `EmptyState` de `ui.tsx` porque ele virou `glass` no redesenho e o drawer já é vidro; (c) a `TodayStrip` recebe `now` além de `items` e `onOpen`, para o "há N dias" usar o mesmo relógio da página.
+Esperado: 18 commits, na ordem das tarefas (7 no Chunk 1, 3 no Chunk 2, 1 no 3a, 3 no 3b, 4 no Chunk 4). Relate: comandos e resultados, o que o screenshot mostrou ou não, e os desvios conscientes deste plano em relação à spec: (a) `src/lib/use-now.ts` e `src/components/crm/next-action-line.tsx` são arquivos além da tabela 3.4 (pureza do React Compiler e DRY da tabela 2.2); (b) o vazio do Histórico não usa o `EmptyState` de `ui.tsx` porque ele virou `glass` no redesenho e o drawer já é vidro; (c) a `TodayStrip` recebe `now` além de `items` e `onOpen`, para o "há N dias" usar o mesmo relógio da página.
 
 ### Tarefa 26: roteiro manual para a Duda (última tarefa; entregar como está)
 
