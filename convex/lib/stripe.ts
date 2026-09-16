@@ -1,5 +1,7 @@
 /** Minimal Stripe REST client (form-encoded) — no SDK, runs in Convex actions. */
 
+import { userError } from "./errors.ts";
+
 export async function stripePost(
   secret: string,
   path: string,
@@ -15,8 +17,10 @@ export async function stripePost(
   });
   const data = (await res.json()) as Record<string, unknown>;
   if (!res.ok) {
+    // Detalhe do erro só nos logs do Convex: nunca vaza pro cliente.
     const err = data.error as { message?: string } | undefined;
-    throw new Error(`Stripe ${res.status}: ${err?.message ?? "erro"}`);
+    console.error(`Stripe ${res.status}:`, (err?.message ?? JSON.stringify(data)).slice(0, 200));
+    throw userError(`Stripe respondeu ${res.status}`);
   }
   return data;
 }

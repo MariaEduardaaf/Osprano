@@ -18,6 +18,7 @@ import type * as lib_compliance from "../lib/compliance.js";
 import type * as lib_domain from "../lib/domain.js";
 import type * as lib_enrich from "../lib/enrich.js";
 import type * as lib_env from "../lib/env.js";
+import type * as lib_errors from "../lib/errors.js";
 import type * as lib_outreachAi from "../lib/outreachAi.js";
 import type * as lib_stripe from "../lib/stripe.js";
 import type * as model_tenant from "../model/tenant.js";
@@ -47,6 +48,7 @@ declare const fullApi: ApiFromModules<{
   "lib/domain": typeof lib_domain;
   "lib/enrich": typeof lib_enrich;
   "lib/env": typeof lib_env;
+  "lib/errors": typeof lib_errors;
   "lib/outreachAi": typeof lib_outreachAi;
   "lib/stripe": typeof lib_stripe;
   "model/tenant": typeof model_tenant;

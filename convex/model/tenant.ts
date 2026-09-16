@@ -1,4 +1,5 @@
 import type { QueryCtx, MutationCtx, ActionCtx } from "../_generated/server";
+import { userError } from "../lib/errors.ts";
 
 /** O modo demo só liga fora de produção. DEFAULT-DENY: exige CONVEX_ENV="development"
  *  explícito (env esquecida = demo off = seguro). NODE_ENV NÃO serve aqui — o bundler
@@ -17,5 +18,5 @@ export async function requireOrgId(ctx: QueryCtx | MutationCtx | ActionCtx): Pro
   if (identity) return identity.subject;
   // Demo mode (dev only): a shared, unauthenticated "demo" workspace.
   if (isDemoEnabled()) return "demo";
-  throw new Error("Não autenticado");
+  throw userError("Não autenticado");
 }

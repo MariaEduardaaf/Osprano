@@ -17,6 +17,7 @@ import {
   draftLinkIssue,
 } from "./lib/env";
 import { addSuppression, isEmailSuppressed } from "./suppressions";
+import { userError } from "./lib/errors";
 
 /**
  * A tabela `outreach` é COMPARTILHADA entre canais: convex/whatsapp.ts insere linhas
@@ -141,9 +142,9 @@ export const upsertDraft = internalMutation({
     // Defesa em profundidade: hoje o único chamador é `draft` (já gateado), mas o gate
     // mora também aqui, colado na escrita — qualquer chamador interno futuro passaria
     // direto e persistiria assunto/corpo de email para um lead sem base legal.
-    if (!lead) throw new Error("Lead não encontrado");
+    if (!lead) throw userError("Lead não encontrado");
     if (!canContactByEmail(lead)) {
-      throw new Error("Mercado opt-in: registre o consentimento do prospect antes de enviar email.");
+      throw userError("Mercado opt-in: registre o consentimento do prospect antes de enviar email.");
     }
     const existing = await emailRowForLead(ctx, args.leadId);
     const unsubscribeToken = existing?.unsubscribeToken ?? crypto.randomUUID().replace(/-/g, "");
@@ -216,19 +217,19 @@ export const draft = action({
   ): Promise<{ subject: string; body: string; warnings: OutreachWarning[] }> => {
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.runQuery(internal.leads.getInternal, { leadId });
-    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
     if (!canContactByEmail(lead)) {
-      throw new Error("Mercado opt-in: registre o consentimento do prospect antes de enviar email.");
+      throw userError("Mercado opt-in: registre o consentimento do prospect antes de enviar email.");
     }
     if (lead.email) {
       const suppressed = await ctx.runQuery(internal.suppressions.isSuppressed, {
         email: normalizeEmail(lead.email),
         orgId,
       });
-      if (suppressed) throw new Error("Este contato pediu para não ser contatado (opt-out).");
+      if (suppressed) throw userError("Este contato pediu para não ser contatado (opt-out).");
     }
     const key = process.env.ANTHROPIC_API_KEY;
-    if (!key) throw new Error("ANTHROPIC_API_KEY não configurada no deployment Convex.");
+    if (!key) throw userError("ANTHROPIC_API_KEY não configurada no deployment Convex.");
 
     // PRÉ-CONDIÇÕES DE LINK, resolvidas ANTES da chamada de IA — de propósito.
     // As duas variáveis produzem texto que o PROSPECT lê: o link da prévia (corpo) e o de
@@ -274,10 +275,10 @@ export const callScript = action({
   ): Promise<{ script: string; translation: string; warnings: OutreachWarning[] }> => {
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.runQuery(internal.leads.getInternal, { leadId });
-    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
-    if (!lead.phone) throw new Error("Lead sem telefone.");
+    if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
+    if (!lead.phone) throw userError("Lead sem telefone.");
     const key = process.env.ANTHROPIC_API_KEY;
-    if (!key) throw new Error("ANTHROPIC_API_KEY não configurada no deployment Convex.");
+    if (!key) throw userError("ANTHROPIC_API_KEY não configurada no deployment Convex.");
 
     // A PRÉVIA TEM QUE EXISTIR ANTES DO TEXTO. O prompt do script manda dizer, EM VOZ ALTA e
     // no passado, que "um site de prévia já foi feito para vocês" (item (3) de
@@ -316,9 +317,9 @@ export const markSent = mutation({
   handler: async (ctx, { leadId }) => {
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.db.get(leadId);
-    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
     if (!canContactByEmail(lead)) {
-      throw new Error("Mercado opt-in: registre o consentimento do prospect antes de enviar email.");
+      throw userError("Mercado opt-in: registre o consentimento do prospect antes de enviar email.");
     }
     // Mesma checagem de supressão de `draft`/`send`: sem ela, um prospect que pediu
     // opt-out ainda podia ser registrado como "enviei eu mesmo". Como markSent é
@@ -329,7 +330,7 @@ export const markSent = mutation({
         email: normalizeEmail(lead.email),
         orgId,
       });
-      if (suppressed) throw new Error("Este contato pediu para não ser contatado (opt-out).");
+      if (suppressed) throw userError("Este contato pediu para não ser contatado (opt-out).");
     }
     const now = Date.now();
     const row = await emailRowForLead(ctx, leadId);
@@ -347,9 +348,9 @@ export const markReplied = mutation({
   handler: async (ctx, { leadId }) => {
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.db.get(leadId);
-    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
     const row = await emailRowForLead(ctx, leadId);
-    if (!row) throw new Error("Nenhuma abordagem encontrada para este lead.");
+    if (!row) throw userError("Nenhuma abordagem encontrada para este lead.");
     const now = Date.now();
     await ctx.db.patch(row._id, { status: "replied", repliedAt: now });
     await ctx.db.insert("events", { orgId, type: "reply", leadId, at: now });
@@ -368,12 +369,12 @@ export const updateDraft = mutation({
   handler: async (ctx, { leadId, subject, body }) => {
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.db.get(leadId);
-    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
     if (!canContactByEmail(lead)) {
-      throw new Error("Mercado opt-in: registre o consentimento do prospect antes de enviar email.");
+      throw userError("Mercado opt-in: registre o consentimento do prospect antes de enviar email.");
     }
     const row = await emailRowForLead(ctx, leadId);
-    if (!row) throw new Error("Nenhum rascunho encontrado para este lead.");
+    if (!row) throw userError("Nenhum rascunho encontrado para este lead.");
     await ctx.db.patch(row._id, { subject, body });
   },
 });
@@ -384,8 +385,8 @@ export const suppress = mutation({
   handler: async (ctx, { leadId }) => {
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.db.get(leadId);
-    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
-    if (!lead.email) throw new Error("Lead sem email para suprimir.");
+    if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
+    if (!lead.email) throw userError("Lead sem email para suprimir.");
     await addSuppression(ctx, {
       email: normalizeEmail(lead.email),
       orgId,
@@ -402,30 +403,30 @@ export const send = action({
   handler: async (ctx, { leadId }): Promise<{ sent: boolean }> => {
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.runQuery(internal.leads.getInternal, { leadId });
-    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
     if (!canContactByEmail(lead)) {
-      throw new Error("Mercado opt-in: registre o consentimento do prospect antes de enviar email.");
+      throw userError("Mercado opt-in: registre o consentimento do prospect antes de enviar email.");
     }
-    if (!lead.email) throw new Error("Lead sem email — copie a abordagem e envie do seu email.");
+    if (!lead.email) throw userError("Lead sem email — copie a abordagem e envie do seu email.");
 
     const suppressed = await ctx.runQuery(internal.suppressions.isSuppressed, {
       email: normalizeEmail(lead.email),
       orgId,
     });
-    if (suppressed) throw new Error("Este contato pediu para não ser contatado (opt-out).");
+    if (suppressed) throw userError("Este contato pediu para não ser contatado (opt-out).");
 
     const row = await ctx.runQuery(api.outreach.getForLead, { leadId });
-    if (!row?.subject || !row?.body) throw new Error("Escreva a abordagem primeiro.");
+    if (!row?.subject || !row?.body) throw userError("Escreva a abordagem primeiro.");
 
     // O corpo pode ter sido gravado ANTES destas travas existirem (há rascunhos no banco com
     // `undefined/unsubscribe` no rodapé) ou num ambiente de desenvolvimento. Como o bloco
     // abaixo só ANEXA rodapé quando o correto falta, o link quebrado antigo iria junto.
     const issue = draftLinkIssue(row.body);
-    if (issue) throw new Error(issue);
+    if (issue) throw userError(issue);
 
     const apiKey = process.env.RESEND_API_KEY;
     const from = process.env.RESEND_FROM;
-    if (!apiKey || !from) throw new Error("RESEND_API_KEY / RESEND_FROM não configurados.");
+    if (!apiKey || !from) throw userError("RESEND_API_KEY / RESEND_FROM não configurados.");
 
     let unsubscribeToken = row.unsubscribeToken;
     if (!unsubscribeToken) {
@@ -461,8 +462,9 @@ export const send = action({
       }),
     });
     if (!res.ok) {
-      const t = await res.text();
-      throw new Error(`Resend ${res.status}: ${t.slice(0, 200)}`);
+      // Corpo da resposta só nos logs do Convex: nunca vaza pro cliente.
+      console.error(`Resend ${res.status}:`, (await res.text()).slice(0, 200));
+      throw userError(`Resend respondeu ${res.status}`);
     }
 
     await ctx.runMutation(api.outreach.markSent, { leadId });

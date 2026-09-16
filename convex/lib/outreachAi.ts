@@ -1,6 +1,7 @@
 import type { Doc } from "../_generated/dataModel";
 import type { Signals, SwissLang } from "./domain.ts";
 import { swissLanguage } from "./domain.ts";
+import { userError } from "./errors.ts";
 
 /**
  * Português EUROPEU, qualificado de propósito. O valor do LANG entra CRU no prompt
@@ -755,8 +756,9 @@ export async function writeEmail(
   });
 
   if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`Anthropic ${res.status}: ${t.slice(0, 200)}`);
+    // Corpo da resposta só nos logs do Convex: nunca vaza pro cliente.
+    console.error(`Anthropic ${res.status}:`, (await res.text()).slice(0, 200));
+    throw userError(`Anthropic respondeu ${res.status}`);
   }
 
   const data = (await res.json()) as AnthropicResponse;
@@ -831,8 +833,9 @@ export async function writeCallScript(
   });
 
   if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`Anthropic ${res.status}: ${t.slice(0, 200)}`);
+    // Corpo da resposta só nos logs do Convex: nunca vaza pro cliente.
+    console.error(`Anthropic ${res.status}:`, (await res.text()).slice(0, 200));
+    throw userError(`Anthropic respondeu ${res.status}`);
   }
 
   const data = (await res.json()) as AnthropicResponse;

@@ -3,6 +3,7 @@ import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { requireOrgId } from "./model/tenant";
 import { hasWaOptIn } from "./lib/domain";
+import { userError } from "./lib/errors";
 
 /**
  * Send a WhatsApp follow-up. COMPLIANCE: allowed ONLY after the prospect has a
@@ -19,15 +20,15 @@ export const sendFollowup = action({
   handler: async (ctx, { leadId, message }): Promise<{ sent: boolean }> => {
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.runQuery(internal.leads.getInternal, { leadId });
-    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
     if (!hasWaOptIn(lead)) {
-      throw new Error("WhatsApp só com opt-in registrado do prospect.");
+      throw userError("WhatsApp só com opt-in registrado do prospect.");
     }
-    if (!lead.phone) throw new Error("Lead sem telefone.");
+    if (!lead.phone) throw userError("Lead sem telefone.");
 
     const token = process.env.WHATSAPP_TOKEN;
     const phoneId = process.env.WHATSAPP_PHONE_ID;
-    if (!token || !phoneId) throw new Error("WHATSAPP_TOKEN / WHATSAPP_PHONE_ID não configurados.");
+    if (!token || !phoneId) throw userError("WHATSAPP_TOKEN / WHATSAPP_PHONE_ID não configurados.");
 
     const to = lead.phone.replace(/[^0-9]/g, "");
     const res = await fetch(`https://graph.facebook.com/v21.0/${phoneId}/messages`, {
@@ -41,8 +42,9 @@ export const sendFollowup = action({
       }),
     });
     if (!res.ok) {
-      const t = await res.text();
-      throw new Error(`WhatsApp ${res.status}: ${t.slice(0, 200)}`);
+      // Corpo da resposta só nos logs do Convex: nunca vaza pro cliente.
+      console.error(`WhatsApp ${res.status}:`, (await res.text()).slice(0, 200));
+      throw userError(`WhatsApp respondeu ${res.status}`);
     }
 
     await ctx.runMutation(internal.whatsapp.record, { orgId, leadId, message });
