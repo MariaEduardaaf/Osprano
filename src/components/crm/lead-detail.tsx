@@ -27,6 +27,7 @@ import {
 import { NextActionForm } from "@/components/crm/next-action-form";
 import { LeadInfoFields } from "@/components/crm/lead-info-fields";
 import { LostReasonModal } from "@/components/crm/lost-reason-modal";
+import { LeadTimeline } from "@/components/crm/lead-timeline";
 import { OutreachComposer } from "@/components/outreach-composer";
 import { GeneratePreviewButton } from "@/components/generate-preview-button";
 import { PublishButton } from "@/components/publish-button";
@@ -60,7 +61,7 @@ const CONTACT_LABEL: Record<string, string> = {
   unknown: "Desconhecido",
 };
 
-const TABS = ["Informações", "Abordagem", "Site", "Objeções", "Venda"] as const;
+const TABS = ["Informações", "Abordagem", "Site", "Objeções", "Venda", "Histórico"] as const;
 type Tab = (typeof TABS)[number];
 
 export function LeadDetail({
@@ -150,6 +151,7 @@ export function LeadDetail({
           {tab === "Site" && <SiteTab lead={lead} />}
           {tab === "Objeções" && <ObjectionsTab />}
           {tab === "Venda" && <SaleTab />}
+          {tab === "Histórico" && <LeadTimeline leadId={lead._id} />}
         </div>
       </div>
       {lostOpen && (
