@@ -96,7 +96,7 @@ export default function CrmPage() {
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value)}
-                className="rounded-lg border border-border bg-surface py-2 pl-3 pr-8 text-sm font-medium text-muted shadow-[var(--shadow-sm)] outline-none focus:border-border-strong"
+                className="rounded-lg border border-border bg-surface-solid py-2 pl-3 pr-8 text-sm font-medium text-muted shadow-[var(--shadow-sm)] outline-none focus:border-border-strong"
                 aria-label="Ordenar"
               >
                 {SORTS.map((s) => (
@@ -118,13 +118,13 @@ export default function CrmPage() {
       />
 
       {/* search */}
-      <div className="relative mb-4 max-w-xl">
+      <div className="glass relative mb-4 max-w-xl rounded-xl focus-within:border-border-strong">
         <MdSearch size={18} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-faint" />
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Buscar por nome, categoria ou cidade…"
-          className="w-full rounded-xl border border-border bg-surface py-2.5 pl-10 pr-9 text-sm shadow-[var(--shadow-sm)] outline-none placeholder:text-faint focus:border-border-strong"
+          className="w-full border-0 bg-transparent py-2.5 pl-10 pr-9 text-sm shadow-none outline-none placeholder:text-faint"
         />
         {q && (
           <button
@@ -215,7 +215,7 @@ export default function CrmPage() {
                             setOverCol(null);
                           }}
                           onClick={() => setOpenId(lead._id)}
-                          className={`group cursor-grab rounded-[var(--radius)] border border-border bg-surface p-3.5 shadow-[var(--shadow-sm)] transition-all hover:border-border-strong hover:shadow-[var(--shadow-md)] active:cursor-grabbing ${
+                          className={`glass-lite group cursor-grab rounded-[var(--radius)] p-3.5 transition-all hover:border-border-strong hover:shadow-[var(--shadow-md)] active:cursor-grabbing ${
                             isDragging ? "opacity-40" : ""
                           }`}
                         >
@@ -247,7 +247,7 @@ export default function CrmPage() {
                             <select
                               value={lead.stage}
                               onChange={(e) => move(lead._id, e.target.value as Stage)}
-                              className="rounded-md border border-border bg-surface px-1.5 py-1 text-[11px] text-muted"
+                              className="rounded-md border border-border bg-surface-solid px-1.5 py-1 text-[11px] text-muted"
                               aria-label="Mover estágio"
                               onClick={(e) => e.stopPropagation()}
                             >
