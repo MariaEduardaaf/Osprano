@@ -33,6 +33,15 @@ const stageArg = v.union(
   v.literal("lost"),
 );
 
+/** Espelha `lostReason` do schema e `LOST_REASONS` do domínio. */
+const lostReasonV = v.union(
+  v.literal("too_expensive"),
+  v.literal("has_site"),
+  v.literal("no_response"),
+  v.literal("not_interested"),
+  v.literal("other"),
+);
+
 const signalsV = v.object({
   noSite: v.boolean(),
   socialOnly: v.boolean(),
@@ -137,8 +146,15 @@ export const setStage = mutation({
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.db.get(args.id);
     if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    // Guardrail: "Perdido" exige motivo. Toda UI que oferece Perdido abre o modal, que chama markLost.
+    if (args.stage === "lost") throw new Error("Use markLost");
     const now = Date.now();
-    await ctx.db.patch(args.id, { stage: args.stage, stageUpdatedAt: now });
+    await ctx.db.patch(args.id, {
+      stage: args.stage,
+      stageUpdatedAt: now,
+      // Sair de Perdido é a única forma de reabrir (não há mutation reopen): o motivo vai junto.
+      ...(lead.stage === "lost" ? { lostReason: undefined, lostNote: undefined } : {}),
+    });
     await ctx.db.insert("events", {
       orgId,
       type: "stage_change",
@@ -174,6 +190,41 @@ export const clearNextAction = mutation({
     const lead = await ctx.db.get(args.id);
     if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
     await ctx.db.patch(args.id, { nextActionAt: undefined, nextActionNote: undefined });
+  },
+});
+
+/**
+ * "Perdido" sempre com motivo. Move para lost, limpa a próxima ação e registra o evento
+ * (meta.reason vai para o Histórico). Lead JÁ em lost (dar motivo a um perdido legado):
+ * só lostReason/lostNote, sem tocar stageUpdatedAt e sem evento.
+ */
+export const markLost = mutation({
+  args: { id: v.id("leads"), reason: lostReasonV, note: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const orgId = await requireOrgId(ctx);
+    const lead = await ctx.db.get(args.id);
+    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    const lostNote = args.note?.trim() || undefined;
+    if (lead.stage === "lost") {
+      await ctx.db.patch(args.id, { lostReason: args.reason, lostNote });
+      return;
+    }
+    const now = Date.now();
+    await ctx.db.patch(args.id, {
+      stage: "lost",
+      stageUpdatedAt: now,
+      lostReason: args.reason,
+      lostNote,
+      nextActionAt: undefined,
+      nextActionNote: undefined,
+    });
+    await ctx.db.insert("events", {
+      orgId,
+      type: "stage_change",
+      leadId: args.id,
+      at: now,
+      meta: { from: lead.stage, to: "lost", reason: args.reason },
+    });
   },
 });
 

@@ -21,9 +21,11 @@ import {
   MARKETS,
   OPT_IN_MARKETS,
   canContactByEmail,
+  lostReasonLabel,
   type Stage,
 } from "@convex/lib/domain";
 import { NextActionForm } from "@/components/crm/next-action-form";
+import { LostReasonModal } from "@/components/crm/lost-reason-modal";
 import { OutreachComposer } from "@/components/outreach-composer";
 import { GeneratePreviewButton } from "@/components/generate-preview-button";
 import { PublishButton } from "@/components/publish-button";
@@ -71,7 +73,17 @@ export function LeadDetail({
   focusNextAction?: boolean;
 }) {
   const [tab, setTab] = useState<Tab>("Informações");
+  const [lostOpen, setLostOpen] = useState(false);
   const setStage = useMutation(api.leads.setStage);
+  const markLost = useMutation(api.leads.markLost);
+  // "Perdido" (pílula de Etapa ou botão Status) SEMPRE pede motivo, inclusive com o lead JÁ em
+  // lost: é o único caminho de UI para dar motivo a um perdido legado (por isso não há
+  // `if (stage === "lost") return`). Os demais estágios seguem em setStage; sair de Perdido
+  // por pílula ou "Em aberto" funciona como hoje e o servidor limpa o motivo.
+  const onStage = (s: Stage) => {
+    if (s === "lost") setLostOpen(true);
+    else void setStage({ id: lead._id, stage: s });
+  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -130,7 +142,7 @@ export function LeadDetail({
               lead={lead}
               status={status}
               autoFocusAction={focusNextAction}
-              onStage={(s) => void setStage({ id: lead._id, stage: s })}
+              onStage={onStage}
             />
           )}
           {tab === "Abordagem" && <ApproachTab lead={lead} />}
@@ -139,6 +151,15 @@ export function LeadDetail({
           {tab === "Venda" && <SaleTab />}
         </div>
       </div>
+      {lostOpen && (
+        <LostReasonModal
+          lead={lead}
+          onConfirm={async ({ reason, note }) => {
+            await markLost({ id: lead._id, reason, note });
+          }}
+          onClose={() => setLostOpen(false)}
+        />
+      )}
     </div>
   );
 }
@@ -173,6 +194,13 @@ function InfoTab({
   return (
     <div className="space-y-6">
       {/* blocos novos do CRM, acima dos dados do Google (que não mudam) */}
+      {lead.stage === "lost" && (
+        // sem lostReason (legado): só "Perdido"; sem lostNote: sem o terceiro segmento.
+        // Reabrir é o "Em aberto" ou uma pílula de Etapa, abaixo; não há botão próprio.
+        <p className="text-sm font-semibold text-hot">
+          {["Perdido", lostReasonLabel(lead.lostReason), lead.lostNote].filter(Boolean).join(" · ")}
+        </p>
+      )}
       <NextActionForm lead={lead} autoFocus={autoFocusAction} />
 
       <section>
