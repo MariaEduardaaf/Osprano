@@ -43,3 +43,6 @@ next-env.d.ts
 
 # design references (não fazem parte do app)
 /Style guides*.jpg
+
+# mockups do brainstorming (visual companion)
+.superpowers/
