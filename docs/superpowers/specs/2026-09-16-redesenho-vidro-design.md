@@ -41,13 +41,21 @@ Correção (a que o guia de upgrade do Tailwind v4 prescreve): mover a regra par
 `@layer base { * { border-color: var(--border) } }`. É um commit **separado, antes**
 do redesenho, com screenshot da landing antes/depois: a landing tem 22 usos de
 `border-brand`, `border-white/10`, `border-transparent` etc. hoje suprimidos e vai
-mudar onde essas bordas eram intencionais. A Duda vê o antes/depois e decide se
+mudar onde essas bordas eram intencionais. O mesmo vale para as páginas públicas de
+preview: `preview-site.tsx` (`/p/[token]`, `/site/[slug]`) tem 6 `border-white/10` e
+`border-white/25` que hoje saem cinza opaco sobre fundo escuro e passam a ser brancas
+sutis. A Duda vê o antes/depois de `/` e de `/site/[slug]` (seed) e decide se
 aceita; o redesenho é comparado contra essa nova base.
+
+Outra regra sem camada, `:focus-visible { outline: none; box-shadow: var(--ring);
+border-radius: 8px }`, vence utilitários do mesmo jeito (num card focado troca o raio
+por 8px e o `ring` pelo `--ring`). Pré-existente, fora de escopo; registrado para
+ninguém debugar isso na verificação.
 
 ## Fora do escopo
 
-Landing, páginas públicas de preview, o formulário interno do Clerk (só o container
-muda), sidebar responsiva/mobile (a app hoje não tem layout móvel na área logada e
+Landing e páginas públicas de preview (só o efeito colateral do commit preparatório
+as toca), o formulário interno do Clerk (só o container muda), sidebar responsiva/mobile (a app hoje não tem layout móvel na área logada e
 isso não muda aqui), troca de fontes, ícones ou paleta de marca. O uso de
 `text-faint` em texto real (rótulo do StatCard, thead do outbox, títulos de seção do
 drawer) já está abaixo de AA hoje; não é este trabalho que introduz, nem corrige.
@@ -92,11 +100,14 @@ do escopo (fora dele, na landing, continua).
 | `--surface` | `#ffffff` → `rgba(255,255,255,.62)` | `#141a24` → `rgba(255,255,255,.07)` |
 | `--surface-solid` (novo) | `#ffffff` | `#161c28` |
 | `--surface-2` | `#eef1f7` (mantém) | `#1d2531` (mantém) |
-| `--elevated` | `#ffffff` → `rgba(255,255,255,.78)` | `#18202b` → `rgba(255,255,255,.10)` |
+| `--elevated` | `#ffffff` → `rgba(255,255,255,.88)` | `#18202b` → `rgba(255,255,255,.10)` |
 | `--border` | `#e2e6ef` (**mantém**) | `#28313f` (**mantém**) |
 | `--glass-border` (novo) | `rgba(255,255,255,.9)` | `rgba(255,255,255,.12)` |
 | `--border-strong` | mantém | mantém |
 | `--muted` | `#656d7e` (mantém) | `#8a93a4` → `#a3abbb` |
+| `--cold` | mantém | `#8a93a4` → `#a3abbb` |
+| `--hot` | mantém | `#f2725a` → `#ff8f78` |
+| `--danger` | mantém | `#e5484d` → `#ff8a8e` |
 | `--radius` | `14px` → `18px` | idem |
 | `--radius-panel` (novo, **só no bloco escopado**, não no `@theme`) | `22px` | idem |
 | `--shadow-sm` | → `0 4px 14px rgba(30,45,80,.06)` | → `0 4px 14px rgba(0,0,0,.25)` |
@@ -110,12 +121,22 @@ Por que cada um:
   `Row`, `border-t` em cards, linhas de tabela, lane do Kanban, borda dos inputs). A
   borda branca translúcida é só do vidro, em `--glass-border`.
 - `--elevated` passa a ser usado: drawer e modais ficam sobre um overlay escurecido
-  e precisam de vidro mais denso que os cards.
-- `--muted` escuro clareia porque o pior caso não é a base `#0f1522` e sim a mancha
-  `#1d2f5a`: 7% de branco sobre ela dá ≈ `#2d3e66`, e `#8a93a4` mede 3,4:1 (falha).
-  `#a3abbb` mede ≈ 4,6:1. É a única cor de texto que muda.
-- `--radius-panel` fica fora do `@theme inline` de propósito: um `--radius-lg` lá
-  sobrescreveria o `rounded-lg` do Tailwind (52 usos em botões e inputs).
+  (`bg-black/30`) e precisam de vidro mais denso que os cards. 88% no claro porque a
+  78% o `--muted` sobre overlay + vidro media 4,3:1 (falha); a 88% dá ≈ 4,7:1.
+- No escuro, o pior caso não é a base `#0f1522` e sim a mancha `#1d2f5a`: 7% de
+  branco sobre ela dá ≈ `#2d3e66`. Sobre isso, `--muted` e `--cold` (`#8a93a4`)
+  medem 3,4:1, `--hot` 3,7:1 e `--danger` 2,7:1, todos abaixo de AA e todos usados
+  como texto (Badge "Frio", erros, ações atrasadas). Os valores novos medem
+  `#a3abbb` 4,6:1, `#ff8f78` 4,7:1, `#ff8a8e` 4,7:1. Só no bloco escuro escopado.
+- **`--brand` como texto no escuro fica em 3,0:1 e é aceito assim**, com registro:
+  clarear o azul quebraria o botão (`bg-brand` com texto branco já está em 3,5:1 e
+  cairia para 2,5:1). O uso de `text-brand` como texto pequeno (rótulos de 11px do
+  `LeadCard`, links) é pré-existente. A correção certa é um token `--brand-text`
+  separado, trocando os `text-brand`; fica como trabalho à parte.
+- `--radius-panel` fica fora do `@theme inline` porque precisa ser **escopada**
+  (variável de `@theme` é global em `:root`); no `@theme inline` só `--radius-2xl` a
+  referencia. E não se chama `--radius-lg` porque esse nome lá sobrescreveria o
+  `rounded-lg` do Tailwind (52 usos em botões e inputs).
 
 No `@theme inline`: ganha `--color-surface-solid: var(--surface-solid)` e
 `--radius-2xl: var(--radius-panel, 1rem)`. O fallback `1rem` (o default do Tailwind)
@@ -124,8 +145,8 @@ passa intacto pelo `@theme inline`: na landing, onde `--radius-panel` não exist
 em card de lead, sites, modal e lane do Kanban, não fica **menor** que o `rounded-xl`
 de 18px). `--radius-xl` continua `var(--radius)`.
 
-Marca (`--brand*`), semânticas (`--hot`, `--warm`, `--cold`, `--danger`), demais
-cores de texto, fontes e `--ring` **não mudam**.
+Marca (`--brand*`), `--warm`, `--foreground`, `--ink-soft`, `--faint`, fontes e
+`--ring` **não mudam**. No claro, nenhuma cor de texto muda.
 
 ### 1.3 Classe `glass`
 
@@ -137,10 +158,9 @@ passam por cima. Depende do commit preparatório: com a regra `*` fora de camada
 `--glass-border` seria ignorado.
 
 Consequência: qualquer `border-border` que sobrar num elemento `glass` vence o
-`--glass-border`. Nos quatro lugares onde ele está num ramo condicional separado do
-`border` (`LeadCard` não selecionado, Plans não Popular, card de Sites, card do CRM,
-todos com `hover:border-border-strong`), o `border-border` do ramo **sai** e o
-`hover:border-border-strong` fica.
+`--glass-border`. Nos quatro cards onde ele aparece junto do `hover:border-border-strong`
+(`LeadCard` no ramo não selecionado, Plans no ramo não Popular, card de Sites e card
+do CRM inline), o `border-border` **sai** e o `hover:border-border-strong` fica.
 
 ```css
 @layer components {
@@ -188,7 +208,8 @@ Raio não entra na classe: cada uso escolhe `rounded-xl` (18px) ou `rounded-2xl`
 
 `--glass-border` cai para `--border` para os cards opacos não ficarem sem contorno.
 `backdrop-filter: none` em vez de `blur(0px)`: zero ainda cria backdrop root e custa
-compositing.
+compositing. Este bloco `@media` vem **depois** dos blocos escopados de 1.0 no
+arquivo (mesma especificidade; a ordem decide).
 Sem suporte no Firefox (só Chrome 118+ e Safari); registrado, sem ação.
 `prefers-reduced-motion` já é tratado (`.animate-rise` desligado); não muda.
 
@@ -271,7 +292,7 @@ Padrão de troca: `border border-border bg-surface shadow-[var(--shadow-sm|md)]`
 | `charts.tsx` `ChartCard` | `glass`, hover `shadow-lg` (é o painel do Dashboard) | |
 | Dashboard (`dashboard/page.tsx`) | nada além dos `StatCard`/`ChartCard` | cards de taxa dentro do painel → `bg-surface-2` |
 | Leads (`leads/page.tsx`, `lead-card.tsx`) | formulário de busca `glass`; cada `LeadCard` `glass-lite` (o selecionado mantém `border-brand ring-2` **e** `shadow-[var(--shadow-sm)]` explícito, porque `ring-2` zera o `box-shadow` do `.glass-lite`) | selects e "Máx" → `bg-surface-solid` |
-| CRM (`crm/page.tsx`) | cada card de lead `glass-lite`; barra de busca `glass`; a faixa Hoje, quando existir | select de estágio, chips de filtro; lane de drop mantém `border-border/60 bg-surface-2/40`; cabeçalho de coluna sem fundo (já é) |
+| CRM (`crm/page.tsx`) | cada card de lead `glass-lite`; barra de busca: o `div.relative` em volta vira `glass rounded-xl focus-within:border-border-strong` e o `<input>` dentro fica `bg-transparent border-0`; a faixa Hoje, quando existir | `<select>` "Ordenar" do `action` (é primeiro nível sobre a névoa) → `bg-surface-solid`; select de estágio, chips de filtro; lane de drop mantém `border-border/60 bg-surface-2/40`; cabeçalho de coluna sem fundo (já é) |
 | Outreach (`outreach/page.tsx`) | o wrapper da tabela do outbox `glass` (hoje sem fundo) | thead `bg-surface-2/50` (como é), linhas transparentes |
 | Sites (`sites/page.tsx`) | cada card de site `glass` | |
 | Plans (`plans/page.tsx`) | cada card de plano `glass` (o "Popular" mantém `border-2 border-brand`) | |
@@ -289,9 +310,13 @@ Interações mantêm o que existe (`animate-rise`, `hover:-translate-y-0.5`).
 
 - Claro: vidro a 62% sobre `#d6e2f5` ≈ `#f0f4fa`. `--foreground #14171d` ≈ 15:1;
   `--muted #656d7e` ≈ 4,7:1. AA.
-- Escuro: 7% de branco sobre a mancha `#1d2f5a` ≈ `#2d3e66`. `--foreground` ≈ 13:1;
-  `--muted` novo `#a3abbb` ≈ 4,6:1. AA. (Com o `#8a93a4` atual seria 3,4:1.)
-- Reconferir os dois no screenshot com o conta-gotas antes de fechar.
+- Escuro: 7% de branco sobre a mancha `#1d2f5a` ≈ `#2d3e66`. `--foreground` ≈ 8,7:1;
+  `--muted`/`--cold` novos ≈ 4,6:1; `--hot` e `--danger` novos ≈ 4,7:1; `--warm` 5,3:1.
+  AA, exceto `--brand` como texto (3,0:1), aceito e registrado em 1.2.
+- Drawer e modal no claro: overlay `bg-black/30` sobre a mancha mais escura e vidro a
+  88% dá ≈ `#f2f3f5`; `--muted` ≈ 4,7:1. No escuro ≈ 5,1:1.
+- Reconferir cards, drawer e modal, nos dois temas, no screenshot com o conta-gotas
+  antes de fechar.
 
 ### 4.2 Blur
 
@@ -328,9 +353,12 @@ Interações mantêm o que existe (`animate-rise`, `hover:-translate-y-0.5`).
   `/sign-in`.
 - `pnpm typecheck`, `pnpm lint`, `pnpm test` verdes. Nenhuma lógica muda; os 191
   testes continuam iguais.
-- Grep final: nenhum `bg-surface` (translúcido) em input/select/textarea; nenhum
-  `glass` cujo ancestral também seja `glass`; nenhum `bg-surface/NN` (o alfa
-  compõe com os 62% e fica invisível).
+- Grep final: listar todo `bg-surface` e `hover:bg-surface` nu que sobrar em
+  `src/app/(app)` e `src/components` (fora `landing/`) e justificar um a um; nenhum
+  em input/select/textarea; nenhum `glass` cujo ancestral também seja `glass`;
+  nenhum `bg-surface/NN` (o alfa compõe com os 62% e fica invisível). Os
+  `hover:bg-surface` de botões dentro de raiz `bg-surface-2` (`outreach-composer.tsx`,
+  `call-script-panel.tsx`) viram "62% de branco sobre surface-2": visível, aceito.
 - Landing: screenshot de `/` **depois do commit preparatório** e depois do
   redesenho, iguais (prova do escopo 1.0). O antes/depois do próprio commit
   preparatório é outro par, que a Duda avalia.
