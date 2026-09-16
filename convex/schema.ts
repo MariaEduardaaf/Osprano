@@ -22,6 +22,15 @@ const stage = v.union(
 
 const tier = v.union(v.literal("hot"), v.literal("warm"), v.literal("cold"));
 
+/** Motivo fixo de perda (CRM). Espelhado em `LOST_REASONS` de convex/lib/domain.ts. */
+const lostReason = v.union(
+  v.literal("too_expensive"),
+  v.literal("has_site"),
+  v.literal("no_response"),
+  v.literal("not_interested"),
+  v.literal("other"),
+);
+
 /** Digital Presence Score signal breakdown (each true = a reason to buy). */
 const signals = v.object({
   noSite: v.boolean(),
@@ -97,6 +106,16 @@ export default defineSchema({
     // "Enviar para CRM" marca saved=true. undefined (seed/legado) = já no CRM.
     saved: v.optional(v.boolean()),
 
+    // CRM: fluxo do dia e informação do lead. Todos opcionais: lead existente segue válido.
+    nextActionAt: v.optional(v.number()), // meia-noite LOCAL do dia (calculada no navegador); anda junto com a nota
+    nextActionNote: v.optional(v.string()),
+    contactName: v.optional(v.string()),
+    contactRole: v.optional(v.string()),
+    dealSetup: v.optional(v.number()), // moeda derivada do país (currencyForCountry)
+    dealMonthly: v.optional(v.number()),
+    lostReason: v.optional(lostReason), // leads em `lost` sem motivo existem (legado, seed)
+    lostNote: v.optional(v.string()),
+
     // Agenda (reunião marcada com o lead)
     meetingAt: v.optional(v.number()),
     meetingNote: v.optional(v.string()),
@@ -169,12 +188,15 @@ export default defineSchema({
       v.literal("stage_change"),
       v.literal("wa_opt_in"),
       v.literal("contact_opt_in"),
+      v.literal("note"), // CRM: nota privada do lead; meta: { text }
     ),
     leadId: v.optional(v.id("leads")),
     previewToken: v.optional(v.string()),
     at: v.number(),
     meta: v.optional(v.any()),
-  }).index("by_org", ["orgId"]),
+  })
+    .index("by_org", ["orgId"])
+    .index("by_lead", ["leadId", "at"]), // histórico por lead
 
   suppressions: defineTable({
     email: v.string(), // normalizado (lowercase/trim) via normalizeEmail — SEMPRE gravado normalizado

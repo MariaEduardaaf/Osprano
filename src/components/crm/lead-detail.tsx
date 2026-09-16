@@ -21,8 +21,13 @@ import {
   MARKETS,
   OPT_IN_MARKETS,
   canContactByEmail,
+  lostReasonLabel,
   type Stage,
 } from "@convex/lib/domain";
+import { NextActionForm } from "@/components/crm/next-action-form";
+import { LeadInfoFields } from "@/components/crm/lead-info-fields";
+import { LostReasonModal } from "@/components/crm/lost-reason-modal";
+import { LeadTimeline } from "@/components/crm/lead-timeline";
 import { OutreachComposer } from "@/components/outreach-composer";
 import { GeneratePreviewButton } from "@/components/generate-preview-button";
 import { PublishButton } from "@/components/publish-button";
@@ -56,12 +61,31 @@ const CONTACT_LABEL: Record<string, string> = {
   unknown: "Desconhecido",
 };
 
-const TABS = ["Informações", "Abordagem", "Site", "Objeções", "Venda"] as const;
+const TABS = ["Informações", "Abordagem", "Site", "Objeções", "Venda", "Histórico"] as const;
 type Tab = (typeof TABS)[number];
 
-export function LeadDetail({ lead, onClose }: { lead: Doc<"leads">; onClose: () => void }) {
+export function LeadDetail({
+  lead,
+  onClose,
+  focusNextAction = false,
+}: {
+  lead: Doc<"leads">;
+  onClose: () => void;
+  /** A faixa Hoje abre o lead depois de "Feito": o campo da próxima ação nasce focado. A aba inicial não muda. */
+  focusNextAction?: boolean;
+}) {
   const [tab, setTab] = useState<Tab>("Informações");
+  const [lostOpen, setLostOpen] = useState(false);
   const setStage = useMutation(api.leads.setStage);
+  const markLost = useMutation(api.leads.markLost);
+  // "Perdido" (pílula de Etapa ou botão Status) SEMPRE pede motivo, inclusive com o lead JÁ em
+  // lost: é o único caminho de UI para dar motivo a um perdido legado (por isso não há
+  // `if (stage === "lost") return`). Os demais estágios seguem em setStage; sair de Perdido
+  // por pílula ou "Em aberto" funciona como hoje e o servidor limpa o motivo.
+  const onStage = (s: Stage) => {
+    if (s === "lost") setLostOpen(true);
+    else void setStage({ id: lead._id, stage: s });
+  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -116,14 +140,29 @@ export function LeadDetail({ lead, onClose }: { lead: Doc<"leads">; onClose: () 
         {/* body */}
         <div className="flex-1 overflow-y-auto px-6 py-5">
           {tab === "Informações" && (
-            <InfoTab lead={lead} status={status} onStage={(s) => void setStage({ id: lead._id, stage: s })} />
+            <InfoTab
+              lead={lead}
+              status={status}
+              autoFocusAction={focusNextAction}
+              onStage={onStage}
+            />
           )}
           {tab === "Abordagem" && <ApproachTab lead={lead} />}
           {tab === "Site" && <SiteTab lead={lead} />}
           {tab === "Objeções" && <ObjectionsTab />}
           {tab === "Venda" && <SaleTab />}
+          {tab === "Histórico" && <LeadTimeline leadId={lead._id} />}
         </div>
       </div>
+      {lostOpen && (
+        <LostReasonModal
+          lead={lead}
+          onConfirm={async ({ reason, note }) => {
+            await markLost({ id: lead._id, reason, note });
+          }}
+          onClose={() => setLostOpen(false)}
+        />
+      )}
     </div>
   );
 }
@@ -139,7 +178,17 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   );
 }
 
-function InfoTab({ lead, status, onStage }: { lead: Doc<"leads">; status: "open" | "won" | "lost"; onStage: (s: Stage) => void }) {
+function InfoTab({
+  lead,
+  status,
+  autoFocusAction,
+  onStage,
+}: {
+  lead: Doc<"leads">;
+  status: "open" | "won" | "lost";
+  autoFocusAction: boolean;
+  onStage: (s: Stage) => void;
+}) {
   const market = MARKETS[lead.countryCode];
   const activeSignals = lead.signals
     ? Object.entries(lead.signals).filter(([, v]) => v).map(([k]) => SIGNAL_LABEL[k] ?? k)
@@ -147,6 +196,17 @@ function InfoTab({ lead, status, onStage }: { lead: Doc<"leads">; status: "open"
 
   return (
     <div className="space-y-6">
+      {/* blocos novos do CRM, acima dos dados do Google (que não mudam) */}
+      {lead.stage === "lost" && (
+        // sem lostReason (legado): só "Perdido"; sem lostNote: sem o terceiro segmento.
+        // Reabrir é o "Em aberto" ou uma pílula de Etapa, abaixo; não há botão próprio.
+        <p className="text-sm font-semibold text-hot">
+          {["Perdido", lostReasonLabel(lead.lostReason), lead.lostNote].filter(Boolean).join(" · ")}
+        </p>
+      )}
+      <NextActionForm lead={lead} autoFocus={autoFocusAction} />
+      <LeadInfoFields lead={lead} />
+
       <section>
         <Row label="Categoria">{(lead.category ?? "—").replace(/_/g, " ")}</Row>
         <Row label="Cidade">{lead.city ? `${lead.city}${market ? `, ${market.name}` : ""}` : "—"}</Row>

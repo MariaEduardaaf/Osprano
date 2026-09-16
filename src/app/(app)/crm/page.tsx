@@ -4,17 +4,41 @@ import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Doc, Id } from "@convex/_generated/dataModel";
-import { MdOutlineCall, MdDragIndicator, MdSearch, MdClose, MdAdd } from "react-icons/md";
+import {
+  MdOutlineCall,
+  MdDragIndicator,
+  MdSearch,
+  MdClose,
+  MdAdd,
+  MdExpandMore,
+  MdExpandLess,
+} from "react-icons/md";
 import { PageHeader } from "@/components/ui";
 import { WhatsAppFollowup } from "@/components/whatsapp-followup";
 import { CreateLeadModal } from "@/components/crm/create-lead-modal";
 import { LeadDetail } from "@/components/crm/lead-detail";
-import { PIPELINE_STAGES, canContactByEmail, type Stage } from "@convex/lib/domain";
+import { LostReasonModal } from "@/components/crm/lost-reason-modal";
+import { TodayStrip, type TodayItem } from "@/components/crm/today-strip";
+import { CardActionLine } from "@/components/crm/next-action-line";
+import { useNow } from "@/lib/use-now";
+import {
+  PIPELINE_STAGES,
+  canContactByEmail,
+  nextActionOf,
+  actionStatus,
+  isStalled,
+  compareByNextAction,
+  formatMoney,
+  currencyForCountry,
+  type Stage,
+} from "@convex/lib/domain";
 
-const COLUMNS = PIPELINE_STAGES.filter((s) => s.id !== "lost");
+// Perdido entra como última coluna, recolhida por padrão (estado local, não persiste).
+const COLUMNS = PIPELINE_STAGES;
 
 const SORTS: { id: string; label: string; cmp: (a: Doc<"leads">, b: Doc<"leads">) => number }[] = [
   { id: "score_desc", label: "Score (maior)", cmp: (a, b) => (b.score ?? 0) - (a.score ?? 0) },
+  { id: "next_action", label: "Próxima ação", cmp: compareByNextAction },
   { id: "score_asc", label: "Score (menor)", cmp: (a, b) => (a.score ?? 0) - (b.score ?? 0) },
   { id: "recent", label: "Mais recentes", cmp: (a, b) => b._creationTime - a._creationTime },
   { id: "name", label: "Nome (A–Z)", cmp: (a, b) => a.name.localeCompare(b.name) },
@@ -26,6 +50,7 @@ const STAGE_DOT: Record<string, string> = {
   scheduled: "var(--warm)",
   followup: "var(--warm)",
   converted: "var(--brand)",
+  lost: "var(--faint)",
 };
 
 const TIER: Record<string, { label: string; color: string }> = {
@@ -34,7 +59,8 @@ const TIER: Record<string, { label: string; color: string }> = {
   cold: { label: "Frio", color: "var(--cold)" },
 };
 
-const FILTERS: { id: string; label: string; fn: (l: Doc<"leads">) => boolean }[] = [
+// `now` vem do estado da página (useNow): "parado" depende do relógio.
+const FILTERS: { id: string; label: string; fn: (l: Doc<"leads">, now: number) => boolean }[] = [
   { id: "all", label: "Todos", fn: () => true },
   { id: "nosite", label: "Sem site", fn: (l) => !!(l.signals?.noSite || l.signals?.socialOnly) },
   { id: "hot", label: "Quente", fn: (l) => l.tier === "hot" },
@@ -42,17 +68,22 @@ const FILTERS: { id: string; label: string; fn: (l: Doc<"leads">) => boolean }[]
   // OPTIN-04: "abordável" = canContactByEmail (regime do mercado OU consentimento registrado).
   // Ler l.emailable cru sumiria com leads que já deram opt-in explícito na ligação.
   { id: "email", label: "Abordável", fn: (l) => canContactByEmail(l) },
+  { id: "stalled", label: "Parados", fn: (l, now) => isStalled(l, now) },
 ];
 
 export default function CrmPage() {
   const leads = useQuery(api.leads.list, {});
+  const now = useNow(); // "hoje" é o dia civil do navegador, atualizado a cada 60 s
   const [filter, setFilter] = useState("all");
   const [q, setQ] = useState("");
   const [sort, setSort] = useState("score_desc");
   const [createOpen, setCreateOpen] = useState(false);
   const [openId, setOpenId] = useState<Id<"leads"> | null>(null);
+  const [openFocus, setOpenFocus] = useState(false); // a faixa Hoje abre o lead com o campo da ação em foco
   const [dragId, setDragId] = useState<Id<"leads"> | null>(null);
   const [overCol, setOverCol] = useState<Stage | null>(null);
+  const [lostOpen, setLostOpen] = useState(false); // coluna Perdido expandida?
+  const [lostFor, setLostFor] = useState<Id<"leads"> | null>(null); // lead esperando motivo no modal
 
   // optimistic move: the card jumps immediately, before the server acks
   const setStage = useMutation(api.leads.setStage).withOptimisticUpdate((store, { id, stage }) => {
@@ -65,14 +96,33 @@ export default function CrmPage() {
     );
   });
 
-  const move = (id: Id<"leads">, stage: Stage) => void setStage({ id, stage });
+  const markLost = useMutation(api.leads.markLost);
+  // "Perdido" nunca move direto: abre o modal de motivo (o servidor recusa setStage("lost")).
+  // Vale para o drop na coluna e para o seletor do card. Cancelar: nada muda.
+  const move = (id: Id<"leads">, stage: Stage) => {
+    if (stage === "lost") {
+      setLostFor(id);
+      return;
+    }
+    void setStage({ id, stage });
+  };
 
   const active = FILTERS.find((f) => f.id === filter) ?? FILTERS[0];
   const needle = q.trim().toLowerCase();
   const cmp = (SORTS.find((s) => s.id === sort) ?? SORTS[0]).cmp;
-  const filtered = (leads ?? [])
-    .filter((l) => l.saved !== false) // descoberta (saved=false) fica só na tela de Leads
-    .filter(active.fn)
+  // descoberta (saved=false) fica só na tela de Leads
+  const crmLeads = (leads ?? []).filter((l) => l.saved !== false);
+  // A faixa Hoje sai de crmLeads, ANTES de busca, filtro e ordenação: filtrar o Kanban não a muda.
+  const todayItems: TodayItem[] = crmLeads
+    .flatMap((lead) => {
+      const action = nextActionOf(lead);
+      if (!action) return [];
+      const status = actionStatus(action.at, now);
+      return status === "upcoming" ? [] : [{ lead, action, status }];
+    })
+    .sort((a, b) => a.action.at - b.action.at);
+  const visible = crmLeads
+    .filter((l) => active.fn(l, now))
     .filter((l) =>
       needle === ""
         ? true
@@ -81,7 +131,12 @@ export default function CrmPage() {
     .slice()
     .sort(cmp);
 
-  const openLead = openId ? (leads ?? []).find((l) => l._id === openId) ?? null : null;
+  const openLead = openId ? crmLeads.find((l) => l._id === openId) ?? null : null;
+  const lostLead = lostFor ? crmLeads.find((l) => l._id === lostFor) ?? null : null;
+  const openLeadDetail = (id: Id<"leads">, opts?: { focusNextAction?: boolean }) => {
+    setOpenId(id);
+    setOpenFocus(opts?.focusNextAction === true);
+  };
 
   return (
     <>
@@ -116,6 +171,8 @@ export default function CrmPage() {
           </div>
         }
       />
+
+      <TodayStrip items={todayItems} now={now} onOpen={openLeadDetail} />
 
       {/* search */}
       <div className="glass relative mb-4 max-w-xl rounded-xl focus-within:border-border-strong">
@@ -154,7 +211,7 @@ export default function CrmPage() {
         ))}
         {leads !== undefined && (
           <span className="ml-auto font-mono text-[11px] tabular-nums text-faint">
-            {filtered.length} {filtered.length === 1 ? "lead" : "leads"}
+            {visible.length} {visible.length === 1 ? "lead" : "leads"}
           </span>
         )}
       </div>
@@ -164,32 +221,80 @@ export default function CrmPage() {
       ) : (
         <div className="flex gap-4 overflow-x-auto pb-4">
           {COLUMNS.map((col) => {
-            const items = filtered.filter((l) => l.stage === col.id);
+            const items = visible.filter((l) => l.stage === col.id);
             const isOver = overCol === col.id;
-            return (
-              <div key={col.id} className="flex w-80 shrink-0 flex-col">
-                <div className="mb-2.5 flex items-center justify-between px-1.5">
-                  <span className="flex items-center gap-2 text-sm font-semibold">
-                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: STAGE_DOT[col.id] }} />
-                    {col.label}
-                  </span>
+            const isLost = col.id === "lost";
+            // os mesmos handlers na lane e no cabeçalho recolhido de Perdido
+            const dropProps = {
+              onDragOver: (e: React.DragEvent) => {
+                e.preventDefault();
+                if (overCol !== col.id) setOverCol(col.id);
+              },
+              onDrop: (e: React.DragEvent) => {
+                e.preventDefault();
+                if (dragId) move(dragId, col.id);
+                setDragId(null);
+                setOverCol(null);
+              },
+            };
+            // Soma de dealMonthly dos MESMOS leads que o N conta (depois de busca e filtro), na
+            // moeda do primeiro lead da coluna com valor (mistura de moedas numa coluna é caso
+            // raro: soma crua nessa moeda). Perdido não soma.
+            const priced = isLost ? [] : items.filter((l) => typeof l.dealMonthly === "number");
+            const monthlySum =
+              priced.length > 0
+                ? formatMoney(
+                    priced.reduce((sum, l) => sum + (l.dealMonthly ?? 0), 0),
+                    currencyForCountry(priced[0].countryCode),
+                  )
+                : null;
+            const header = (
+              <div className="mb-2.5 flex items-center justify-between px-1.5">
+                <span className="flex items-center gap-2 text-sm font-semibold">
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: STAGE_DOT[col.id] }} />
+                  {col.label}
+                </span>
+                <span className="flex items-center gap-1.5">
                   <span className="rounded-full bg-surface-2 px-2 py-0.5 font-mono text-[10px] tabular-nums text-muted">
                     {items.length}
                   </span>
+                  {monthlySum && (
+                    <span className="font-mono text-[10px] tabular-nums text-muted">· {monthlySum}/mês</span>
+                  )}
+                  {isLost && (
+                    <button
+                      onClick={() => setLostOpen((v) => !v)}
+                      aria-expanded={lostOpen}
+                      aria-label={lostOpen ? "Recolher Perdido" : "Expandir Perdido"}
+                      className="rounded-md p-0.5 text-muted hover:bg-surface-2 hover:text-foreground"
+                    >
+                      {lostOpen ? <MdExpandLess size={16} /> : <MdExpandMore size={16} />}
+                    </button>
+                  )}
+                </span>
+              </div>
+            );
+            if (isLost && !lostOpen) {
+              // recolhida: só o cabeçalho, que continua sendo alvo de drop (realce de overCol)
+              return (
+                <div
+                  key={col.id}
+                  {...dropProps}
+                  className={`w-56 shrink-0 rounded-2xl border p-2.5 transition-colors ${
+                    isOver ? "border-brand/50 bg-brand/[0.06]" : "border-transparent"
+                  }`}
+                >
+                  {header}
                 </div>
+              );
+            }
+            return (
+              <div key={col.id} className="flex w-80 shrink-0 flex-col">
+                {header}
 
                 {/* drop lane */}
                 <div
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    if (overCol !== col.id) setOverCol(col.id);
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    if (dragId) move(dragId, col.id);
-                    setDragId(null);
-                    setOverCol(null);
-                  }}
+                  {...dropProps}
                   className={`flex-1 space-y-2.5 rounded-2xl border p-2.5 transition-colors ${
                     isOver
                       ? "border-brand/50 bg-brand/[0.06]"
@@ -214,7 +319,7 @@ export default function CrmPage() {
                             setDragId(null);
                             setOverCol(null);
                           }}
-                          onClick={() => setOpenId(lead._id)}
+                          onClick={() => openLeadDetail(lead._id)}
                           className={`glass-lite group cursor-grab rounded-[var(--radius)] p-3.5 transition-all hover:border-border-strong hover:shadow-[var(--shadow-md)] active:cursor-grabbing ${
                             isDragging ? "opacity-40" : ""
                           }`}
@@ -242,6 +347,8 @@ export default function CrmPage() {
                             {(lead.category ?? "—").replace(/_/g, " ")}
                             {lead.city ? ` · ${lead.city}` : ""}
                           </p>
+
+                          <CardActionLine lead={lead} now={now} />
 
                           <div className="mt-3 flex items-center justify-between gap-2">
                             <select
@@ -295,7 +402,28 @@ export default function CrmPage() {
       )}
 
       {createOpen && <CreateLeadModal onClose={() => setCreateOpen(false)} />}
-      {openLead && <LeadDetail lead={openLead} onClose={() => setOpenId(null)} />}
+      {lostLead && (
+        <LostReasonModal
+          lead={lostLead}
+          onConfirm={async ({ reason, note }) => {
+            await markLost({ id: lostLead._id, reason, note });
+          }}
+          onClose={() => {
+            // confirmar ou cancelar: o card volta ao lugar, dragId e overCol limpos
+            setLostFor(null);
+            setDragId(null);
+            setOverCol(null);
+          }}
+        />
+      )}
+      {openLead && (
+        <LeadDetail
+          key={openLead._id}
+          lead={openLead}
+          focusNextAction={openFocus}
+          onClose={() => setOpenId(null)}
+        />
+      )}
     </>
   );
 }

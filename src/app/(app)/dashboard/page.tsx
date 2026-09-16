@@ -2,18 +2,14 @@
 
 import { useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
-import type { ReactNode } from "react";
 import {
   MdOutlineTravelExplore,
   MdOutlineWebAsset,
   MdOutlineMarkEmailRead,
   MdOutlineCheckCircle,
-  MdOutlineVisibility,
-  MdOutlineSend,
-  MdOutlineChat,
-  MdOutlineSwapHoriz,
 } from "react-icons/md";
 import { PageHeader, StatCard } from "@/components/ui";
+import { eventDot, eventIcon } from "@/components/event-glyph";
 import { ChartCard, Donut, VBars, HBars } from "@/components/charts";
 import { PIPELINE_STAGES, MARKETS } from "@convex/lib/domain";
 
@@ -38,19 +34,6 @@ const SIGNAL_LABEL: Record<string, string> = {
   slow: "Lento",
   sparseProfile: "Perfil fraco",
 };
-
-function eventDot(type: string): string {
-  if (type === "preview_open") return "var(--warm)";
-  if (type === "email_sent" || type === "reply") return "var(--brand)";
-  return "var(--faint)";
-}
-
-function eventIcon(type: string, meta: { channel?: string } | null): ReactNode {
-  if (type === "preview_open") return <MdOutlineVisibility size={15} />;
-  if (type === "email_sent") return meta?.channel === "whatsapp" ? <MdOutlineChat size={15} /> : <MdOutlineSend size={15} />;
-  if (type === "reply") return <MdOutlineChat size={15} />;
-  return <MdOutlineSwapHoriz size={15} />;
-}
 
 function eventLabel(type: string, meta: { to?: string; channel?: string } | null): string {
   switch (type) {

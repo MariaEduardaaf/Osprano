@@ -746,3 +746,194 @@ export const STARTER_CATEGORIES = [
   "electrician",
   "car_repair",
 ] as const;
+
+// ---------------------------------------------------------------------------
+// CRM: fluxo do dia e informação do lead. Tudo puro; quem depende do relógio
+// recebe `now`. "Dia civil local" = fuso do processo que chama (o navegador,
+// na UI; o Convex roda em UTC e por isso NUNCA faz aritmética de data).
+// ---------------------------------------------------------------------------
+
+export type Currency = "EUR" | "GBP" | "SEK" | "NOK" | "DKK" | "CHF";
+
+const CURRENCY_BY_COUNTRY: Record<string, Currency> = {
+  GB: "GBP",
+  SE: "SEK",
+  NO: "NOK",
+  CH: "CHF",
+  DK: "DKK",
+};
+
+/** Moeda derivada do país, sem campo no lead: fora da tabela é euro. */
+export function currencyForCountry(countryCode: string): Currency {
+  return CURRENCY_BY_COUNTRY[countryCode.toUpperCase()] ?? "EUR";
+}
+
+export function currencySymbol(currency: Currency): string {
+  if (currency === "EUR") return "€";
+  if (currency === "GBP") return "£";
+  if (currency === "CHF") return "CHF";
+  return "kr";
+}
+
+/** Sem centavos (arredonda), milhar com ponto: "€340", "£1.200", "340 kr", "CHF 340". */
+export function formatMoney(amount: number, currency: Currency): string {
+  const n = Math.round(amount);
+  const digits = Math.abs(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  const body = (n < 0 ? "-" : "") + digits;
+  const symbol = currencySymbol(currency);
+  if (currency === "EUR" || currency === "GBP") return `${symbol}${body}`;
+  if (currency === "CHF") return `${symbol} ${body}`;
+  return `${body} ${symbol}`;
+}
+
+const DAY_MS = 86_400_000;
+const MONTH_ABBR_PT = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+
+/** Meia-noite local do dia de `at`. */
+function startOfLocalDay(at: number): number {
+  const d = new Date(at);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+}
+
+/** Mesmo horário local, `n` dias civis depois: atravessa horário de verão sem virar 23 h. */
+export function addDays(at: number, n: number): number {
+  const d = new Date(at);
+  return new Date(
+    d.getFullYear(),
+    d.getMonth(),
+    d.getDate() + n,
+    d.getHours(),
+    d.getMinutes(),
+    d.getSeconds(),
+    d.getMilliseconds(),
+  ).getTime();
+}
+
+/** Dias civis inteiros de `a` até `b` (positivo quando `b` é depois), fuso local. */
+export function daysBetween(a: number, b: number): number {
+  // Math.round: o dia da virada de horário de verão tem 23 h ou 25 h.
+  return Math.round((startOfLocalDay(b) - startOfLocalDay(a)) / DAY_MS);
+}
+
+/**
+ * "2026-09-23" (valor do <input type="date">) → meia-noite LOCAL do dia.
+ * Nunca `new Date(string)`: isso parseia como UTC e cai no dia errado à noite.
+ * Inválido (vazio, outro formato, 31/02) → null.
+ */
+export function dateInputToTimestamp(value: string): number | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!m) return null;
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  const d = Number(m[3]);
+  const date = new Date(y, mo - 1, d);
+  if (date.getFullYear() !== y || date.getMonth() !== mo - 1 || date.getDate() !== d) return null;
+  return date.getTime();
+}
+
+/** "YYYY-MM-DD" LOCAL, para `value` e `min` do <input type="date">. */
+export function toDateInputValue(at: number): string {
+  const d = new Date(at);
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+/** "hoje", "ontem", "amanhã", senão "23 set". */
+export function formatDay(at: number, now: number): string {
+  const delta = daysBetween(now, at);
+  if (delta === 0) return "hoje";
+  if (delta === -1) return "ontem";
+  if (delta === 1) return "amanhã";
+  const d = new Date(at);
+  return `${d.getDate()} ${MONTH_ABBR_PT[d.getMonth()]}`;
+}
+
+/** Para eventos (passado): "agora", "há 5 min", "há 2 h", "ontem", senão formatDay. */
+export function formatRelative(at: number, now: number): string {
+  const diff = now - at;
+  if (diff < 60_000) return "agora";
+  if (diff < 3_600_000) return `há ${Math.floor(diff / 60_000)} min`;
+  const days = daysBetween(at, now);
+  if (days === 0) return `há ${Math.floor(diff / 3_600_000)} h`;
+  if (days === 1) return "ontem";
+  return formatDay(at, now);
+}
+
+export interface NextAction {
+  at: number;
+  note: string;
+}
+
+export type ActionStatus = "overdue" | "today" | "upcoming";
+
+/** Uma próxima ação por lead, no próprio documento. Sem `nextActionAt` não há ação. */
+export function nextActionOf(lead: {
+  nextActionAt?: number | null;
+  nextActionNote?: string | null;
+}): NextAction | null {
+  if (typeof lead.nextActionAt !== "number") return null;
+  return { at: lead.nextActionAt, note: lead.nextActionNote ?? "" };
+}
+
+/** Antes de hoje 00:00 local = atrasada; mesmo dia civil = hoje; depois = futura. */
+export function actionStatus(at: number, now: number): ActionStatus {
+  const delta = daysBetween(now, at);
+  if (delta < 0) return "overdue";
+  if (delta === 0) return "today";
+  return "upcoming";
+}
+
+export const STALLED_AFTER_DAYS = 7;
+
+type StalledInput = {
+  nextActionAt?: number | null;
+  nextActionNote?: string | null;
+  stage: string;
+  stageUpdatedAt: number;
+};
+
+/**
+ * Dias desde a última mudança de estágio, SÓ quando não há ação e o estágio não é
+ * converted nem lost; senão null. Conta a partir de stageUpdatedAt (não do último
+ * evento): é o estágio que mede avanço, e ler eventos por card custaria uma query cada.
+ */
+export function stalledDays(lead: StalledInput, now: number): number | null {
+  if (nextActionOf(lead) !== null) return null;
+  if (lead.stage === "converted" || lead.stage === "lost") return null;
+  return daysBetween(lead.stageUpdatedAt, now);
+}
+
+export function isStalled(lead: StalledInput, now: number): boolean {
+  const days = stalledDays(lead, now);
+  return days !== null && days >= STALLED_AFTER_DAYS;
+}
+
+/** Com ação antes de sem ação; entre com ação, `at` crescente; entre sem ação, score decrescente. */
+export function compareByNextAction(
+  a: { nextActionAt?: number | null; score?: number | null },
+  b: { nextActionAt?: number | null; score?: number | null },
+): number {
+  const aAt = typeof a.nextActionAt === "number" ? a.nextActionAt : null;
+  const bAt = typeof b.nextActionAt === "number" ? b.nextActionAt : null;
+  if (aAt !== null && bAt !== null) return aAt - bAt;
+  if (aAt !== null) return -1;
+  if (bAt !== null) return 1;
+  return (b.score ?? 0) - (a.score ?? 0);
+}
+
+export type LostReason = "too_expensive" | "has_site" | "no_response" | "not_interested" | "other";
+
+/** Espelha o validador `lostReason` de convex/schema.ts. Ordem = ordem dos rádios no modal. */
+export const LOST_REASONS: { id: LostReason; label: string }[] = [
+  { id: "too_expensive", label: "Caro demais" },
+  { id: "has_site", label: "Já tem site" },
+  { id: "no_response", label: "Sem resposta" },
+  { id: "not_interested", label: "Não quer" },
+  { id: "other", label: "Outro" },
+];
+
+/** Leads perdidos sem motivo existem (legado, seed): ausente → undefined, e a tela mostra só "Perdido". */
+export function lostReasonLabel(id?: string | null): string | undefined {
+  return LOST_REASONS.find((r) => r.id === id)?.label;
+}

@@ -33,6 +33,15 @@ const stageArg = v.union(
   v.literal("lost"),
 );
 
+/** Espelha `lostReason` do schema e `LOST_REASONS` do domínio. */
+const lostReasonV = v.union(
+  v.literal("too_expensive"),
+  v.literal("has_site"),
+  v.literal("no_response"),
+  v.literal("not_interested"),
+  v.literal("other"),
+);
+
 const signalsV = v.object({
   noSite: v.boolean(),
   socialOnly: v.boolean(),
@@ -137,8 +146,15 @@ export const setStage = mutation({
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.db.get(args.id);
     if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    // Guardrail: "Perdido" exige motivo. Toda UI que oferece Perdido abre o modal, que chama markLost.
+    if (args.stage === "lost") throw new Error("Use markLost");
     const now = Date.now();
-    await ctx.db.patch(args.id, { stage: args.stage, stageUpdatedAt: now });
+    await ctx.db.patch(args.id, {
+      stage: args.stage,
+      stageUpdatedAt: now,
+      // Sair de Perdido é a única forma de reabrir (não há mutation reopen): o motivo vai junto.
+      ...(lead.stage === "lost" ? { lostReason: undefined, lostNote: undefined } : {}),
+    });
     await ctx.db.insert("events", {
       orgId,
       type: "stage_change",
@@ -146,6 +162,145 @@ export const setStage = mutation({
       at: now,
       meta: { from: lead.stage, to: args.stage },
     });
+  },
+});
+
+// ---------------------------------------------------------------------------
+// CRM: próxima ação (uma por lead, no próprio documento; os dois campos andam juntos)
+// ---------------------------------------------------------------------------
+
+/** Marca a próxima ação. `at` é a meia-noite LOCAL do dia, calculada no navegador (o servidor está em UTC). */
+export const setNextAction = mutation({
+  args: { id: v.id("leads"), at: v.number(), note: v.string() },
+  handler: async (ctx, args) => {
+    const orgId = await requireOrgId(ctx);
+    const lead = await ctx.db.get(args.id);
+    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    const note = args.note.trim();
+    if (!note) throw new Error("Escreva o que fazer");
+    await ctx.db.patch(args.id, { nextActionAt: args.at, nextActionNote: note });
+  },
+});
+
+/** Conclui a próxima ação: remove os dois campos. */
+export const clearNextAction = mutation({
+  args: { id: v.id("leads") },
+  handler: async (ctx, args) => {
+    const orgId = await requireOrgId(ctx);
+    const lead = await ctx.db.get(args.id);
+    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    await ctx.db.patch(args.id, { nextActionAt: undefined, nextActionNote: undefined });
+  },
+});
+
+/**
+ * "Perdido" sempre com motivo. Move para lost, limpa a próxima ação e registra o evento
+ * (meta.reason vai para o Histórico). Lead JÁ em lost (dar motivo a um perdido legado):
+ * só lostReason/lostNote, sem tocar stageUpdatedAt e sem evento.
+ */
+export const markLost = mutation({
+  args: { id: v.id("leads"), reason: lostReasonV, note: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const orgId = await requireOrgId(ctx);
+    const lead = await ctx.db.get(args.id);
+    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    const lostNote = args.note?.trim() || undefined;
+    if (lead.stage === "lost") {
+      await ctx.db.patch(args.id, { lostReason: args.reason, lostNote });
+      return;
+    }
+    const now = Date.now();
+    await ctx.db.patch(args.id, {
+      stage: "lost",
+      stageUpdatedAt: now,
+      lostReason: args.reason,
+      lostNote,
+      nextActionAt: undefined,
+      nextActionNote: undefined,
+    });
+    await ctx.db.insert("events", {
+      orgId,
+      type: "stage_change",
+      leadId: args.id,
+      at: now,
+      meta: { from: lead.stage, to: "lost", reason: args.reason },
+    });
+  },
+});
+
+/** null limpa; negativo, NaN ou infinito é erro. */
+function cleanAmount(value: number | null): number | undefined {
+  if (value === null) return undefined;
+  if (!Number.isFinite(value) || value < 0) throw new Error("Valor inválido");
+  return value;
+}
+
+/**
+ * Contato e valores do negócio: patch SÓ dos campos enviados. String: trim, vazia limpa.
+ * Número: null limpa. Valores ficam na moeda do país (currencyForCountry), sem campo de moeda.
+ */
+export const updateInfo = mutation({
+  args: {
+    id: v.id("leads"),
+    contactName: v.optional(v.string()),
+    contactRole: v.optional(v.string()),
+    dealSetup: v.optional(v.union(v.number(), v.null())),
+    dealMonthly: v.optional(v.union(v.number(), v.null())),
+  },
+  handler: async (ctx, args) => {
+    const orgId = await requireOrgId(ctx);
+    const lead = await ctx.db.get(args.id);
+    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    const patch: { contactName?: string; contactRole?: string; dealSetup?: number; dealMonthly?: number } = {};
+    if (args.contactName !== undefined) patch.contactName = args.contactName.trim() || undefined;
+    if (args.contactRole !== undefined) patch.contactRole = args.contactRole.trim() || undefined;
+    if (args.dealSetup !== undefined) patch.dealSetup = cleanAmount(args.dealSetup);
+    if (args.dealMonthly !== undefined) patch.dealMonthly = cleanAmount(args.dealMonthly);
+    await ctx.db.patch(args.id, patch); // chave presente com undefined = remove o campo
+  },
+});
+
+/** Nota do CRM = evento `note` com meta { text }. Comentário privado: fora do feed do Dashboard. */
+export const addNote = mutation({
+  args: { id: v.id("leads"), text: v.string() },
+  handler: async (ctx, args) => {
+    const orgId = await requireOrgId(ctx);
+    const lead = await ctx.db.get(args.id);
+    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    const text = args.text.trim();
+    if (!text) throw new Error("Nota vazia");
+    await ctx.db.insert("events", { orgId, type: "note", leadId: args.id, at: Date.now(), meta: { text } });
+  },
+});
+
+/** Forma solta do meta que o Histórico lê (o schema guarda v.any()). */
+type TimelineMeta = {
+  text?: string;
+  from?: string;
+  to?: string;
+  reason?: string;
+  source?: string;
+  channel?: string;
+};
+
+/** Histórico do lead: eventos via by_lead, mais recente primeiro. Outra org ou inexistente: erro. */
+export const timeline = query({
+  args: { leadId: v.id("leads") },
+  handler: async (ctx, { leadId }) => {
+    const orgId = await requireOrgId(ctx);
+    const lead = await ctx.db.get(leadId);
+    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    const events = await ctx.db
+      .query("events")
+      .withIndex("by_lead", (q) => q.eq("leadId", leadId))
+      .order("desc")
+      .take(100);
+    return events.map((e) => ({
+      _id: e._id,
+      type: e.type,
+      at: e.at,
+      meta: (e.meta ?? null) as TimelineMeta | null,
+    }));
   },
 });
 
