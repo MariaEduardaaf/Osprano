@@ -149,6 +149,34 @@ export const setStage = mutation({
   },
 });
 
+// ---------------------------------------------------------------------------
+// CRM: próxima ação (uma por lead, no próprio documento; os dois campos andam juntos)
+// ---------------------------------------------------------------------------
+
+/** Marca a próxima ação. `at` é a meia-noite LOCAL do dia, calculada no navegador (o servidor está em UTC). */
+export const setNextAction = mutation({
+  args: { id: v.id("leads"), at: v.number(), note: v.string() },
+  handler: async (ctx, args) => {
+    const orgId = await requireOrgId(ctx);
+    const lead = await ctx.db.get(args.id);
+    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    const note = args.note.trim();
+    if (!note) throw new Error("Escreva o que fazer");
+    await ctx.db.patch(args.id, { nextActionAt: args.at, nextActionNote: note });
+  },
+});
+
+/** Conclui a próxima ação: remove os dois campos. */
+export const clearNextAction = mutation({
+  args: { id: v.id("leads") },
+  handler: async (ctx, args) => {
+    const orgId = await requireOrgId(ctx);
+    const lead = await ctx.db.get(args.id);
+    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    await ctx.db.patch(args.id, { nextActionAt: undefined, nextActionNote: undefined });
+  },
+});
+
 /** Marca uma reunião com o lead e move-o para "Agendado". */
 export const schedule = mutation({
   args: { id: v.id("leads"), at: v.number(), note: v.optional(v.string()) },
