@@ -25,7 +25,7 @@ const CONTACT = [
 ] as const;
 
 const fieldCls =
-  "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none placeholder:text-faint focus:border-border-strong";
+  "w-full rounded-lg border border-border bg-surface-solid px-3 py-2 text-sm outline-none placeholder:text-faint focus:border-border-strong";
 
 function Field({ label, children, required }: { label: string; children: React.ReactNode; required?: boolean }) {
   return (
@@ -102,9 +102,9 @@ export function CreateLeadModal({ onClose }: { onClose: () => void }) {
       <button
         aria-label="Fechar"
         onClick={onClose}
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/30 backdrop-blur-sm"
       />
-      <div className="relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-lg)]">
+      <div className="glass-dense relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl">
         <div className="flex shrink-0 items-center justify-between border-b border-border px-6 py-4">
           <div>
             <div className="font-mono text-[10px] font-semibold uppercase tracking-wider text-brand">
