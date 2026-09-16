@@ -746,3 +746,42 @@ export const STARTER_CATEGORIES = [
   "electrician",
   "car_repair",
 ] as const;
+
+// ---------------------------------------------------------------------------
+// CRM: fluxo do dia e informação do lead. Tudo puro; quem depende do relógio
+// recebe `now`. "Dia civil local" = fuso do processo que chama (o navegador,
+// na UI; o Convex roda em UTC e por isso NUNCA faz aritmética de data).
+// ---------------------------------------------------------------------------
+
+export type Currency = "EUR" | "GBP" | "SEK" | "NOK" | "DKK" | "CHF";
+
+const CURRENCY_BY_COUNTRY: Record<string, Currency> = {
+  GB: "GBP",
+  SE: "SEK",
+  NO: "NOK",
+  CH: "CHF",
+  DK: "DKK",
+};
+
+/** Moeda derivada do país, sem campo no lead: fora da tabela é euro. */
+export function currencyForCountry(countryCode: string): Currency {
+  return CURRENCY_BY_COUNTRY[countryCode.toUpperCase()] ?? "EUR";
+}
+
+export function currencySymbol(currency: Currency): string {
+  if (currency === "EUR") return "€";
+  if (currency === "GBP") return "£";
+  if (currency === "CHF") return "CHF";
+  return "kr";
+}
+
+/** Sem centavos (arredonda), milhar com ponto: "€340", "£1.200", "340 kr", "CHF 340". */
+export function formatMoney(amount: number, currency: Currency): string {
+  const n = Math.round(amount);
+  const digits = Math.abs(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  const body = (n < 0 ? "-" : "") + digits;
+  const symbol = currencySymbol(currency);
+  if (currency === "EUR" || currency === "GBP") return `${symbol}${body}`;
+  if (currency === "CHF") return `${symbol} ${body}`;
+  return `${body} ${symbol}`;
+}
