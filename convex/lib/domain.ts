@@ -785,3 +785,77 @@ export function formatMoney(amount: number, currency: Currency): string {
   if (currency === "CHF") return `${symbol} ${body}`;
   return `${body} ${symbol}`;
 }
+
+const DAY_MS = 86_400_000;
+const MONTH_ABBR_PT = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+
+/** Meia-noite local do dia de `at`. */
+function startOfLocalDay(at: number): number {
+  const d = new Date(at);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+}
+
+/** Mesmo horário local, `n` dias civis depois: atravessa horário de verão sem virar 23 h. */
+export function addDays(at: number, n: number): number {
+  const d = new Date(at);
+  return new Date(
+    d.getFullYear(),
+    d.getMonth(),
+    d.getDate() + n,
+    d.getHours(),
+    d.getMinutes(),
+    d.getSeconds(),
+    d.getMilliseconds(),
+  ).getTime();
+}
+
+/** Dias civis inteiros de `a` até `b` (positivo quando `b` é depois), fuso local. */
+export function daysBetween(a: number, b: number): number {
+  // Math.round: o dia da virada de horário de verão tem 23 h ou 25 h.
+  return Math.round((startOfLocalDay(b) - startOfLocalDay(a)) / DAY_MS);
+}
+
+/**
+ * "2026-09-23" (valor do <input type="date">) → meia-noite LOCAL do dia.
+ * Nunca `new Date(string)`: isso parseia como UTC e cai no dia errado à noite.
+ * Inválido (vazio, outro formato, 31/02) → null.
+ */
+export function dateInputToTimestamp(value: string): number | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!m) return null;
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  const d = Number(m[3]);
+  const date = new Date(y, mo - 1, d);
+  if (date.getFullYear() !== y || date.getMonth() !== mo - 1 || date.getDate() !== d) return null;
+  return date.getTime();
+}
+
+/** "YYYY-MM-DD" LOCAL, para `value` e `min` do <input type="date">. */
+export function toDateInputValue(at: number): string {
+  const d = new Date(at);
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+/** "hoje", "ontem", "amanhã", senão "23 set". */
+export function formatDay(at: number, now: number): string {
+  const delta = daysBetween(now, at);
+  if (delta === 0) return "hoje";
+  if (delta === -1) return "ontem";
+  if (delta === 1) return "amanhã";
+  const d = new Date(at);
+  return `${d.getDate()} ${MONTH_ABBR_PT[d.getMonth()]}`;
+}
+
+/** Para eventos (passado): "agora", "há 5 min", "há 2 h", "ontem", senão formatDay. */
+export function formatRelative(at: number, now: number): string {
+  const diff = now - at;
+  if (diff < 60_000) return "agora";
+  if (diff < 3_600_000) return `há ${Math.floor(diff / 60_000)} min`;
+  const days = daysBetween(at, now);
+  if (days === 0) return `há ${Math.floor(diff / 3_600_000)} h`;
+  if (days === 1) return "ontem";
+  return formatDay(at, now);
+}
