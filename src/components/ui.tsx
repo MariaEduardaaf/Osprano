@@ -43,7 +43,7 @@ export function StatCard({
   icon?: ReactNode;
 }) {
   return (
-    <div className="rounded-[var(--radius)] border border-border bg-surface p-5 shadow-[var(--shadow-sm)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)]">
+    <div className="glass rounded-[var(--radius)] p-5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-lg)]">
       <div className="flex items-center justify-between">
         <div className="font-mono text-[11px] font-medium uppercase tracking-wider text-faint">
           {label}
@@ -64,7 +64,7 @@ export function StatCard({
 
 export function EmptyState({ title, children }: { title: string; children?: ReactNode }) {
   return (
-    <div className="rounded-[var(--radius)] border border-dashed border-border-strong bg-surface/40 px-6 py-16 text-center">
+    <div className="glass rounded-[var(--radius)] border-dashed border-border-strong px-6 py-16 text-center">
       <p className="font-display text-lg font-medium text-foreground">{title}</p>
       {children && <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted">{children}</p>}
     </div>
