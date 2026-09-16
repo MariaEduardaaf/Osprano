@@ -40,7 +40,7 @@ function Note({ tone, children }: { tone: "stop" | "warn" | "info"; children: Re
       ? "border-danger/40 bg-danger/10 text-ink-soft"
       : tone === "warn"
         ? "border-warm/30 bg-warm/10 text-ink-soft"
-        : "border-dashed border-border bg-surface text-muted";
+        : "border-dashed border-border bg-surface-solid text-muted";
   return (
     <div
       className={`flex items-start gap-1.5 rounded-md border p-2 text-[10px] leading-relaxed ${box}`}
@@ -93,7 +93,7 @@ function EmailWarnings({
           <p className="font-semibold text-foreground">Revise antes de enviar</p>
           <p>{w.message}</p>
           {w.excerpt && (
-            <p className="whitespace-pre-wrap break-words rounded border border-warm/30 bg-surface px-1.5 py-1 font-mono text-[10px] text-ink-soft">
+            <p className="whitespace-pre-wrap break-words rounded border border-warm/30 bg-surface-solid px-1.5 py-1 font-mono text-[10px] text-ink-soft">
               “{w.excerpt}”
             </p>
           )}
@@ -229,7 +229,7 @@ function ComposerBody({
         value={subject}
         onChange={(e) => setSubject(e.target.value)}
         placeholder="Assunto"
-        className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-sm font-medium"
+        className="w-full rounded-md border border-border bg-surface-solid px-2 py-1.5 text-sm font-medium"
       />
       {/* Colado no texto que ela vai mandar, e ANTES dele: é o que precisa ser corrigido
           antes de qualquer um dos botões abaixo. */}
@@ -238,7 +238,7 @@ function ComposerBody({
         value={body}
         onChange={(e) => setBody(e.target.value)}
         rows={7}
-        className="w-full resize-y rounded-md border border-border bg-surface px-2 py-1.5 text-sm"
+        className="w-full resize-y rounded-md border border-border bg-surface-solid px-2 py-1.5 text-sm"
       />
       <div className="flex flex-wrap items-center gap-2">
         <button

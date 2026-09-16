@@ -64,7 +64,7 @@ export function ContactOptInButton({
       <select
         value={source}
         onChange={(e) => setSource(e.target.value as ContactSource)}
-        className="w-full rounded-md border border-border bg-surface px-2 py-1 text-[11px]"
+        className="w-full rounded-md border border-border bg-surface-solid px-2 py-1 text-[11px]"
         aria-label="Origem do consentimento"
       >
         {CONTACT_SOURCES.map((s) => (
@@ -79,7 +79,7 @@ export function ContactOptInButton({
           onChange={(e) => setNote(e.target.value)}
           placeholder="Como foi obtido? (opcional)"
           aria-label="Nota sobre o consentimento (opcional)"
-          className="flex-1 rounded-md border border-border bg-surface px-2 py-1 text-[11px] placeholder:text-faint"
+          className="flex-1 rounded-md border border-border bg-surface-solid px-2 py-1 text-[11px] placeholder:text-faint"
         />
         <button
           onClick={async () => {

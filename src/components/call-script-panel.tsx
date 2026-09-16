@@ -87,7 +87,7 @@ function Note({ tone, children }: { tone: "warn" | "info"; children: ReactNode }
       className={`flex items-start gap-1.5 rounded-md border p-2 text-[10px] leading-relaxed ${
         warn
           ? "border-warm/30 bg-warm/10 text-ink-soft"
-          : "border-dashed border-border bg-surface text-muted"
+          : "border-dashed border-border bg-surface-solid text-muted"
       }`}
     >
       {warn ? (
@@ -125,7 +125,7 @@ function ScriptWarnings({
           <p className="font-semibold text-foreground">Revise antes de ligar</p>
           <p>{w.message}</p>
           {w.excerpt && (
-            <p className="whitespace-pre-wrap break-words rounded border border-warm/30 bg-surface px-1.5 py-1 font-mono text-[10px] text-ink-soft">
+            <p className="whitespace-pre-wrap break-words rounded border border-warm/30 bg-surface-solid px-1.5 py-1 font-mono text-[10px] text-ink-soft">
               “{w.excerpt}”
             </p>
           )}
@@ -153,7 +153,7 @@ function ScriptWarnings({
 
 function ScriptColumn({ label, text }: { label: string; text: string }) {
   return (
-    <div className="space-y-1 rounded-md border border-border bg-surface p-2">
+    <div className="space-y-1 rounded-md border border-border bg-surface-solid p-2">
       <div className="flex items-center justify-between gap-2">
         <span className="font-mono text-[10px] font-semibold uppercase tracking-wide text-faint">
           {label}
@@ -253,7 +253,7 @@ export function CallScriptPanel({
           <MdOutlineDescription size={14} />
           Script de ligação
           {language && (
-            <span className="rounded-full border border-border bg-surface px-2 py-0.5 text-[10px] font-semibold text-muted">
+            <span className="rounded-full border border-border bg-surface-solid px-2 py-0.5 text-[10px] font-semibold text-muted">
               idioma: {language}
             </span>
           )}
@@ -305,7 +305,7 @@ export function CallScriptPanel({
           {hasTranslation ? (
             <ScriptColumn label="Tradução (pt-BR)" text={translation} />
           ) : (
-            <div className="flex items-start gap-1.5 rounded-md border border-dashed border-border bg-surface p-2 text-[10px] leading-relaxed text-muted">
+            <div className="flex items-start gap-1.5 rounded-md border border-dashed border-border bg-surface-solid p-2 text-[10px] leading-relaxed text-muted">
               <MdOutlineWarningAmber size={12} className="mt-0.5 shrink-0 text-warm" />
               <span>Tradução pt-BR indisponível — gere o script de novo.</span>
             </div>
