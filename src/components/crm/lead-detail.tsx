@@ -75,8 +75,8 @@ export function LeadDetail({ lead, onClose }: { lead: Doc<"leads">; onClose: () 
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      <button aria-label="Fechar" onClick={onClose} className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
-      <div className="relative z-10 flex h-full w-full max-w-xl flex-col border-l border-border bg-background shadow-[var(--shadow-lg)]">
+      <button aria-label="Fechar" onClick={onClose} className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
+      <div className="glass-dense relative z-10 flex h-full w-full max-w-xl flex-col overflow-hidden rounded-l-2xl">
         {/* header */}
         <div className="shrink-0 border-b border-border px-6 pt-5">
           <div className="flex items-start justify-between gap-3">
@@ -268,7 +268,7 @@ function InfoTab({ lead, status, onStage }: { lead: Doc<"leads">; status: "open"
           </button>
           <button
             onClick={() => onStage("lost")}
-            className={`border-l border-border px-4 py-1.5 text-xs font-semibold transition-colors ${status === "lost" ? "bg-danger text-white" : "text-muted hover:bg-surface-2"}`}
+            className={`border-l border-border px-4 py-1.5 text-xs font-semibold transition-colors ${status === "lost" ? "bg-danger text-danger-fg" : "text-muted hover:bg-surface-2"}`}
           >
             Perdido
           </button>
@@ -393,7 +393,7 @@ function SiteTab({ lead }: { lead: Doc<"leads"> }) {
 
   if (!preview) {
     return (
-      <div className="rounded-2xl border border-dashed border-border-strong bg-surface/40 px-6 py-12 text-center">
+      <div className="rounded-2xl border border-dashed border-border-strong bg-surface-2/60 px-6 py-12 text-center">
         <MdOutlineLanguage size={30} className="mx-auto text-faint" />
         <p className="mt-3 font-display text-lg font-semibold">Nenhum site gerado ainda</p>
         <p className="mx-auto mt-1 max-w-sm text-sm text-muted">
@@ -408,7 +408,7 @@ function SiteTab({ lead }: { lead: Doc<"leads"> }) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-border bg-surface p-4">
+      <div className="rounded-xl border border-border bg-surface-2 p-4">
         <div className="flex items-center justify-between">
           <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand">
             <span className="h-1.5 w-1.5 rounded-full bg-brand" />
@@ -443,7 +443,7 @@ function SiteTab({ lead }: { lead: Doc<"leads"> }) {
 function ObjectionCard({ o }: { o: Objection }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-surface">
+    <div className="overflow-hidden rounded-xl border border-border bg-surface-2">
       <button onClick={() => setOpen((v) => !v)} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left">
         <span className="text-sm font-semibold">&quot;{o.label}&quot;</span>
         <MdKeyboardArrowDown size={20} className={`shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`} />
@@ -495,7 +495,7 @@ function SaleTab() {
         <h3 className="mb-3 font-mono text-[10px] font-semibold uppercase tracking-wider text-faint">Roteiro da reunião</h3>
         <div className="space-y-2.5">
           {MEETING_PLAYBOOK.map((s) => (
-            <div key={s.n} className="flex gap-3 rounded-xl border border-border bg-surface p-4">
+            <div key={s.n} className="flex gap-3 rounded-xl border border-border bg-surface-2 p-4">
               <span
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-display text-sm font-bold text-white"
                 style={{ backgroundColor: STEP_COLOR[s.n - 1] ?? "var(--brand)" }}
@@ -525,7 +525,7 @@ function SaleTab() {
 function ClosingCard({ label, response }: { label: string; response: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-surface">
+    <div className="overflow-hidden rounded-xl border border-border bg-surface-2">
       <button onClick={() => setOpen((v) => !v)} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left">
         <span className="text-sm font-semibold">&quot;{label}&quot;</span>
         <MdKeyboardArrowDown size={20} className={`shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`} />
