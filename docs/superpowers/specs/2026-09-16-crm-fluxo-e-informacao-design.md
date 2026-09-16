@@ -26,8 +26,10 @@ Uso: **uma pessoa** (a Duda), dezenas de leads ativos. Sem equipe, sem atribuiç
   backend; nenhuma tela marca ou mostra reunião. A próxima ação **não** lê
   `meetingAt`. Quando a agenda ganhar UI, ela entra como caso da próxima ação.
 - **"Hoje" é calculado no navegador**, a partir do `leads.list` que o Kanban já
-  carrega. Não há query de servidor para a faixa: evita divergência de fuso entre
-  servidor (UTC) e cliente, e uma query que não reexecuta quando o relógio vira.
+  carrega. Não há query de servidor para a faixa e **nenhuma aritmética de data
+  roda no servidor**: o Convex está em UTC e o dia civil é o do navegador. A página
+  mantém `now` em estado, atualizado a cada 60 s, para a faixa virar sozinha à
+  meia-noite.
 - Moeda **derivada do país**, sem campo: GB → GBP, SE → SEK, NO → NOK, CH → CHF, DK →
   DKK, resto → EUR. Uma função pura em `convex/lib/domain.ts`.
 - **"Parado" conta a partir de `stageUpdatedAt`**, não do último evento. Um lead com
@@ -40,16 +42,22 @@ Uso: **uma pessoa** (a Duda), dezenas de leads ativos. Sem equipe, sem atribuiç
 Dashboard com pipeline em €, exportação, lembrete por email/push, várias ações por
 lead, recorrência, atribuição a pessoa, UI de reunião. Envio por WhatsApp não gera
 evento hoje (`convex/whatsapp.ts` grava só em `outreach`), então **não aparece no
-Histórico**; registrar o evento lá é trabalho à parte.
+Histórico**. Pelo mesmo motivo, `previews.recordOpen` e `outreach.markSent` movem o
+lead de `base` para `approached` com `patch` direto, sem evento: o Histórico mostra
+"Email enviado" e depois "Abordado → Agendado" sem nunca mostrar "Base → Abordado".
+Registrar esses eventos é trabalho à parte, fora deste desenho.
 
 ## Ordem de implementação
 
 Dois blocos, o segundo só depois do primeiro verificado:
 
-- **Bloco A (fluxo):** schema + domínio + `setNextAction`/`clearNextAction`/
-  `postponeNextAction` + faixa Hoje + linha no card + filtro Parados + ordenação.
-- **Bloco B (informação):** Perdido com motivo + contato/valor + Histórico com notas
-  + refactor do glyph de evento.
+- **Bloco A (fluxo):** schema (todos os campos e o índice, de uma vez) + domínio +
+  `setNextAction`/`clearNextAction` + faixa Hoje + linha no card + filtro Parados +
+  ordenação. `setStage` **não muda** neste bloco.
+- **Bloco B (informação):** `markLost` + guardrail do `setStage` + `LostReasonModal`
+  nos três caminhos (Kanban drop, seletor do card, detalhe) **num commit só**, senão
+  "Perdido" quebra no meio; depois contato/valor, `updateInfo`, `addNote`,
+  `timeline`, Histórico, glyph.
 
 ---
 
@@ -79,15 +87,18 @@ antes desta mudança). Toda tela que mostra motivo trata ausência (seção 3).
 - `type` ganha o literal `"note"`. `meta` de uma nota: `{ text: string }`.
 - Índice novo `by_lead: ["leadId", "at"]` para o histórico por lead.
 - `events.recent` (feed do Dashboard) **exclui** `type === "note"`: nota é comentário
-  privado, o feed é atividade do sistema. Filtro em memória depois do `take`, com
-  `take(30)` para compensar.
+  privado, o feed é atividade do sistema. `take(30)`, filtra em memória, `slice(0, 15)`
+  para o feed manter o tamanho de hoje.
 
 ### 1.3 Domínio puro (`convex/lib/domain.ts`, testes em `tests/crm-domain.test.ts`)
 
 | Função | Contrato |
 |---|---|
 | `currencyForCountry(code)` | `"GB"→"GBP"`, `"SE"→"SEK"`, `"NO"→"NOK"`, `"CH"→"CHF"`, `"DK"→"DKK"`, qualquer outro → `"EUR"` |
+| `currencySymbol(currency)` | `"EUR"→"€"`, `"GBP"→"£"`, `"SEK"`/`"NOK"`/`"DKK"`→`"kr"`, `"CHF"→"CHF"` |
 | `formatMoney(amount, currency)` | `340, "EUR"` → `"€340"`; `"GBP"` → `"£340"`; `"SEK"`/`"NOK"`/`"DKK"` → `"340 kr"`; `"CHF"` → `"CHF 340"`. Sem centavos (arredonda); milhar com ponto (`"€1.200"`) |
+| `addDays(at, n)` | mesmo horário local, `n` dias civis depois (`new Date(y, m, d + n, h, min)`); atravessa horário de verão sem virar 23 h |
+| `dateInputToTimestamp("2026-09-23")` | meia-noite **local** do dia (`new Date(y, m - 1, d)`; nunca `new Date(string)`, que parseia como UTC) |
 | `nextActionOf(lead)` | `{ at, note }` se `nextActionAt` existe, senão `null` |
 | `actionStatus(at, now)` | `"overdue"` (antes de hoje 00:00 local), `"today"` (mesmo dia civil local), `"upcoming"` |
 | `daysBetween(a, b)` | dias civis inteiros entre dois timestamps, fuso local (usado para "há N dias") |
@@ -110,9 +121,8 @@ Todas seguem o padrão existente: `requireOrgId`, buscar o lead, `lead.orgId !==
 |---|---|---|
 | `setNextAction` | `{ id, at: number, note: string }` | patch dos dois campos. `note` trim; vazia → erro `"Escreva o que fazer"` |
 | `clearNextAction` | `{ id }` | remove os dois campos (`undefined`) |
-| `postponeNextAction` | `{ id, days: 1 \| 3 \| 7 }` | `nextActionAt += days * 86400000` a partir da data **vigente**. Sem ação → erro `"Sem próxima ação"` |
 | `updateInfo` | `{ id, contactName?: string, contactRole?: string, dealSetup?: number \| null, dealMonthly?: number \| null }` | patch só dos campos enviados. String: trim, vazia → `undefined`. Número: `null` → `undefined` (limpa); negativo ou `NaN` → erro `"Valor inválido"` |
-| `markLost` | `{ id, reason: LostReason, note?: string }` | `stage: "lost"`, `stageUpdatedAt`, `lostReason`, `lostNote` (trim, vazia → `undefined`); limpa `nextActionAt/Note`; evento `stage_change` com `meta: { from, to: "lost", reason }` |
+| `markLost` | `{ id, reason: LostReason, note?: string }` | `stage: "lost"`, `stageUpdatedAt`, `lostReason`, `lostNote` (trim, vazia → `undefined`); limpa `nextActionAt/Note`; evento `stage_change` com `meta: { from, to: "lost", reason }`. Lead **já** em `lost` (dar motivo a um legado): patch só de `lostReason/lostNote`, sem tocar `stageUpdatedAt` e sem evento |
 | `addNote` | `{ id, text: string }` | trim; vazia → erro `"Nota vazia"`; insere evento `note` com `meta: { text }` |
 
 `setStage` existente muda em dois pontos:
@@ -120,6 +130,9 @@ Todas seguem o padrão existente: `requireOrgId`, buscar o lead, `lead.orgId !==
   que oferece "Perdido" abre o modal, seção 2.4 e 3.1);
 - ao **sair** de `lost` para qualquer estágio, limpa `lostReason` e `lostNote`. É a
   única forma de reabrir; não há mutation `reopen`.
+
+Não há mutation de adiar: "Adiar" é `setNextAction` com `addDays(action.at, n)` e a
+mesma nota, calculado no navegador (ver Decisões).
 
 ### 1.5 Query nova
 
@@ -129,8 +142,9 @@ Todas seguem o padrão existente: `requireOrgId`, buscar o lead, `lead.orgId !==
 
 ### 1.6 Seed do demo (`convex/demo.ts`)
 
-Para a faixa "Hoje" e o "parado" aparecerem no modo demo: 2 leads com ação atrasada,
-2 com ação hoje, 3 com `stageUpdatedAt` há 10+ dias sem ação, 2 em `lost` com motivo
+Para a faixa "Hoje" e o "parado" aparecerem no modo demo: 2 leads com ação atrasada
+(`now - 2 dias`, `now - 5 dias`), 2 com ação hoje (`nextActionAt = now`, o instante,
+nunca "meia-noite" calculada no servidor em UTC), 3 com `stageUpdatedAt` há 10+ dias sem ação, 2 em `lost` com motivo
 (os que já estão em `lost` sem motivo ficam como estão, para cobrir o caso), 1 com
 contato e valores preenchidos, 2 notas. Só dados; nenhuma lógica no seed.
 
@@ -140,9 +154,11 @@ contato e valores preenchidos, 2 notas. Só dados; nenhuma lógica no seed.
 
 ### 2.1 Faixa "Hoje" (`src/components/crm/today-strip.tsx`)
 
-- A página calcula `items` a partir da lista que já filtrou (`saved !== false`):
-  leads com `nextActionOf !== null` e `actionStatus !== "upcoming"`, ordenados por
-  `at` crescente. Recalcula a cada render; `now = Date.now()` no render.
+- A página calcula `items` a partir dos leads do CRM (`saved !== false`), **antes**
+  de busca, filtro rápido e ordenação: a faixa não muda quando você filtra o
+  Kanban. A cadeia `filtered` atual em `crm/page.tsx` é dividida em duas etapas
+  (`crmLeads` → `visible`). Itens: `nextActionOf !== null` e `actionStatus !==
+  "upcoming"`, ordenados por `at` crescente, com o `now` de estado da página.
 - Fica entre o cabeçalho da página e a busca. **Some quando `items` está vazia**
   (sem estado vazio, sem placeholder).
 - Dois grupos, nesta ordem: **Atrasadas** (título em `--hot`) e **Hoje**. Grupo sem
@@ -151,8 +167,9 @@ contato e valores preenchidos, 2 notas. Só dados; nenhuma lógica no seed.
   atrasada · **Feito** · **Adiar ▾** (1 dia · 3 dias · 7 dias).
 - **Feito** → `clearNextAction`, depois `onOpen(leadId, { focusNextAction: true })`
   para a próxima ser marcada na hora.
-- **Adiar** → `postponeNextAction`, com update otimista no `leads.list` (padrão de
-  `setStage`).
+- **Adiar n** → `setNextAction({ id, at: addDays(action.at, n), note: action.note })`,
+  com update otimista no `leads.list` (padrão de `setStage`). Adiar uma ação de 5
+  dias atrás em 1 dia continua atrasada; esperado, o usuário vê e adia de novo.
 - Props: `items: { lead, action, status }[]`, `onOpen(leadId, opts?)`. O componente
   chama as duas mutations por conta própria (`useMutation`); não recebe dados de
   query.
@@ -179,28 +196,33 @@ Convertido e Perdido nunca mostram "parado" (garantido por `stalledDays`).
 - Entra como última coluna, **recolhida por padrão**: só cabeçalho com contagem e
   botão de expandir. Expandida, funciona como as outras (busca, filtro, ordenação
   valem). Estado em `useState`; não persiste.
+- **O cabeçalho recolhido é alvo de drop** (mesmos handlers `onDragOver`/`onDrop`
+  da lane, com o realce de `overCol`), para não precisar expandir antes de arrastar.
 - Soltar um card nela, ou escolher "Perdido" no seletor do card, **não move**: abre o
   `LostReasonModal`. Confirmar → `markLost`; cancelar → nada muda, `dragId` e
   `overCol` são limpos.
-- Cabeçalho de toda coluna: `Rótulo · N` e, quando ao menos um lead da coluna tem
-  `dealMonthly`, `· €340/mês` (soma de `dealMonthly`, formatada com a moeda do
-  **primeiro** lead da coluna que tiver valor; mistura de moedas numa coluna é caso
-  raro e mostra a soma crua com essa moeda). Perdido não mostra soma.
+- Cabeçalho de toda coluna: `Rótulo · N` e, quando ao menos um lead visível da
+  coluna tem `dealMonthly`, `· €340/mês` (soma de `dealMonthly` dos **mesmos leads
+  que o `N` conta**, isto é, depois de busca e filtro; formatada com a moeda do
+  primeiro lead da coluna que tiver valor; mistura de moedas numa coluna é caso raro
+  e mostra a soma crua com essa moeda). Perdido não mostra soma.
 
 ### 2.4 `LostReasonModal` (`src/components/crm/lost-reason-modal.tsx`)
 
 Props: `lead`, `onConfirm({ reason, note })`, `onClose`. `LOST_REASONS` como botões de
 rádio (nenhum pré-selecionado; confirmar desabilitado até escolher), campo de nota
-opcional, botões Cancelar / Marcar perdido. Mesmo padrão visual do `CreateLeadModal`
-(overlay, `role="dialog"`, `aria-labelledby`, Esc fecha). Usado pelo Kanban e pelo
-detalhe do lead.
+opcional, botões Cancelar / Marcar perdido. Segue o `CreateLeadModal` no que ele já
+faz (overlay, Esc fecha, portal em `z-[100]`, necessário porque abre por cima do
+drawer `z-50` do detalhe) e **acrescenta**, como requisito novo, `role="dialog"`,
+`aria-modal`, `aria-labelledby` no título e foco inicial no primeiro rádio. Usado
+pelo Kanban e pelo detalhe do lead.
 
 ---
 
 ## 3. Detalhe do lead (`src/components/crm/lead-detail.tsx`)
 
-`LeadDetail` ganha props opcionais `initialTab?: Tab` e `focusNextAction?: boolean`
-(a página passa quando a faixa Hoje abre o lead).
+`LeadDetail` ganha a prop opcional `focusNextAction?: boolean` (a página passa quando
+a faixa Hoje abre o lead; a aba inicial continua Informações).
 
 ### 3.1 Aba Informações
 
@@ -215,7 +237,7 @@ próprio e renderizado pelo `InfoTab`:
 
 **`NextActionForm` (`next-action-form.tsx`)**: props `lead`, `autoFocus?`. Mostra a
 ação vigente com status colorido (mesma tabela de 2.2); campos data (`<input
-type="date">`, `min` = hoje local; o valor vira meia-noite local do dia) e texto;
+type="date">`, `min` = hoje local; o valor passa por `dateInputToTimestamp`) e texto;
 botões **Salvar** (`setNextAction`) e **Concluir** (`clearNextAction`, só quando há
 ação). Com `autoFocus`, o campo de texto recebe foco ao montar.
 
@@ -228,7 +250,8 @@ servidor abaixo do campo, mantém o digitado e não salva.
 
 **Faixa de perdido**: só quando `lead.stage === "lost"`. Texto `Perdido · Caro demais
 · nota` em `--hot` no topo da aba; sem `lostReason`, só `Perdido`; sem `lostNote`,
-sem o terceiro segmento. Botão **Reabrir** → `setStage(id, "base")`.
+sem o terceiro segmento. Sem botão próprio: reabrir é o "Em aberto" (→ `approached`)
+e as pílulas de Etapa que já existem na aba.
 
 ### 3.2 Aba "Histórico" (`lead-timeline.tsx`)
 
@@ -291,25 +314,26 @@ feed tem copy própria ("<lead> abriu o preview") e o Histórico tem a sua
   controle que a disparou e mantém o valor digitado. Padrão já usado no composer.
 - Lead em `converted`: próxima ação continua permitida (renovação, upsell); "parado"
   não.
-- `postponeNextAction` numa ação atrasada soma a partir da data vigente: adiar 1 dia
-  uma ação de 5 dias atrás continua atrasada. Esperado; o usuário vê e adia de novo
-  ou remarca no detalhe.
 - Drag para "Perdido" cancelado no modal → o card volta ao lugar.
 - Lead perdido sem motivo (legado) → telas mostram só "Perdido".
 - Modo demo: tudo funciona sobre a org "demo", sem auth, como hoje.
 
 ## 5. Testes
 
-- **Unitários (`node --test`)**: `currencyForCountry`, `formatMoney` (as quatro
-  moedas, milhar, arredondamento), `nextActionOf` (com e sem), `actionStatus` (ontem
-  23:59, hoje 00:00, hoje 23:59, amanhã 00:00), `daysBetween`, `stalledDays` (com
-  ação → null; converted → null; lost → null; 6 vs 7 dias), `isStalled`,
+- **Unitários (`node --test`)**: `currencyForCountry`, `currencySymbol`,
+  `formatMoney` (as quatro moedas, milhar, arredondamento), `nextActionOf` (com e
+  sem), `actionStatus` (ontem 23:59, hoje 00:00, hoje 23:59, amanhã 00:00),
+  `daysBetween`, `addDays` (inclusive atravessando a virada de horário de verão de
+  outubro: continua 00:00 do dia seguinte), `dateInputToTimestamp`, `stalledDays`
+  (com ação → null; converted → null; lost → null; 6 vs 7 dias), `isStalled`,
   `compareByNextAction` (ação antes de sem ação; `at` crescente; sem ação por score),
-  `lostReasonLabel` (ausente → undefined).
+  `lostReasonLabel` (ausente → undefined). **Timestamps de teste sempre pelo
+  construtor local** (`new Date(2026, 8, 16, 23, 59)`), nunca string ISO com `Z`:
+  senão passa aqui e falha num CI em UTC.
 - **Verificação manual** no modo demo, roteiro no plano: faixa Hoje aparece com o
   seed; Feito abre o detalhe com o campo em foco; Adiar move; arrastar para Perdido
   pede motivo; cancelar volta; "Perdido" no detalhe também pede motivo; nota aparece
-  no Histórico junto com a mudança de estágio; Reabrir volta para Base e o motivo
-  some; Parados filtra; soma da mensalidade no cabeçalho; nota **não** aparece no
+  no Histórico junto com a mudança de estágio; "Em aberto" tira de Perdido e o
+  motivo some; Parados filtra; soma da mensalidade no cabeçalho; nota **não** aparece no
   feed do Dashboard.
 - `pnpm typecheck`, `pnpm lint`, `pnpm test` verdes antes de "pronto".
