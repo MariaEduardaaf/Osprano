@@ -14,15 +14,6 @@ const display = Bricolage_Grotesque({
 
 const DEMO = process.env.NEXT_PUBLIC_DEMO === "1";
 
-const THEME_INIT = `(function(){try{var t=localStorage.getItem('theme');if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.dataset.theme=t;}catch(e){}})();`;
-
-// TEMPORÁRIO (plano docs/superpowers/plans/2026-09-16-redesenho-vidro.md, Tarefa 24 remove):
-// `?theme=dark|light` força o tema nos screenshots headless. Só fora de produção.
-const THEME_QUERY_HOOK =
-  process.env.NODE_ENV !== "production"
-    ? `(function(){try{var q=new URLSearchParams(location.search).get('theme');if(q==='light'||q==='dark'){document.documentElement.dataset.theme=q;}}catch(e){}})();`
-    : "";
-
 export const metadata: Metadata = {
   title: "Osprano — ache a dor, feche o site",
   description:
@@ -37,7 +28,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       className={`${geistSans.variable} ${geistMono.variable} ${display.variable} h-full antialiased`}
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT + THEME_QUERY_HOOK }} />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('theme');if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.dataset.theme=t;}catch(e){}})();`,
+          }}
+        />
       </head>
       <body className="min-h-full">
         <ConvexClientProvider>{children}</ConvexClientProvider>
