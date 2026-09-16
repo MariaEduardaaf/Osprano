@@ -23,6 +23,7 @@ import {
   canContactByEmail,
   type Stage,
 } from "@convex/lib/domain";
+import { NextActionForm } from "@/components/crm/next-action-form";
 import { OutreachComposer } from "@/components/outreach-composer";
 import { GeneratePreviewButton } from "@/components/generate-preview-button";
 import { PublishButton } from "@/components/publish-button";
@@ -59,7 +60,16 @@ const CONTACT_LABEL: Record<string, string> = {
 const TABS = ["Informações", "Abordagem", "Site", "Objeções", "Venda"] as const;
 type Tab = (typeof TABS)[number];
 
-export function LeadDetail({ lead, onClose }: { lead: Doc<"leads">; onClose: () => void }) {
+export function LeadDetail({
+  lead,
+  onClose,
+  focusNextAction = false,
+}: {
+  lead: Doc<"leads">;
+  onClose: () => void;
+  /** A faixa Hoje abre o lead depois de "Feito": o campo da próxima ação nasce focado. A aba inicial não muda. */
+  focusNextAction?: boolean;
+}) {
   const [tab, setTab] = useState<Tab>("Informações");
   const setStage = useMutation(api.leads.setStage);
 
@@ -116,7 +126,12 @@ export function LeadDetail({ lead, onClose }: { lead: Doc<"leads">; onClose: () 
         {/* body */}
         <div className="flex-1 overflow-y-auto px-6 py-5">
           {tab === "Informações" && (
-            <InfoTab lead={lead} status={status} onStage={(s) => void setStage({ id: lead._id, stage: s })} />
+            <InfoTab
+              lead={lead}
+              status={status}
+              autoFocusAction={focusNextAction}
+              onStage={(s) => void setStage({ id: lead._id, stage: s })}
+            />
           )}
           {tab === "Abordagem" && <ApproachTab lead={lead} />}
           {tab === "Site" && <SiteTab lead={lead} />}
@@ -139,7 +154,17 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   );
 }
 
-function InfoTab({ lead, status, onStage }: { lead: Doc<"leads">; status: "open" | "won" | "lost"; onStage: (s: Stage) => void }) {
+function InfoTab({
+  lead,
+  status,
+  autoFocusAction,
+  onStage,
+}: {
+  lead: Doc<"leads">;
+  status: "open" | "won" | "lost";
+  autoFocusAction: boolean;
+  onStage: (s: Stage) => void;
+}) {
   const market = MARKETS[lead.countryCode];
   const activeSignals = lead.signals
     ? Object.entries(lead.signals).filter(([, v]) => v).map(([k]) => SIGNAL_LABEL[k] ?? k)
@@ -147,6 +172,9 @@ function InfoTab({ lead, status, onStage }: { lead: Doc<"leads">; status: "open"
 
   return (
     <div className="space-y-6">
+      {/* blocos novos do CRM, acima dos dados do Google (que não mudam) */}
+      <NextActionForm lead={lead} autoFocus={autoFocusAction} />
+
       <section>
         <Row label="Categoria">{(lead.category ?? "—").replace(/_/g, " ")}</Row>
         <Row label="Cidade">{lead.city ? `${lead.city}${market ? `, ${market.name}` : ""}` : "—"}</Row>

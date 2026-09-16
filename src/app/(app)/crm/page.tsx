@@ -9,12 +9,24 @@ import { PageHeader } from "@/components/ui";
 import { WhatsAppFollowup } from "@/components/whatsapp-followup";
 import { CreateLeadModal } from "@/components/crm/create-lead-modal";
 import { LeadDetail } from "@/components/crm/lead-detail";
-import { PIPELINE_STAGES, canContactByEmail, type Stage } from "@convex/lib/domain";
+import { TodayStrip, type TodayItem } from "@/components/crm/today-strip";
+import { CardActionLine } from "@/components/crm/next-action-line";
+import { useNow } from "@/lib/use-now";
+import {
+  PIPELINE_STAGES,
+  canContactByEmail,
+  nextActionOf,
+  actionStatus,
+  isStalled,
+  compareByNextAction,
+  type Stage,
+} from "@convex/lib/domain";
 
 const COLUMNS = PIPELINE_STAGES.filter((s) => s.id !== "lost");
 
 const SORTS: { id: string; label: string; cmp: (a: Doc<"leads">, b: Doc<"leads">) => number }[] = [
   { id: "score_desc", label: "Score (maior)", cmp: (a, b) => (b.score ?? 0) - (a.score ?? 0) },
+  { id: "next_action", label: "Próxima ação", cmp: compareByNextAction },
   { id: "score_asc", label: "Score (menor)", cmp: (a, b) => (a.score ?? 0) - (b.score ?? 0) },
   { id: "recent", label: "Mais recentes", cmp: (a, b) => b._creationTime - a._creationTime },
   { id: "name", label: "Nome (A–Z)", cmp: (a, b) => a.name.localeCompare(b.name) },
@@ -34,7 +46,8 @@ const TIER: Record<string, { label: string; color: string }> = {
   cold: { label: "Frio", color: "var(--cold)" },
 };
 
-const FILTERS: { id: string; label: string; fn: (l: Doc<"leads">) => boolean }[] = [
+// `now` vem do estado da página (useNow): "parado" depende do relógio.
+const FILTERS: { id: string; label: string; fn: (l: Doc<"leads">, now: number) => boolean }[] = [
   { id: "all", label: "Todos", fn: () => true },
   { id: "nosite", label: "Sem site", fn: (l) => !!(l.signals?.noSite || l.signals?.socialOnly) },
   { id: "hot", label: "Quente", fn: (l) => l.tier === "hot" },
@@ -42,15 +55,18 @@ const FILTERS: { id: string; label: string; fn: (l: Doc<"leads">) => boolean }[]
   // OPTIN-04: "abordável" = canContactByEmail (regime do mercado OU consentimento registrado).
   // Ler l.emailable cru sumiria com leads que já deram opt-in explícito na ligação.
   { id: "email", label: "Abordável", fn: (l) => canContactByEmail(l) },
+  { id: "stalled", label: "Parados", fn: (l, now) => isStalled(l, now) },
 ];
 
 export default function CrmPage() {
   const leads = useQuery(api.leads.list, {});
+  const now = useNow(); // "hoje" é o dia civil do navegador, atualizado a cada 60 s
   const [filter, setFilter] = useState("all");
   const [q, setQ] = useState("");
   const [sort, setSort] = useState("score_desc");
   const [createOpen, setCreateOpen] = useState(false);
   const [openId, setOpenId] = useState<Id<"leads"> | null>(null);
+  const [openFocus, setOpenFocus] = useState(false); // a faixa Hoje abre o lead com o campo da ação em foco
   const [dragId, setDragId] = useState<Id<"leads"> | null>(null);
   const [overCol, setOverCol] = useState<Stage | null>(null);
 
@@ -70,9 +86,19 @@ export default function CrmPage() {
   const active = FILTERS.find((f) => f.id === filter) ?? FILTERS[0];
   const needle = q.trim().toLowerCase();
   const cmp = (SORTS.find((s) => s.id === sort) ?? SORTS[0]).cmp;
-  const filtered = (leads ?? [])
-    .filter((l) => l.saved !== false) // descoberta (saved=false) fica só na tela de Leads
-    .filter(active.fn)
+  // descoberta (saved=false) fica só na tela de Leads
+  const crmLeads = (leads ?? []).filter((l) => l.saved !== false);
+  // A faixa Hoje sai de crmLeads, ANTES de busca, filtro e ordenação: filtrar o Kanban não a muda.
+  const todayItems: TodayItem[] = crmLeads
+    .flatMap((lead) => {
+      const action = nextActionOf(lead);
+      if (!action) return [];
+      const status = actionStatus(action.at, now);
+      return status === "upcoming" ? [] : [{ lead, action, status }];
+    })
+    .sort((a, b) => a.action.at - b.action.at);
+  const visible = crmLeads
+    .filter((l) => active.fn(l, now))
     .filter((l) =>
       needle === ""
         ? true
@@ -81,7 +107,11 @@ export default function CrmPage() {
     .slice()
     .sort(cmp);
 
-  const openLead = openId ? (leads ?? []).find((l) => l._id === openId) ?? null : null;
+  const openLead = openId ? crmLeads.find((l) => l._id === openId) ?? null : null;
+  const openLeadDetail = (id: Id<"leads">, opts?: { focusNextAction?: boolean }) => {
+    setOpenId(id);
+    setOpenFocus(opts?.focusNextAction === true);
+  };
 
   return (
     <>
@@ -116,6 +146,8 @@ export default function CrmPage() {
           </div>
         }
       />
+
+      <TodayStrip items={todayItems} now={now} onOpen={openLeadDetail} />
 
       {/* search */}
       <div className="glass relative mb-4 max-w-xl rounded-xl focus-within:border-border-strong">
@@ -154,7 +186,7 @@ export default function CrmPage() {
         ))}
         {leads !== undefined && (
           <span className="ml-auto font-mono text-[11px] tabular-nums text-faint">
-            {filtered.length} {filtered.length === 1 ? "lead" : "leads"}
+            {visible.length} {visible.length === 1 ? "lead" : "leads"}
           </span>
         )}
       </div>
@@ -164,7 +196,7 @@ export default function CrmPage() {
       ) : (
         <div className="flex gap-4 overflow-x-auto pb-4">
           {COLUMNS.map((col) => {
-            const items = filtered.filter((l) => l.stage === col.id);
+            const items = visible.filter((l) => l.stage === col.id);
             const isOver = overCol === col.id;
             return (
               <div key={col.id} className="flex w-80 shrink-0 flex-col">
@@ -214,7 +246,7 @@ export default function CrmPage() {
                             setDragId(null);
                             setOverCol(null);
                           }}
-                          onClick={() => setOpenId(lead._id)}
+                          onClick={() => openLeadDetail(lead._id)}
                           className={`glass-lite group cursor-grab rounded-[var(--radius)] p-3.5 transition-all hover:border-border-strong hover:shadow-[var(--shadow-md)] active:cursor-grabbing ${
                             isDragging ? "opacity-40" : ""
                           }`}
@@ -242,6 +274,8 @@ export default function CrmPage() {
                             {(lead.category ?? "—").replace(/_/g, " ")}
                             {lead.city ? ` · ${lead.city}` : ""}
                           </p>
+
+                          <CardActionLine lead={lead} now={now} />
 
                           <div className="mt-3 flex items-center justify-between gap-2">
                             <select
@@ -295,7 +329,14 @@ export default function CrmPage() {
       )}
 
       {createOpen && <CreateLeadModal onClose={() => setCreateOpen(false)} />}
-      {openLead && <LeadDetail lead={openLead} onClose={() => setOpenId(null)} />}
+      {openLead && (
+        <LeadDetail
+          key={openLead._id}
+          lead={openLead}
+          focusNextAction={openFocus}
+          onClose={() => setOpenId(null)}
+        />
+      )}
     </>
   );
 }
