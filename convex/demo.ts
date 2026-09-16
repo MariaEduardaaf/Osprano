@@ -216,6 +216,12 @@ function crmExtras(now: number): Record<number, CrmExtra> {
   };
 }
 
+/** Notas do CRM (eventos `note`), por posição em NAMES; `agoMs` atrás de `now`. */
+const CRM_NOTES: { i: number; agoMs: number; text: string }[] = [
+  { i: 3, agoMs: 3 * 3600_000, text: "Falei com a Sanne: quer ver a prévia antes de decidir." }, // De Gouden Lepel BV
+  { i: 25, agoMs: 1 * DAY, text: "Reunião marcada. Pediu proposta com dois planos." }, // Klippet Nordic
+];
+
 function phone(cc: string, i: number): string {
   const p: Record<string, string> = {
     GB: "+44 20 7946", NL: "+31 20 555", IE: "+353 1 555", SE: "+46 8 555", NO: "+47 21 555",
@@ -399,6 +405,10 @@ export const seed = mutation({
     for (const l of ids.filter((x) => x.stage === "converted").slice(0, 3)) {
       await ctx.db.insert("events", { orgId: ORG, type: "stage_change", leadId: l.id, at: now - t * 900_000, meta: { to: "converted" } });
       t += 1;
+    }
+    // Notas do CRM: comentário privado do lead; events.recent as exclui do feed.
+    for (const n of CRM_NOTES) {
+      await ctx.db.insert("events", { orgId: ORG, type: "note", leadId: ids[n.i].id, at: now - n.agoMs, meta: { text: n.text } });
     }
 
     // Outbox — abordagens em vários estágios (rascunho → enviado → abriu → respondeu)
