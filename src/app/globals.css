@@ -105,8 +105,13 @@
   --radius-xl: var(--radius);
 }
 
-* {
-  border-color: var(--border);
+/* Em @layer base de propósito: fora de camada esta regra vencia TODO utilitário de cor
+   de borda (border-brand, border-transparent, border-white/10), que é o que o guia de
+   upgrade do Tailwind v4 manda evitar. */
+@layer base {
+  * {
+    border-color: var(--border);
+  }
 }
 
 html {
