@@ -71,7 +71,7 @@ export default function SitesPage() {
           {sites.map((s) => (
             <div
               key={s._id}
-              className="flex flex-col rounded-2xl border border-border bg-surface p-4 shadow-[var(--shadow-sm)] transition-all duration-300 hover:-translate-y-0.5 hover:border-border-strong hover:shadow-[var(--shadow-md)]"
+              className="glass flex flex-col rounded-2xl p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-border-strong hover:shadow-[var(--shadow-lg)]"
             >
               <SiteThumb published={s.published} />
 
