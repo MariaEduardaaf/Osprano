@@ -921,3 +921,19 @@ export function compareByNextAction(
   if (bAt !== null) return 1;
   return (b.score ?? 0) - (a.score ?? 0);
 }
+
+export type LostReason = "too_expensive" | "has_site" | "no_response" | "not_interested" | "other";
+
+/** Espelha o validador `lostReason` de convex/schema.ts. Ordem = ordem dos rádios no modal. */
+export const LOST_REASONS: { id: LostReason; label: string }[] = [
+  { id: "too_expensive", label: "Caro demais" },
+  { id: "has_site", label: "Já tem site" },
+  { id: "no_response", label: "Sem resposta" },
+  { id: "not_interested", label: "Não quer" },
+  { id: "other", label: "Outro" },
+];
+
+/** Leads perdidos sem motivo existem (legado, seed): ausente → undefined, e a tela mostra só "Perdido". */
+export function lostReasonLabel(id?: string | null): string | undefined {
+  return LOST_REASONS.find((r) => r.id === id)?.label;
+}

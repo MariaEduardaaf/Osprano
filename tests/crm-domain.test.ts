@@ -16,6 +16,8 @@ import {
   STALLED_AFTER_DAYS,
   isStalled,
   compareByNextAction,
+  LOST_REASONS,
+  lostReasonLabel,
 } from "../convex/lib/domain.ts";
 
 /** Timestamps SEMPRE pelo construtor local (nunca string ISO com Z): o CI em UTC não pode mentir. */
@@ -172,4 +174,27 @@ test("compareByNextAction: com ação antes de sem ação; at crescente; sem aç
   assert.ok(compareByNextAction(withEarly, withLate) < 0);
   assert.ok(compareByNextAction(noneHi, noneLo) < 0);
   assert.deepEqual([noneLo, withLate, noneHi, withEarly].sort(compareByNextAction), [withEarly, withLate, noneHi, noneLo]);
+});
+
+// ---------------------------------------------------------------------------
+// Motivo de perda
+// ---------------------------------------------------------------------------
+
+test("LOST_REASONS: cinco motivos, nesta ordem", () => {
+  assert.deepEqual(
+    LOST_REASONS.map((r) => r.id),
+    ["too_expensive", "has_site", "no_response", "not_interested", "other"],
+  );
+  assert.deepEqual(
+    LOST_REASONS.map((r) => r.label),
+    ["Caro demais", "Já tem site", "Sem resposta", "Não quer", "Outro"],
+  );
+});
+
+test("lostReasonLabel: rótulo, ou undefined para ausente/desconhecido", () => {
+  assert.equal(lostReasonLabel("too_expensive"), "Caro demais");
+  assert.equal(lostReasonLabel("other"), "Outro");
+  assert.equal(lostReasonLabel(undefined), undefined);
+  assert.equal(lostReasonLabel(null), undefined);
+  assert.equal(lostReasonLabel("nope"), undefined);
 });
