@@ -5,6 +5,7 @@ import { MdOutlineChat, MdOutlineSend, MdOpenInNew } from "react-icons/md";
 import { useAction, useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
+import { errorMessage } from "@/lib/errors";
 
 const OPT_IN_SOURCES = [
   { value: "replied_email", label: "Respondeu o email" },
@@ -67,7 +68,7 @@ export function WhatsAppFollowup({
               try {
                 await recordOptIn({ leadId, source });
               } catch (e) {
-                setMsg(e instanceof Error ? e.message : "Falha");
+                setMsg(errorMessage(e, "Falha"));
               } finally {
                 setBusy(false);
               }
@@ -101,7 +102,7 @@ export function WhatsAppFollowup({
               await send({ leadId, message });
               setMsg("Enviado.");
             } catch (e) {
-              setMsg(e instanceof Error ? e.message : "Falha");
+              setMsg(errorMessage(e, "Falha"));
             } finally {
               setBusy(false);
             }

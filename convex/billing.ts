@@ -3,6 +3,7 @@ import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { requireOrgId } from "./model/tenant";
 import { stripePost } from "./lib/stripe";
+import { userError } from "./lib/errors";
 
 function priceFor(plan: "pro" | "agency"): string | undefined {
   return plan === "pro" ? process.env.STRIPE_PRICE_PRO : process.env.STRIPE_PRICE_AGENCY;
@@ -15,9 +16,9 @@ export const createCheckout = action({
     const orgId = await requireOrgId(ctx);
     const identity = await ctx.auth.getUserIdentity();
     const secret = process.env.STRIPE_SECRET_KEY;
-    if (!secret) throw new Error("STRIPE_SECRET_KEY não configurada.");
+    if (!secret) throw userError("STRIPE_SECRET_KEY não configurada.");
     const price = priceFor(plan);
-    if (!price) throw new Error(`Price do plano ${plan} não configurado (STRIPE_PRICE_*).`);
+    if (!price) throw userError(`Price do plano ${plan} não configurado (STRIPE_PRICE_*).`);
     const appUrl = process.env.APP_URL ?? "http://localhost:3000";
 
     const ws = await ctx.runQuery(internal.workspaces.getInternal, { orgId });
@@ -53,10 +54,10 @@ export const portal = action({
   handler: async (ctx): Promise<{ url: string }> => {
     const orgId = await requireOrgId(ctx);
     const secret = process.env.STRIPE_SECRET_KEY;
-    if (!secret) throw new Error("STRIPE_SECRET_KEY não configurada.");
+    if (!secret) throw userError("STRIPE_SECRET_KEY não configurada.");
     const appUrl = process.env.APP_URL ?? "http://localhost:3000";
     const ws = await ctx.runQuery(internal.workspaces.getInternal, { orgId });
-    if (!ws?.stripeCustomerId) throw new Error("Sem assinatura ativa.");
+    if (!ws?.stripeCustomerId) throw userError("Sem assinatura ativa.");
 
     const session = await stripePost(secret, "billing_portal/sessions", {
       customer: ws.stripeCustomerId,

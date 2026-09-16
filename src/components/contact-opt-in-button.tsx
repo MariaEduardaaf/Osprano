@@ -5,6 +5,7 @@ import { MdOutlineHowToReg, MdOutlineCheckCircle } from "react-icons/md";
 import { useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
+import { errorMessage } from "@/lib/errors";
 
 /** OPTIN-04: vocabulário de origem do consentimento (espelha o union aceito pela mutation). */
 const CONTACT_SOURCES = [
@@ -89,7 +90,7 @@ export function ContactOptInButton({
               const trimmed = note.trim();
               await recordOptIn({ leadId, source, ...(trimmed ? { note: trimmed } : {}) });
             } catch (e) {
-              setMsg(e instanceof Error ? e.message : "Falha ao registrar o consentimento.");
+              setMsg(errorMessage(e, "Falha ao registrar o consentimento."));
             } finally {
               setBusy(false);
             }

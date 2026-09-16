@@ -6,10 +6,7 @@ import { MdCheck } from "react-icons/md";
 import { api } from "@convex/_generated/api";
 import { PageHeader } from "@/components/ui";
 import { PLANS } from "@convex/lib/domain";
-
-function msg(e: unknown): string {
-  return e instanceof Error ? e.message : "Falha";
-}
+import { errorMessage } from "@/lib/errors";
 
 export default function PlansPage() {
   const ws = useQuery(api.workspaces.current);
@@ -27,7 +24,7 @@ export default function PlansPage() {
       const { url } = await checkout({ plan });
       window.location.assign(url);
     } catch (e) {
-      setErr(msg(e));
+      setErr(errorMessage(e, "Falha"));
       setBusy(null);
     }
   }
@@ -39,7 +36,7 @@ export default function PlansPage() {
       const { url } = await portal({});
       window.location.assign(url);
     } catch (e) {
-      setErr(msg(e));
+      setErr(errorMessage(e, "Falha"));
       setBusy(null);
     }
   }

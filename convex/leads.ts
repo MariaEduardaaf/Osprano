@@ -6,6 +6,7 @@ import {
 } from "./_generated/server";
 import { v } from "convex/values";
 import { requireOrgId } from "./model/tenant";
+import { userError } from "./lib/errors";
 import {
   classifyWebsite,
   computeScore,
@@ -145,8 +146,9 @@ export const setStage = mutation({
   handler: async (ctx, args) => {
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.db.get(args.id);
-    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
     // Guardrail: "Perdido" exige motivo. Toda UI que oferece Perdido abre o modal, que chama markLost.
+    // Erro de programação (UI chamou errado), não mensagem pra usuária: Error comum de propósito.
     if (args.stage === "lost") throw new Error("Use markLost");
     const now = Date.now();
     await ctx.db.patch(args.id, {
@@ -175,9 +177,9 @@ export const setNextAction = mutation({
   handler: async (ctx, args) => {
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.db.get(args.id);
-    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
     const note = args.note.trim();
-    if (!note) throw new Error("Escreva o que fazer");
+    if (!note) throw userError("Escreva o que fazer");
     await ctx.db.patch(args.id, { nextActionAt: args.at, nextActionNote: note });
   },
 });
@@ -188,7 +190,7 @@ export const clearNextAction = mutation({
   handler: async (ctx, args) => {
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.db.get(args.id);
-    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
     await ctx.db.patch(args.id, { nextActionAt: undefined, nextActionNote: undefined });
   },
 });
@@ -203,7 +205,7 @@ export const markLost = mutation({
   handler: async (ctx, args) => {
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.db.get(args.id);
-    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
     const lostNote = args.note?.trim() || undefined;
     if (lead.stage === "lost") {
       await ctx.db.patch(args.id, { lostReason: args.reason, lostNote });
@@ -231,7 +233,7 @@ export const markLost = mutation({
 /** null limpa; negativo, NaN ou infinito é erro. */
 function cleanAmount(value: number | null): number | undefined {
   if (value === null) return undefined;
-  if (!Number.isFinite(value) || value < 0) throw new Error("Valor inválido");
+  if (!Number.isFinite(value) || value < 0) throw userError("Valor inválido");
   return value;
 }
 
@@ -250,7 +252,7 @@ export const updateInfo = mutation({
   handler: async (ctx, args) => {
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.db.get(args.id);
-    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
     const patch: { contactName?: string; contactRole?: string; dealSetup?: number; dealMonthly?: number } = {};
     if (args.contactName !== undefined) patch.contactName = args.contactName.trim() || undefined;
     if (args.contactRole !== undefined) patch.contactRole = args.contactRole.trim() || undefined;
@@ -266,9 +268,9 @@ export const addNote = mutation({
   handler: async (ctx, args) => {
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.db.get(args.id);
-    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
     const text = args.text.trim();
-    if (!text) throw new Error("Nota vazia");
+    if (!text) throw userError("Nota vazia");
     await ctx.db.insert("events", { orgId, type: "note", leadId: args.id, at: Date.now(), meta: { text } });
   },
 });
@@ -289,7 +291,7 @@ export const timeline = query({
   handler: async (ctx, { leadId }) => {
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.db.get(leadId);
-    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
     const events = await ctx.db
       .query("events")
       .withIndex("by_lead", (q) => q.eq("leadId", leadId))
@@ -310,7 +312,7 @@ export const schedule = mutation({
   handler: async (ctx, args) => {
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.db.get(args.id);
-    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
     const now = Date.now();
     await ctx.db.patch(args.id, {
       stage: "scheduled",
@@ -340,7 +342,7 @@ export const recordWaOptIn = mutation({
   handler: async (ctx, { leadId, source, note }) => {
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.db.get(leadId);
-    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
     const now = Date.now();
     await ctx.db.patch(leadId, { waOptInAt: now, waOptInSource: source });
     await ctx.db.insert("events", {
@@ -371,7 +373,7 @@ export const recordContactOptIn = mutation({
   handler: async (ctx, { leadId, source, note }) => {
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.db.get(leadId);
-    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
     const now = Date.now();
     await ctx.db.patch(leadId, {
       contactOptInAt: now,

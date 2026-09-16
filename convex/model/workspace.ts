@@ -1,6 +1,7 @@
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 import type { Doc } from "../_generated/dataModel";
 import { planLimit } from "../lib/domain";
+import { userError } from "../lib/errors";
 
 const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -22,6 +23,7 @@ export async function ensureWorkspace(ctx: MutationCtx, orgId: string): Promise<
     periodStart: Date.now(),
   });
   const ws = await ctx.db.get(id);
+  // Invariante (get logo após insert): Error comum de propósito — não é mensagem pra usuária.
   if (!ws) throw new Error("Falha ao criar workspace");
   return ws;
 }
@@ -45,14 +47,14 @@ export async function reserveUsage(
   count: number,
 ): Promise<void> {
   if (!Number.isInteger(count) || count < 1) {
-    throw new Error(`Quantidade de reserva inválida (${count}).`);
+    throw userError(`Quantidade de reserva inválida (${count}).`);
   }
   const ws = await ensureFresh(ctx, orgId);
   const used = kind === "leads" ? ws.leadsUsed : ws.sitesUsed;
   const limit = planLimit(ws.plan, kind);
   if (used + count > limit) {
     const unit = kind === "leads" ? "leads" : "sites";
-    throw new Error(`Limite do plano ${ws.plan} atingido (${limit} ${unit}/mês). Faça upgrade em Planos.`);
+    throw userError(`Limite do plano ${ws.plan} atingido (${limit} ${unit}/mês). Faça upgrade em Planos.`);
   }
   await ctx.db.patch(
     ws._id,

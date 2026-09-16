@@ -7,6 +7,7 @@ import type { Id } from "@convex/_generated/dataModel";
 import { PIPELINE_STAGES, lostReasonLabel, formatRelative } from "@convex/lib/domain";
 import { eventDot, eventIcon } from "@/components/event-glyph";
 import { useNow } from "@/lib/use-now";
+import { errorMessage } from "@/lib/errors";
 
 type Meta = {
   text?: string;
@@ -83,7 +84,7 @@ export function LeadTimeline({ leadId }: { leadId: Id<"leads"> }) {
       await addNote({ id: leadId, text });
       setText("");
     } catch (e) {
-      setMsg(e instanceof Error ? e.message : "Falha");
+      setMsg(errorMessage(e, "Falha"));
     } finally {
       setBusy(false);
     }

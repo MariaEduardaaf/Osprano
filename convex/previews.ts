@@ -2,6 +2,7 @@ import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { requireOrgId } from "./model/tenant";
 import { reserveUsage } from "./model/workspace";
+import { userError } from "./lib/errors";
 
 function slugify(s: string): string {
   return (
@@ -41,7 +42,7 @@ export const generate = mutation({
   handler: async (ctx, { leadId }) => {
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.db.get(leadId);
-    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
 
     const content = {
       name: lead.name,
@@ -79,7 +80,7 @@ export const ensureForLead = internalMutation({
     if (existing) return existing.token;
 
     const lead = await ctx.db.get(leadId);
-    if (!lead) throw new Error("Lead não encontrado");
+    if (!lead) throw userError("Lead não encontrado");
     const content = {
       name: lead.name,
       category: lead.category ?? null,
@@ -156,7 +157,7 @@ export const publish = mutation({
   handler: async (ctx, { leadId }) => {
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.db.get(leadId);
-    if (!lead || lead.orgId !== orgId) throw new Error("Lead não encontrado");
+    if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
 
     const content = {
       name: lead.name,
@@ -177,6 +178,7 @@ export const publish = mutation({
       const id = await ctx.db.insert("previews", { orgId, leadId, token, content, openCount: 0 });
       preview = await ctx.db.get(id);
     }
+    // Invariante (get logo após insert): Error comum de propósito — não é mensagem pra usuária.
     if (!preview) throw new Error("Falha ao criar preview");
     if (preview.published && preview.slug) return preview.slug;
 

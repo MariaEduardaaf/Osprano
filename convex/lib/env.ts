@@ -1,8 +1,9 @@
 /**
  * Pré-condições de AMBIENTE que viram TEXTO NO EMAIL DO PROSPECT.
  *
- * Módulo puro (sem imports de Convex), testável direto — porque a trava tem que morar no
- * código, não no prompt nem na memória de quem configurou o deployment.
+ * Módulo puro (sem imports do servidor Convex — `convex/values` é só valores, roda em Node),
+ * testável direto — porque a trava tem que morar no código, não no prompt nem na memória de
+ * quem configurou o deployment.
  *
  * REGRA DA CASA: variável de ambiente cujo valor é lido pelo prospect NÃO tem default.
  * Um default silencioso aqui não degrada a experiência — ele MENTE:
@@ -14,6 +15,8 @@
  * Mesma forma de `ANTHROPIC_API_KEY` em convex/outreach.ts: falta a variável → erro em
  * pt-BR dizendo QUAL falta e ONDE configurar, antes de qualquer efeito colateral.
  */
+
+import { userError } from "./errors.ts";
 
 /**
  * DESENVOLVIMENTO só quando declarado. Mesmo precedente (e mesmo motivo) de `isDemoEnabled`
@@ -39,12 +42,12 @@ function parseHttpUrl(raw: string, name: string): URL {
   try {
     url = new URL(raw);
   } catch {
-    throw new Error(
+    throw userError(
       `${name} inválida ("${raw}"): precisa ser uma URL absoluta, com http:// ou https://. ${CONFIG_HINT}`,
     );
   }
   if (url.protocol !== "http:" && url.protocol !== "https:") {
-    throw new Error(
+    throw userError(
       `${name} inválida ("${raw}"): precisa começar com http:// ou https://. ${CONFIG_HINT}`,
     );
   }
@@ -72,7 +75,7 @@ export function requireAppUrl(env: NodeJS.ProcessEnv = process.env): string {
   const raw = env.APP_URL?.trim();
   if (!raw) {
     if (dev) return DEV_APP_URL;
-    throw new Error(
+    throw userError(
       "APP_URL não configurada no deployment Convex. Sem ela o link da prévia sairia como " +
         `${DEV_APP_URL}/p/... no email do prospect — um endereço que só abre na sua máquina. ` +
         `${CONFIG_HINT}`,
@@ -80,7 +83,7 @@ export function requireAppUrl(env: NodeJS.ProcessEnv = process.env): string {
   }
   const url = parseHttpUrl(raw, "APP_URL");
   if (!dev && isLocalHost(url)) {
-    throw new Error(
+    throw userError(
       `APP_URL aponta para um endereço local ("${raw}") fora de desenvolvimento. O link da ` +
         "prévia no email do prospect não abriria. Configure a URL pública do app. " +
         `${CONFIG_HINT}`,
@@ -100,7 +103,7 @@ export function requireAppUrl(env: NodeJS.ProcessEnv = process.env): string {
 export function requireUnsubscribeBaseUrl(env: NodeJS.ProcessEnv = process.env): string {
   const raw = env.CONVEX_SITE_URL?.trim();
   if (!raw) {
-    throw new Error(
+    throw userError(
       "CONVEX_SITE_URL não configurada no deployment Convex. Sem ela o link de descadastro " +
         "sairia como `undefined/unsubscribe?token=...` no rodapé e no header List-Unsubscribe " +
         "— um caminho de opt-out quebrado equivale a não ter opt-out (COMP-02/COMP-03). " +
@@ -146,7 +149,7 @@ export function requireSenderFrom(env: NodeJS.ProcessEnv = process.env): string 
   const raw = env.RESEND_FROM?.trim();
   if (raw) return raw;
   if (isDevEnv(env)) return "Osprano";
-  throw new Error(
+  throw userError(
     "RESEND_FROM não configurada no deployment Convex. Ela identifica quem envia no rodapé " +
       'de opt-out do prospect ("Enviado por ..."), e adivinhar esse nome seria afirmar uma ' +
       `identidade não verificada. Formato: "Seu Nome <voce@dominio.com>". ${CONFIG_HINT}`,

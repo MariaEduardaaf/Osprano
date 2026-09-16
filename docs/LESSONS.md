@@ -72,11 +72,52 @@ cru só serve para país monolíngue. O teste distingue "cidade está no mapa" d
 "caiu no fallback" (`isKnownSwissCity`), senão uma cidade nova no select vira
 alemão silencioso. Bélgica e Canadá teriam o mesmo problema.
 
+## CSS / Tailwind
+
+**Tailwind v4 varre TODO arquivo fora do `.gitignore`, inclusive `docs/*.md`** (2026-09-16)
+`sintoma:` todas as rotas caem com 500 e o erro vem do Lightning CSS, citando
+um valor arbitrário que não existe em `src/`. Aparece logo depois de escrever
+uma spec ou plano em `docs/`.
+`causa:` o v4 não tem `content:`; ele lê tudo que o git não ignora. Um trecho
+de doc parecido com classe (valor arbitrário com `|`) entra no CSS gerado e
+derruba a compilação inteira, não só aquela classe.
+`fix:` `@source not "../../docs";` logo abaixo do `@import "tailwindcss"` em
+`src/app/globals.css` (commit `755a321`). Pasta nova só de texto vai pra
+mesma lista. `Diagnóstico 1º:` o erro cita a "classe"; `grep -rn` dela fora
+de `src/`.
+
+**`-webkit-backdrop-filter` escrito à mão apaga o `backdrop-filter` sem prefixo** (2026-09-16)
+`sintoma:` vidro com blur no Chrome e no Safari, sem blur no Firefox. O CSS
+fonte tem as duas formas e parece completo.
+`causa:` o Lightning CSS do Turbopack gera o `-webkit-` sozinho e, com o par
+escrito à mão (sem prefixo primeiro), descarta a forma sem prefixo no CSS
+compilado.
+`fix:` escrever só `backdrop-filter` (commit `c781a5a`). Vale pra qualquer
+propriedade que o Lightning CSS prefixa: nunca duplicar à mão. Conferir no
+CSS compilado, não no fonte.
+
+**Regra fora de `@layer` vence TODO utilitário, independente de especificidade** (2026-09-16)
+`sintoma:` `border-brand`, `border-transparent`, `border-hot/30` etc. não têm
+efeito em lugar nenhum; toda borda sai `#e2e6ef`. Nada loga, e a classe
+parece errada.
+`causa:` `globals.css` tinha `* { border-color: var(--border) }` fora de
+camada. Estilo sem camada vence estilo em camada, e o Tailwind v4 põe todo
+utilitário em `@layer utilities`. Bug pré-existente, invisível porque a cor
+padrão coincidia com a maioria dos usos.
+`fix:` mover para `@layer base { * { border-color: var(--border) } }`
+(commit `09fb2da`), como o guia de upgrade do v4 manda. Regra global nova em
+`globals.css` nasce dentro de `@layer base`. Fica registrado: a regra
+`:focus-visible` sem camada ainda existe (troca o raio por 8px em card
+focado); pré-existente, fora de escopo. `Diagnóstico 1º:` listar as regras de
+`globals.css` que não estão dentro de um bloco `@layer`.
+
 ## Ambiente
 
 **`pnpm <script>` aborta neste repo (`..._NO_TTY`)**
-`fix:` use `npx tsc --noEmit`, `npx eslint`,
-`node --experimental-strip-types --test tests/*.test.ts`. Detalhe em
+`fix:` use `./node_modules/.bin/tsc --noEmit`, `./node_modules/.bin/eslint`,
+`node --experimental-strip-types --test tests/*.test.ts`. Ou `pnpm install`
+num terminal com TTY (o pnpm 11 quer purgar o `node_modules` pra
+ressincronizar e sem TTY aborta em vez de perguntar). Detalhe em
 `~/.claude/licoes.md` §npm.
 
 **Mudança de schema não chega ao banco sozinha**
@@ -107,3 +148,19 @@ devolve resposta vazia e nada aparece escutando na porta.
 encerram. Só `npx convex dev` (sem `--once`) o mantém de pé.
 `fix:` para testar httpAction (unsubscribe, webhooks), deixe `npx convex dev`
 rodando em background e use `curl --retry-connrefused` para esperar a porta.
+
+**`npx convex run … | head` trava** (2026-09-16)
+`sintoma:` o comando nunca termina e o terminal fica preso; parece o backend
+travado.
+`causa:` não investigada a fundo: o CLI não encerra quando a saída vai pra um
+pipe que fecha cedo (`head`, `grep -m1`).
+`fix:` redirecionar pra arquivo (`> /tmp/out.json`) e ler depois com `head`
+ou `jq`.
+
+**Chrome headless com tempo virtual: o websocket do Convex muitas vezes não entrega dados** (2026-09-16)
+`sintoma:` screenshot da área logada sai com a casca certa mas listas vazias
+(ou o skeleton), sem erro no console. Parece bug de query.
+`causa:` sob `--virtual-time-budget` o relógio avança sem tempo real passar; o
+sync do websocket do Convex nem sempre completa dentro do orçamento.
+`fix:` repetir com orçamento maior (e mais de uma tentativa), ou confirmar o
+dado direto no backend com `npx convex run` antes de suspeitar do código.

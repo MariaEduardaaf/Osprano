@@ -3,6 +3,7 @@ import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { requireOrgId } from "./model/tenant";
 import { isSearchableMarket, MARKETS, clampDiscoveryCount } from "./lib/domain";
+import { userError } from "./lib/errors";
 
 interface PlaceResult {
   id: string;
@@ -38,10 +39,10 @@ export const search = action({
     const country = args.countryCode.toUpperCase();
     if (!isSearchableMarket(country)) {
       const name = MARKETS[country]?.name ?? country;
-      throw new Error(`${name} ainda não está disponível para busca.`);
+      throw userError(`${name} ainda não está disponível para busca.`);
     }
     const key = process.env.GOOGLE_PLACES_API_KEY;
-    if (!key) throw new Error("GOOGLE_PLACES_API_KEY não configurada no deployment Convex.");
+    if (!key) throw userError("GOOGLE_PLACES_API_KEY não configurada no deployment Convex.");
 
     // Quantos leads buscar (1–50). O Text Search do Google Places devolve ≤20 por
     // página, então paginamos via nextPageToken até atingir o alvo.
@@ -90,8 +91,9 @@ export const search = action({
         });
 
         if (!res.ok) {
-          const body = await res.text();
-          throw new Error(`Places API ${res.status}: ${body.slice(0, 240)}`);
+          // Corpo da resposta só nos logs do Convex: nunca vaza pro cliente.
+          console.error(`Places API ${res.status}:`, (await res.text()).slice(0, 240));
+          throw userError(`Places API respondeu ${res.status}`);
         }
 
         const data = (await res.json()) as { places?: PlaceResult[]; nextPageToken?: string };

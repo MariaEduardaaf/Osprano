@@ -3,6 +3,7 @@ import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { requireOrgId } from "./model/tenant";
 import { isSearchableMarket, MARKETS, clampDiscoveryCount } from "./lib/domain";
+import { userError } from "./lib/errors";
 
 interface FsqPlace {
   fsq_id?: string;
@@ -36,10 +37,10 @@ export const search = action({
     const country = args.countryCode.toUpperCase();
     if (!isSearchableMarket(country)) {
       const name = MARKETS[country]?.name ?? country;
-      throw new Error(`${name} ainda não está disponível para busca.`);
+      throw userError(`${name} ainda não está disponível para busca.`);
     }
     const key = process.env.FSQ_API_KEY;
-    if (!key) throw new Error("FSQ_API_KEY não configurada no deployment Convex.");
+    if (!key) throw userError("FSQ_API_KEY não configurada no deployment Convex.");
 
     const want = clampDiscoveryCount(args.max);
 
@@ -62,8 +63,9 @@ export const search = action({
         headers: { accept: "application/json", authorization: key },
       });
       if (!res.ok) {
-        const body = await res.text();
-        throw new Error(`Foursquare ${res.status}: ${body.slice(0, 240)}`);
+        // Corpo da resposta só nos logs do Convex: nunca vaza pro cliente.
+        console.error(`Foursquare ${res.status}:`, (await res.text()).slice(0, 240));
+        throw userError(`Foursquare respondeu ${res.status}`);
       }
 
       const data = (await res.json()) as { results?: FsqPlace[] };

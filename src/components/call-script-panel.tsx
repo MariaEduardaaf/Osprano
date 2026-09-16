@@ -21,6 +21,7 @@ import {
   detectLocalityClaims,
 } from "@convex/lib/outreachAi";
 import type { OutreachWarning } from "@convex/lib/outreachAi";
+import { errorMessage } from "@/lib/errors";
 
 /**
  * Nome do idioma em PORTUGUÊS — é só RÓTULO DE UI, para a usuária brasileira ler.
@@ -282,7 +283,7 @@ export function CallScriptPanel({
             setTranslation(result.translation);
             setWarnings(result.warnings);
           } catch (e) {
-            setMsg(e instanceof Error ? e.message : "Falha ao gerar o script.");
+            setMsg(errorMessage(e, "Falha ao gerar o script."));
           } finally {
             setBusy(false);
           }

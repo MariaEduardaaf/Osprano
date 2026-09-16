@@ -14,6 +14,8 @@ Este milestone leva o Osprano — SaaS de prospecção e venda de sites para o m
 - [x] **Phase 2: Compliance de Email e WhatsApp** - Supressão, unsubscribe e opt-out garantidos por código; WhatsApp só com opt-in registrado (completed 2026-07-11)
 - [x] **Phase 3: Tracking, Composer e Localização** - Funil reflete abertura real do prospect, resposta manual funciona, composer é fonte de verdade do envio, preview localizado por mercado (completed 2026-07-11)
 - [x] **Phase 4: Modo opt-in (ligação-primeiro)** - Prospecção compliant em mercados opt-in (ES/IT/PT/DE/DK/CH): aba "Ligação primeiro", script de ligação por IA, consentimento destrava email — guardrail server-side (completed 2026-07-22)
+- [x] **Phase 5: Redesenho vidro sobre névoa** - Área logada em cards translúcidos sobre névoa azul-acinzentada, rail de 72px com ícone e nome, tema escuro azul-marinho; landing intocada (milestone v1.1, completed 2026-09-16)
+- [x] **Phase 6: CRM: fluxo do dia e informação do lead** - Próxima ação por lead, faixa Hoje, leads parados, Perdido com motivo, contato e valores, Histórico com notas (milestone v1.1, completed 2026-09-16)
 
 ## Phase Details
 
@@ -71,7 +73,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -79,6 +81,8 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 2. Compliance de Email e WhatsApp | 4/4 | Complete    | 2026-07-11 |
 | 3. Tracking, Composer e Localização | 4/4 | Complete    | 2026-07-11 |
 | 4. Modo opt-in (ligação-primeiro) | 6/6 | Complete    | 2026-07-22 |
+| 5. Redesenho vidro sobre névoa | 1/1 | Complete    | 2026-09-16 |
+| 6. CRM: fluxo do dia e informação do lead | 1/1 | Complete    | 2026-09-16 |
 
 ### Phase 4: Modo opt-in (ligação-primeiro) para mercados onde cold email é ilegal
 
@@ -100,3 +104,41 @@ Plans:
 - [x] 04-04-PLAN.md — Rodapé de opt-out localizado (compliance.ts FOOTER_COPY es/it/pt/de/da) (OPTIN-04)
 - [x] 04-05-PLAN.md — UI: card variant "call" (Ligar/Script/Consentimento, sem cold email) + call-script-panel + contact-opt-in-button (OPTIN-02, OPTIN-03, OPTIN-04)
 - [x] 04-06-PLAN.md — UI: abas Email/Ligação primeiro + filtro/select por regime + banner de validação jurídica + banner do CRM via canContactByEmail (OPTIN-02, OPTIN-06)
+
+## Milestone v1.1: visual e CRM (2026-09-16)
+
+As fases 5 e 6 foram executadas com o workflow **superpowers** (brainstorm → spec → plano → subagent-driven development), não com planos GSD: não há `.planning/phases/05-*` nem `06-*`; a spec e o plano de cada uma vivem em `docs/superpowers/`. Os checklists manuais (última tarefa de cada plano) ainda estão pendentes com a Duda.
+
+### Phase 5: Redesenho vidro sobre névoa
+
+**Goal**: A área logada ganha a estética "vidro sobre névoa" (cards translúcidos com blur sobre um fundo abstrato azul-acinzentado, muito respiro, cantos de 18/22px), o header some e a navegação vira um rail de 72px com ícone e nome ("Início, Leads, CRM, Outreach, Sites, Ajustes"), o tema escuro vira névoa azul-marinho com contraste AA em texto principal e secundário, e a landing e as páginas públicas de preview ficam exatamente como estavam.
+**Depends on**: Phase 4
+**Requirements**: UX-01, UX-02, UX-03, UX-04, UX-05
+**Success Criteria** (what must be TRUE):
+  1. Tokens novos (névoa, superfícies translúcidas, `--glass-border`, raio, sombras) só valem sob `.app-shell`; screenshots de `/` e `/site/[slug]` antes e depois do redesenho são iguais
+  2. Sidebar de 240px substituída por rail de 72px em vidro, com `aria-current` no item ativo; plano e uso saem da sidebar (já existem em Settings → "Plano & uso")
+  3. Vidro (`glass`, `glass-lite`, `glass-dense`) só no primeiro nível; inputs, selects e blocos internos são sólidos; nenhum `glass` dentro de `glass`
+  4. Tema escuro azul-marinho com `--foreground` e `--muted` em AA sobre a mancha mais escura; "reduzir transparência" do sistema deixa os vidros opacos com contorno
+  5. Regra `* { border-color }` dentro de `@layer base`, e os utilitários de cor de borda voltam a funcionar em todo o app
+**Plans**: 1/1 plan complete (superpowers)
+
+Plans:
+- [x] `docs/superpowers/specs/2026-09-16-redesenho-vidro-design.md` + `docs/superpowers/plans/2026-09-16-redesenho-vidro.md`: 29 tarefas; merge `0460e66`; screenshots finais em `docs/redesign/` (14 arquivos, 1440px, claro e escuro); Task 29 (roteiro manual no navegador) pendente com a Duda
+
+### Phase 6: CRM: fluxo do dia e informação do lead
+
+**Goal**: O CRM passa a dizer o que fazer hoje e a guardar o que o Google não entrega: cada lead tem uma próxima ação, a faixa "Hoje" lista atrasadas e as do dia (Feito / Adiar), lead parado há 7+ dias fica visível e filtrável, "Perdido" vira coluna e exige motivo, o detalhe guarda contato e valores do negócio (setup + mensal, moeda pelo país) com soma da mensalidade por coluna, e a aba Histórico mostra notas e eventos do sistema numa linha do tempo só.
+**Depends on**: Phase 5 (os componentes novos nascem no estilo novo)
+**Requirements**: CRM-01, CRM-02, CRM-03, CRM-04, CRM-05, CRM-06, CRM-07
+**Success Criteria** (what must be TRUE):
+  1. `setNextAction`/`clearNextAction` gravam `nextActionAt`/`nextActionNote` no lead; o card mostra a linha da ação com status atrasada (`--hot`), hoje (`--warm`) ou futura (`--faint`)
+  2. A faixa Hoje aparece entre o cabeçalho e a busca só quando há atrasadas ou de hoje, calculada no navegador (`useNow`, 60 s), e não muda com busca ou filtro do Kanban
+  3. `isStalled` (7+ dias em `stageUpdatedAt`, sem ação, fora de `converted`/`lost`) alimenta a linha "parado há N dias", o filtro Parados e a ordenação "Próxima ação"
+  4. `setStage` recusa `lost` ("Use markLost"); `markLost` exige motivo (`LOST_REASONS`) e o `LostReasonModal` abre nos quatro pontos de entrada (drop na coluna recolhida, seletor do card, pílula de Etapa, botão Status); sair de `lost` limpa o motivo
+  5. `updateInfo` grava contato (nome, cargo) e valores (setup, mensal) com validação; a moeda vem do país (`currencyForCountry`); o cabeçalho da coluna soma a mensalidade dos leads visíveis
+  6. `addNote` grava evento `note`; `leads.timeline` devolve eventos do lead via índice `by_lead`; a aba Histórico mostra notas e eventos; o feed do Dashboard exclui notas
+  7. 17 funções puras novas em `convex/lib/domain.ts` com 17 testes em `tests/crm-domain.test.ts` (191 → 208); seed do demo cobre atrasadas, de hoje, parados, perdidos com motivo, contato/valores e notas
+**Plans**: 1/1 plan complete (superpowers)
+
+Plans:
+- [x] `docs/superpowers/specs/2026-09-16-crm-fluxo-e-informacao-design.md` + `docs/superpowers/plans/2026-09-16-crm-fluxo-e-informacao.md`: 26 tarefas em dois blocos (A: fluxo; B: informação); merge `828a11f`; Tarefa 26 (roteiro manual no modo demo) pendente com a Duda

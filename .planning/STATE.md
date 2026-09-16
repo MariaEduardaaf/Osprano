@@ -1,15 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
+milestone: v1.1
 milestone_name: milestone
 status: milestone-complete
-stopped_at: Phase 4 executada e verificada — milestone v1.0 completo
-last_updated: "2026-07-22T00:00:00.000Z"
+stopped_at: Fases 5 e 6 mergeadas (redesenho vidro sobre névoa + CRM fluxo do dia); milestone v1.1 completo, falta UAT manual e produção
+last_updated: "2026-09-16T00:00:00.000Z"
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 17
-  completed_plans: 17
+  total_phases: 6
+  completed_phases: 6
+  total_plans: 19
+  completed_plans: 19
 ---
 
 # Project State
@@ -19,15 +19,26 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-11)
 
 **Core value:** O usuário prospecta e aborda negócios europeus sem risco legal — compliance garantido por código, contagem de plano/billing íntegra.
-**Current focus:** nenhum — as 4 fases do milestone v1.0 estão completas e verificadas
+**Current focus:** nenhum de código. As 6 fases (v1.0 + v1.1) estão completas e mergeadas; o que resta é operacional (produção) e a validação manual da Duda.
 
 ## Current Position
 
-Phase: 4 (Modo opt-in ligação-primeiro) — COMPLETE
-Plan: 6 of 6
+Phase: 6 (CRM: fluxo do dia e informação do lead): COMPLETE
+Plan: 1 of 1 (superpowers, não GSD)
 
-Todos os 18 requisitos v1 estão fechados. Próximo passo é operacional, não de
-código: ligar o deployment real seguindo `docs/CHECKLIST-MODO-REAL.md`.
+Milestone v1.1 fechado em 2026-09-16: Fase 5 (redesenho vidro sobre névoa,
+merge `0460e66`) e Fase 6 (CRM: próxima ação, faixa Hoje, parados, Perdido
+com motivo, contato/valores, Histórico; merge `828a11f`). 18 requisitos v1 +
+12 requisitos v1.1 fechados; suíte em 208 testes. As duas fases foram
+executadas com o workflow superpowers: spec e plano em `docs/superpowers/`,
+sem `.planning/phases/05-*` e `06-*`.
+
+Próximo passo:
+1. `docs/CHECKLIST-MODO-REAL.md` seção 9 (Vercel + Convex prod), começando
+   pelo 3.0 (rotacionar a chave da Anthropic, impressa num terminal nesta
+   sessão).
+2. UAT manual da Duda: última tarefa de cada plano (`Task 29` do redesenho,
+   `Tarefa 26` do CRM), roteiro no navegador com o seed do demo.
 O backlog v2 (SCAL-01..03, GDPR-01/02, BILL-04/05) segue em REQUIREMENTS.md.
 
 ## Performance Metrics
@@ -66,6 +77,7 @@ O backlog v2 (SCAL-01..03, GDPR-01/02, BILL-04/05) segue em REQUIREMENTS.md.
 ### Roadmap Evolution
 
 - Phase 4 added: Modo opt-in (ligação-primeiro) para mercados opt-in (ES/IT/PT/DE/DK/CH) — aba Ligação primeiro, script de IA, consentimento destrava email (OPTIN-01..06)
+- Milestone v1.1 (2026-09-16), fora do GSD: Phase 5 Redesenho vidro sobre névoa (UX-01..05) e Phase 6 CRM fluxo do dia e informação do lead (CRM-01..07), ambas via superpowers (spec + plano em `docs/superpowers/`)
 
 ### Decisions
 
@@ -107,6 +119,12 @@ None yet.
 - [Phase 4]: bug pré-existente: `outreach` é compartilhada com o WhatsApp; toda leitura por `by_lead` precisa filtrar `channel === "email"`
 - [Pós-fase 4]: Suíça multilíngue — idioma vem de `(país, cidade)` via `swissLanguage`; `langForLead`/`localeForLead` são as fontes de verdade, `LANG[countryCode]` cru só vale para país monolíngue
 - [Pós-fase 4]: o campo `city` tem 3 origens (select da UI = forma local · foursquare locality = subúrbio · criação manual = texto livre). O Places NÃO é origem do nome da cidade — `places.ts` grava `args.city`
+- [Phase 5]: tokens do redesenho escopados a `:root:has(.app-shell)`; landing e `/p`, `/site` ficam com os tokens antigos. Vidro só no primeiro nível, sólido por dentro; `--border` não muda (divisor interno), a borda translúcida é `--glass-border`
+- [Phase 5]: `* { border-color }` fora de `@layer` vencia todo utilitário de borda (bug pré-existente); movido para `@layer base` em commit separado. `backdrop-filter` só sem prefixo (o Lightning CSS gera o `-webkit-` e descartava a forma sem prefixo)
+- [Phase 5]: `--brand` como texto no escuro fica em 3,0:1 e badges de tier entre 3,9 e 4,1: aceitos e registrados; a correção certa (token `--brand-text`, tinte próprio do Badge) é trabalho à parte
+- [Phase 6]: uma próxima ação por lead no próprio documento (sem tabela `tasks`); notas são eventos (`events.type = "note"`), não tabela própria; "Hoje" e toda aritmética de data rodam no navegador (Convex é UTC, o dia civil é o do navegador)
+- [Phase 6]: `setStage` recusa `lost` no servidor; só `markLost` (com motivo) leva a Perdido, e sair de `lost` limpa o motivo. "Parado" conta de `stageUpdatedAt`, não do último evento
+- [Phase 6]: moeda derivada do país (GB→GBP, SE→SEK, NO→NOK, CH→CHF, DK→DKK, resto EUR), sem campo no schema
 
 ### Blockers/Concerns
 
@@ -117,13 +135,15 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-22
-Stopped at: Phase 4 mergeada na main; Suíça multilíngue (de/fr/it) na branch feat/suica-multilingue
-Resume file: .planning/phases/04-modo-opt-in-liga-o-primeiro-para-mercados-onde-cold-email-ilegal/04-VERIFICATION.md
+Last session: 2026-09-16
+Stopped at: Fases 5 e 6 mergeadas (`0460e66`, `828a11f`); branch `chore/producao` com docs, checklist de produção e planning atualizados para v1.1
+Resume file: docs/CHECKLIST-MODO-REAL.md (seção 3.0 e seção 9) e os roteiros manuais em docs/superpowers/plans/*.md (última tarefa de cada)
 
 ## Pendências operacionais (não são código)
 
 - RESOLVIDO 2026-07-22: o `CONVEX_DEPLOYMENT` apontava para o projeto `sitescout` (nome antigo do repo), que não existe mais na conta — daí "You don't have access to the selected project" em todo comando Convex. Reconfigurado para o projeto `osprano` com deployment LOCAL (`npx convex dev --once --configure new --project osprano --dev-deployment local`). Codegen roda, schema da Fase 4 no banco, guardrails validados em runtime (ver 04-VERIFICATION.md §Verificação de runtime).
 - Deployment atual é LOCAL (grátis, offline). Para uso real com Clerk/Resend, trocar para nuvem — passo 1 do `docs/CHECKLIST-MODO-REAL.md`.
 - Falta ainda: `GOOGLE_PLACES_API_KEY` (busca real), `ANTHROPIC_API_KEY` (script/email por IA), `RESEND_API_KEY` (envio).
-- `pnpm test/typecheck/lint` abortam neste terminal (`ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY`). Usar `npx tsc --noEmit`, `npx eslint`, `node --experimental-strip-types --test tests/*.test.ts`.
+- `pnpm test/typecheck/lint` abortam neste terminal (`ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY`). Usar `./node_modules/.bin/tsc --noEmit`, `./node_modules/.bin/eslint`, `node --experimental-strip-types --test tests/*.test.ts`, ou `pnpm install` num terminal com TTY.
+- 2026-09-16: a `ANTHROPIC_API_KEY` atual foi impressa num terminal durante a sessão. Rotacionar antes de qualquer deploy (checklist 3.0).
+- 2026-09-16: UAT manual pendente com a Duda: Task 29 do plano do redesenho e Tarefa 26 do plano do CRM (roteiros no navegador, modo demo).
