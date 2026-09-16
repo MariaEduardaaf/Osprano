@@ -85,10 +85,10 @@ O `body` só recebe a névoa sob o mesmo escopo:
 
 ### 1.1 Fundo (`--mist`)
 
-| Tema | `--background` | `--mist` (três manchas radiais, nesta ordem, cada uma até `transparent`) |
+| Tema | `--background` (hoje → novo) | `--mist` (três manchas radiais, nesta ordem, cada uma até `transparent`) |
 |---|---|---|
-| claro | `#eef2f9` | `60% 50% at 20% 10%` `#dfe8ff` → transparent 60%; `50% 45% at 85% 20%` `#e9eef8` → 60%; `60% 60% at 60% 100%` `#d6e2f5` → 65% |
-| escuro | `#0f1522` | `60% 50% at 20% 10%` `#1d2f5a` → 60%; `50% 45% at 85% 20%` `#1a2740` → 60%; `60% 60% at 60% 100%` `#17305e` → 65% |
+| claro | `#f4f6fa` → `#eef2f9` | `60% 50% at 20% 10%` `#dfe8ff` → transparent 60%; `50% 45% at 85% 20%` `#e9eef8` → 60%; `60% 60% at 60% 100%` `#d6e2f5` → 65% |
+| escuro | `#0b0e15` → `#0f1522` | `60% 50% at 20% 10%` `#1d2f5a` → 60%; `50% 45% at 85% 20%` `#1a2740` → 60%; `60% 60% at 60% 100%` `#17305e` → 65% |
 
 `background-attachment: fixed` como já é. O brilho radial atual do `body` sai dentro
 do escopo (fora dele, na landing, continua).
@@ -107,7 +107,8 @@ do escopo (fora dele, na landing, continua).
 | `--muted` | `#656d7e` (mantém) | `#8a93a4` → `#a3abbb` |
 | `--cold` | mantém | `#8a93a4` → `#a3abbb` |
 | `--hot` | mantém | `#f2725a` → `#ff8f78` |
-| `--danger` | mantém | `#e5484d` → `#ff8a8e` |
+| `--danger` | mantém | `#f0645f` → `#ff8a8e` |
+| `--danger-fg` (novo) | `#ffffff` | `#14171d` |
 | `--radius` | `14px` → `18px` | idem |
 | `--radius-panel` (novo, **só no bloco escopado**, não no `@theme`) | `22px` | idem |
 | `--shadow-sm` | → `0 4px 14px rgba(30,45,80,.06)` | → `0 4px 14px rgba(0,0,0,.25)` |
@@ -125,9 +126,21 @@ Por que cada um:
   78% o `--muted` sobre overlay + vidro media 4,3:1 (falha); a 88% dá ≈ 4,7:1.
 - No escuro, o pior caso não é a base `#0f1522` e sim a mancha `#1d2f5a`: 7% de
   branco sobre ela dá ≈ `#2d3e66`. Sobre isso, `--muted` e `--cold` (`#8a93a4`)
-  medem 3,4:1, `--hot` 3,7:1 e `--danger` 2,7:1, todos abaixo de AA e todos usados
-  como texto (Badge "Frio", erros, ações atrasadas). Os valores novos medem
+  medem 3,4:1, `--hot` 3,7:1 e `--danger` (`#f0645f`) 3,4:1, todos abaixo de AA e
+  todos usados como texto (erros, ações atrasadas, badges). Os valores novos medem
   `#a3abbb` 4,6:1, `#ff8f78` 4,7:1, `#ff8a8e` 4,7:1. Só no bloco escuro escopado.
+- `--danger-fg` existe porque clarear `--danger` derruba o único `bg-danger
+  text-white` da app (botão "Perdido" ativo do drawer, `lead-detail.tsx`): branco
+  sobre `#ff8a8e` = 2,3:1. O botão passa a `text-danger-fg` (escuro `#14171d`,
+  7,9:1), espelhando o `--brand-fg` que o botão "Ganho" ao lado já usa. No claro
+  `--danger-fg` é branco, nada muda.
+- **Badges de tier no escuro: regressão consciente.** O `Badge` (`ui.tsx`) é
+  `text-X` sobre `bg-X/10`, e o tinte de 10% clareia o fundo. Sobre a mancha, hoje
+  (superfície sólida) hot 5,4 / cold 4,9 / danger 5,0; com vidro e valores novos
+  hot 4,1 / cold 3,9 / danger 4,0 / warm 4,5. Passar 4,5 exigiria tons pastel
+  (`#b8c0cd`, `#ffa694`, `#ffa3a7`) que lavam os tiers. Aceito com os números;
+  se incomodar, a saída é um tinte próprio do Badge no escuro (`bg-X/6`), trabalho
+  à parte.
 - **`--brand` como texto no escuro fica em 3,0:1 e é aceito assim**, com registro:
   clarear o azul quebraria o botão (`bg-brand` com texto branco já está em 3,5:1 e
   cairia para 2,5:1). O uso de `text-brand` como texto pequeno (rótulos de 11px do
@@ -146,7 +159,8 @@ em card de lead, sites, modal e lane do Kanban, não fica **menor** que o `round
 de 18px). `--radius-xl` continua `var(--radius)`.
 
 Marca (`--brand*`), `--warm`, `--foreground`, `--ink-soft`, `--faint`, fontes e
-`--ring` **não mudam**. No claro, nenhuma cor de texto muda.
+`--ring` **não mudam**. No claro, nenhuma cor de texto muda. O `@theme inline` ganha
+`--color-danger-fg`.
 
 ### 1.3 Classe `glass`
 
@@ -159,8 +173,9 @@ passam por cima. Depende do commit preparatório: com a regra `*` fora de camada
 
 Consequência: qualquer `border-border` que sobrar num elemento `glass` vence o
 `--glass-border`. Nos quatro cards onde ele aparece junto do `hover:border-border-strong`
-(`LeadCard` no ramo não selecionado, Plans no ramo não Popular, card de Sites e card
-do CRM inline), o `border-border` **sai** e o `hover:border-border-strong` fica.
+(`LeadCard` no ramo não selecionado, card de Sites e card do CRM inline), o
+`border-border` **sai** e o `hover:border-border-strong` fica. Em Plans, o ramo não
+Popular é só `border border-border` e sai inteiro.
 
 ```css
 @layer components {
@@ -269,7 +284,11 @@ formulário do Clerk não muda.
 encosta na névoa ou no overlay. Dentro de um vidro tudo é sólido:
 - `bg-surface-solid`: input, select, textarea, dropdown (inclui o `fieldCls` de
   `create-lead-modal.tsx` e os selects do formulário de Leads, que hoje usam
-  `bg-surface-2`).
+  `bg-surface-2`). **Exceção:** quando o input **é** o bloco de primeiro nível
+  (barra de busca do CRM), o vidro vai num wrapper e o input fica `bg-transparent
+  border-0 shadow-none`; do `<input>` saem `border border-border`, `rounded-xl`,
+  `shadow-[var(--shadow-sm)]` e `focus:border-border-strong` (que vira
+  `focus-within:` no wrapper), senão a sombra dobra.
 - `bg-surface-2`: chips, blocos internos, `contact-opt-in-button.tsx`, cabeçalhos
   de tabela (`bg-surface-2/50`).
 - **Bloco que já está dentro de um `bg-surface-2` usa `bg-surface-solid`**, senão
@@ -297,8 +316,9 @@ Padrão de troca: `border border-border bg-surface shadow-[var(--shadow-sm|md)]`
 | Sites (`sites/page.tsx`) | cada card de site `glass` | |
 | Plans (`plans/page.tsx`) | cada card de plano `glass` (o "Popular" mantém `border-2 border-brand`) | |
 | Settings (`settings/page.tsx`) | o card único (sub-nav + painel) `glass` | sub-nav e painéis internos → transparentes/`bg-surface-2` |
-| `lead-detail.tsx` (drawer) | `glass-dense rounded-l-2xl`; overlay `bg-black/30 backdrop-blur-sm` | abas, blocos → `bg-surface-2`; vazio do SiteTab `bg-surface/40 border-dashed` → `bg-surface-2/60 border-dashed` |
-| `create-lead-modal.tsx` | `glass-dense rounded-2xl`; overlay igual ao drawer | inputs `bg-surface-solid` |
+| `lead-detail.tsx` (drawer) | `glass-dense rounded-l-2xl`; overlay hoje `bg-black/50` → `bg-black/30` (o 4,7:1 do drawer claro depende disso), `backdrop-blur-sm` fica | abas, blocos → `bg-surface-2`; vazio do SiteTab `bg-surface/40 border-dashed` → `bg-surface-2/60 border-dashed` |
+| `create-lead-modal.tsx` | `glass-dense rounded-2xl`; overlay igual ao drawer (`/50` → `/30`) | inputs `bg-surface-solid` |
+| `lead-detail.tsx` botão "Perdido" ativo | | `bg-danger text-danger-fg` (era `text-white`) |
 
 Interações mantêm o que existe (`animate-rise`, `hover:-translate-y-0.5`).
 
@@ -312,7 +332,12 @@ Interações mantêm o que existe (`animate-rise`, `hover:-translate-y-0.5`).
   `--muted #656d7e` ≈ 4,7:1. AA.
 - Escuro: 7% de branco sobre a mancha `#1d2f5a` ≈ `#2d3e66`. `--foreground` ≈ 8,7:1;
   `--muted`/`--cold` novos ≈ 4,6:1; `--hot` e `--danger` novos ≈ 4,7:1; `--warm` 5,3:1.
-  AA, exceto `--brand` como texto (3,0:1), aceito e registrado em 1.2.
+  AA, exceto `--brand` como texto (3,0:1) e os badges de tier (3,9 a 4,1), ambos
+  aceitos e registrados em 1.2.
+- Pré-existente, nos dois temas: `--hot/--warm/--cold/--danger` como texto no claro
+  já falham hoje sobre branco (3,7 / 2,8 / 3,7 / 3,9) e o vidro tira ≈ 0,3. Fica
+  junto do `text-faint` em "Fora do escopo": o "AA" acima é de `--foreground` e
+  `--muted`.
 - Drawer e modal no claro: overlay `bg-black/30` sobre a mancha mais escura e vidro a
   88% dá ≈ `#f2f3f5`; `--muted` ≈ 4,7:1. No escuro ≈ 5,1:1.
 - Reconferir cards, drawer e modal, nos dois temas, no screenshot com o conta-gotas
@@ -359,6 +384,6 @@ Interações mantêm o que existe (`animate-rise`, `hover:-translate-y-0.5`).
   nenhum `bg-surface/NN` (o alfa compõe com os 62% e fica invisível). Os
   `hover:bg-surface` de botões dentro de raiz `bg-surface-2` (`outreach-composer.tsx`,
   `call-script-panel.tsx`) viram "62% de branco sobre surface-2": visível, aceito.
-- Landing: screenshot de `/` **depois do commit preparatório** e depois do
-  redesenho, iguais (prova do escopo 1.0). O antes/depois do próprio commit
-  preparatório é outro par, que a Duda avalia.
+- Landing e preview: screenshots de `/` e `/site/[slug]` **depois do commit
+  preparatório** e depois do redesenho, iguais (prova do escopo 1.0). O antes/depois
+  do próprio commit preparatório são outros dois pares, que a Duda avalia.
