@@ -10,6 +10,12 @@ import {
   toDateInputValue,
   formatDay,
   formatRelative,
+  nextActionOf,
+  actionStatus,
+  stalledDays,
+  STALLED_AFTER_DAYS,
+  isStalled,
+  compareByNextAction,
 } from "../convex/lib/domain.ts";
 
 /** Timestamps SEMPRE pelo construtor local (nunca string ISO com Z): o CI em UTC não pode mentir. */
@@ -118,4 +124,52 @@ test("formatRelative: agora, minutos, horas, ontem, senão formatDay", () => {
   assert.equal(formatRelative(now - 2 * 3_600_000, now), "há 2 h");
   assert.equal(formatRelative(T(2026, 8, 15, 20, 0), now), "ontem");
   assert.equal(formatRelative(T(2026, 8, 12, 10, 0), now), "12 set");
+});
+
+// ---------------------------------------------------------------------------
+// Próxima ação e "parado"
+// ---------------------------------------------------------------------------
+
+test("nextActionOf: com e sem ação", () => {
+  assert.deepEqual(nextActionOf({ nextActionAt: 1000, nextActionNote: "ligar" }), { at: 1000, note: "ligar" });
+  assert.equal(nextActionOf({}), null);
+  assert.equal(nextActionOf({ nextActionNote: "nota solta, sem data" }), null);
+});
+
+test("actionStatus: ontem 23:59 atrasada; hoje 00:00 e 23:59 hoje; amanhã 00:00 futura", () => {
+  const now = T(2026, 8, 16, 15, 0);
+  assert.equal(actionStatus(T(2026, 8, 15, 23, 59), now), "overdue");
+  assert.equal(actionStatus(T(2026, 8, 16, 0, 0), now), "today");
+  assert.equal(actionStatus(T(2026, 8, 16, 23, 59), now), "today");
+  assert.equal(actionStatus(T(2026, 8, 17, 0, 0), now), "upcoming");
+});
+
+test("stalledDays: com ação null; converted e lost null; senão dias desde stageUpdatedAt", () => {
+  const now = T(2026, 8, 16, 15, 0);
+  const at = T(2026, 8, 4, 10, 0); // 12 dias civis antes
+  assert.equal(stalledDays({ stage: "approached", stageUpdatedAt: at, nextActionAt: now, nextActionNote: "x" }, now), null);
+  assert.equal(stalledDays({ stage: "converted", stageUpdatedAt: at }, now), null);
+  assert.equal(stalledDays({ stage: "lost", stageUpdatedAt: at }, now), null);
+  assert.equal(stalledDays({ stage: "approached", stageUpdatedAt: at }, now), 12);
+  assert.equal(stalledDays({ stage: "base", stageUpdatedAt: now }, now), 0);
+});
+
+test("isStalled: 6 dias não, 7 dias sim; convertido nunca", () => {
+  const now = T(2026, 8, 16, 15, 0);
+  assert.equal(STALLED_AFTER_DAYS, 7);
+  assert.equal(isStalled({ stage: "base", stageUpdatedAt: T(2026, 8, 10, 15, 0) }, now), false);
+  assert.equal(isStalled({ stage: "base", stageUpdatedAt: T(2026, 8, 9, 15, 0) }, now), true);
+  assert.equal(isStalled({ stage: "converted", stageUpdatedAt: T(2026, 7, 1) }, now), false);
+});
+
+test("compareByNextAction: com ação antes de sem ação; at crescente; sem ação por score decrescente", () => {
+  const withLate = { nextActionAt: 200, score: 10 };
+  const withEarly = { nextActionAt: 100, score: 90 };
+  const noneHi = { score: 80 };
+  const noneLo = { score: 20 };
+  assert.ok(compareByNextAction(withLate, noneHi) < 0);
+  assert.ok(compareByNextAction(noneHi, withLate) > 0);
+  assert.ok(compareByNextAction(withEarly, withLate) < 0);
+  assert.ok(compareByNextAction(noneHi, noneLo) < 0);
+  assert.deepEqual([noneLo, withLate, noneHi, withEarly].sort(compareByNextAction), [withEarly, withLate, noneHi, noneLo]);
 });

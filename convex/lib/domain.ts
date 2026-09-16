@@ -859,3 +859,65 @@ export function formatRelative(at: number, now: number): string {
   if (days === 1) return "ontem";
   return formatDay(at, now);
 }
+
+export interface NextAction {
+  at: number;
+  note: string;
+}
+
+export type ActionStatus = "overdue" | "today" | "upcoming";
+
+/** Uma próxima ação por lead, no próprio documento. Sem `nextActionAt` não há ação. */
+export function nextActionOf(lead: {
+  nextActionAt?: number | null;
+  nextActionNote?: string | null;
+}): NextAction | null {
+  if (typeof lead.nextActionAt !== "number") return null;
+  return { at: lead.nextActionAt, note: lead.nextActionNote ?? "" };
+}
+
+/** Antes de hoje 00:00 local = atrasada; mesmo dia civil = hoje; depois = futura. */
+export function actionStatus(at: number, now: number): ActionStatus {
+  const delta = daysBetween(now, at);
+  if (delta < 0) return "overdue";
+  if (delta === 0) return "today";
+  return "upcoming";
+}
+
+export const STALLED_AFTER_DAYS = 7;
+
+type StalledInput = {
+  nextActionAt?: number | null;
+  nextActionNote?: string | null;
+  stage: string;
+  stageUpdatedAt: number;
+};
+
+/**
+ * Dias desde a última mudança de estágio, SÓ quando não há ação e o estágio não é
+ * converted nem lost; senão null. Conta a partir de stageUpdatedAt (não do último
+ * evento): é o estágio que mede avanço, e ler eventos por card custaria uma query cada.
+ */
+export function stalledDays(lead: StalledInput, now: number): number | null {
+  if (nextActionOf(lead) !== null) return null;
+  if (lead.stage === "converted" || lead.stage === "lost") return null;
+  return daysBetween(lead.stageUpdatedAt, now);
+}
+
+export function isStalled(lead: StalledInput, now: number): boolean {
+  const days = stalledDays(lead, now);
+  return days !== null && days >= STALLED_AFTER_DAYS;
+}
+
+/** Com ação antes de sem ação; entre com ação, `at` crescente; entre sem ação, score decrescente. */
+export function compareByNextAction(
+  a: { nextActionAt?: number | null; score?: number | null },
+  b: { nextActionAt?: number | null; score?: number | null },
+): number {
+  const aAt = typeof a.nextActionAt === "number" ? a.nextActionAt : null;
+  const bAt = typeof b.nextActionAt === "number" ? b.nextActionAt : null;
+  if (aAt !== null && bAt !== null) return aAt - bAt;
+  if (aAt !== null) return -1;
+  if (bAt !== null) return 1;
+  return (b.score ?? 0) - (a.score ?? 0);
+}
