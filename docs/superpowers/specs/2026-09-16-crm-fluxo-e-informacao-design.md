@@ -51,13 +51,15 @@ Registrar esses eventos é trabalho à parte, fora deste desenho.
 
 Dois blocos, o segundo só depois do primeiro verificado:
 
-- **Bloco A (fluxo):** schema (todos os campos e o índice, de uma vez) + domínio +
+- **Bloco A (fluxo):** schema (todos os campos, o índice e o literal `"note"`, de uma
+  vez) + domínio +
   `setNextAction`/`clearNextAction` + faixa Hoje + linha no card + filtro Parados +
   ordenação. `setStage` **não muda** neste bloco.
 - **Bloco B (informação):** `markLost` + guardrail do `setStage` + `LostReasonModal`
-  nos três caminhos (Kanban drop, seletor do card, detalhe) **num commit só**, senão
-  "Perdido" quebra no meio; depois contato/valor, `updateInfo`, `addNote`,
-  `timeline`, Histórico, glyph.
+  nos quatro pontos de entrada (Kanban drop, seletor do card, pílula de Etapa e
+  botão Status no detalhe) + a coluna "Perdido" (2.3) **num commit só**, senão
+  "Perdido" quebra no meio; depois contato/valor, `updateInfo`, soma no cabeçalho da
+  coluna, `addNote`, `timeline`, Histórico, glyph.
 
 ---
 
@@ -108,6 +110,9 @@ antes desta mudança). Toda tela que mostra motivo trata ausência (seção 3).
 | `compareByNextAction(a, b)` | com ação antes de sem ação; entre com ação, `at` crescente; entre sem ação, score decrescente |
 | `LOST_REASONS` | `{ id, label }[]` na ordem: Caro demais · Já tem site · Sem resposta · Não quer · Outro |
 | `lostReasonLabel(id)` | rótulo, ou `undefined` para `id` ausente |
+| `formatDay(at, now)` | `"hoje"`, `"ontem"`, `"amanhã"`, senão `"23 set"` (dia + mês abreviado pt-BR) |
+| `formatRelative(at, now)` | `"há 5 min"`, `"há 2 h"`, `"ontem"`, senão `formatDay` |
+| `toDateInputValue(at)` | `"YYYY-MM-DD"` **local** (para `value` e `min` do `<input type="date">`) |
 
 Todas recebem `now` quando dependem do relógio. "Dia civil local" = fuso do processo
 que chama (o navegador, no caso da UI).
@@ -209,13 +214,17 @@ Convertido e Perdido nunca mostram "parado" (garantido por `stalledDays`).
 
 ### 2.4 `LostReasonModal` (`src/components/crm/lost-reason-modal.tsx`)
 
-Props: `lead`, `onConfirm({ reason, note })`, `onClose`. `LOST_REASONS` como botões de
+Props: `lead`, `onConfirm({ reason, note }): Promise<void>`, `onClose`. O modal
+chama `onConfirm`, mostra o erro dentro do próprio modal se a promise rejeitar (e
+fica aberto), e só fecha quando ela resolve. `LOST_REASONS` como botões de
 rádio (nenhum pré-selecionado; confirmar desabilitado até escolher), campo de nota
 opcional, botões Cancelar / Marcar perdido. Segue o `CreateLeadModal` no que ele já
 faz (overlay, Esc fecha, portal em `z-[100]`, necessário porque abre por cima do
 drawer `z-50` do detalhe) e **acrescenta**, como requisito novo, `role="dialog"`,
-`aria-modal`, `aria-labelledby` no título e foco inicial no primeiro rádio. Usado
-pelo Kanban e pelo detalhe do lead.
+`aria-modal`, `aria-labelledby` no título e foco inicial no primeiro rádio. **Esc é
+tratado no `onKeyDown` do próprio dialog, com `stopPropagation()`**: o `LeadDetail`
+já fecha no Esc via listener no `window`, e sem isso um Esc cancelaria o motivo e
+fecharia o lead junto. Usado pelo Kanban e pelo detalhe do lead.
 
 ---
 
@@ -228,8 +237,9 @@ a faixa Hoje abre o lead; a aba inicial continua Informações).
 
 O `InfoTab` hoje oferece "Perdido" por dois caminhos (`PIPELINE_STAGES.map` nas
 pílulas "Etapa" e o botão "Perdido" do controle "Status"), ambos via `setStage`.
-**Os dois passam a abrir o `LostReasonModal`**; os demais estágios seguem em
-`setStage`. Sair de Perdido por pílula ou botão "Em aberto" funciona como hoje (e o
+**Os dois passam a abrir o `LostReasonModal`**, inclusive quando o lead **já está**
+em `lost` (é o único caminho de UI para dar motivo a um lead legado; não colocar
+`if (stage === "lost") return`); os demais estágios seguem em `setStage`. Sair de Perdido por pílula ou botão "Em aberto" funciona como hoje (e o
 servidor limpa o motivo).
 
 Três blocos novos, **acima** dos dados do Google (que não mudam), cada um em arquivo
@@ -267,7 +277,7 @@ Texto por tipo (função `timelineText`, local ao componente):
 | Tipo | Texto |
 |---|---|
 | `note` | o texto da nota |
-| `stage_change` | `Base → Abordado`; sem `from` (eventos antigos, seed) → `→ Abordado`; `to: "lost"` → `→ Perdido · Caro demais` (sem `reason` → `→ Perdido`) |
+| `stage_change` | `Base → Abordado`; sem `from` (eventos antigos, seed) → `→ Abordado`; `to: "lost"` → `Abordado → Perdido · Caro demais` (sem `reason` → `Abordado → Perdido`) |
 | `email_sent` | `Email enviado` |
 | `preview_open` | `Preview aberto` |
 | `reply` | `Respondeu` |
@@ -327,7 +337,8 @@ feed tem copy própria ("<lead> abriu o preview") e o Histórico tem a sua
   outubro: continua 00:00 do dia seguinte), `dateInputToTimestamp`, `stalledDays`
   (com ação → null; converted → null; lost → null; 6 vs 7 dias), `isStalled`,
   `compareByNextAction` (ação antes de sem ação; `at` crescente; sem ação por score),
-  `lostReasonLabel` (ausente → undefined). **Timestamps de teste sempre pelo
+  `lostReasonLabel` (ausente → undefined), `formatDay`, `formatRelative`,
+  `toDateInputValue`. **Timestamps de teste sempre pelo
   construtor local** (`new Date(2026, 8, 16, 23, 59)`), nunca string ISO com `Z`:
   senão passa aqui e falha num CI em UTC.
 - **Verificação manual** no modo demo, roteiro no plano: faixa Hoje aparece com o
