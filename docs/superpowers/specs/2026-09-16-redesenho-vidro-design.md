@@ -26,6 +26,24 @@ paleta azul-acinzentada, muito respiro.
   `2026-09-16-crm-fluxo-e-informacao-design.md`, para os componentes novos do CRM
   nascerem no estilo novo.
 
+## Commit preparatório: a regra `* { border-color }` fora de camada
+
+`globals.css` tem `* { border-color: var(--border) }` **fora de qualquer `@layer`**.
+Estilo sem camada vence estilo em camada, independente de especificidade, e o
+Tailwind v4 põe todos os utilitários em `@layer utilities`. Resultado, verificado
+compilando o CSS real e renderizando: **nenhum utilitário de cor de borda do repo
+funciona hoje**. `border-brand` do card "Popular", `border-brand` do `LeadCard`
+selecionado, `border-transparent` das abas do drawer, `border-hot/30` dos badges,
+tudo renderiza `#e2e6ef`. É bug pré-existente, e sem corrigi-lo o vidro também não
+teria a borda branca (`--glass-border` seria ignorado).
+
+Correção (a que o guia de upgrade do Tailwind v4 prescreve): mover a regra para
+`@layer base { * { border-color: var(--border) } }`. É um commit **separado, antes**
+do redesenho, com screenshot da landing antes/depois: a landing tem 22 usos de
+`border-brand`, `border-white/10`, `border-transparent` etc. hoje suprimidos e vai
+mudar onde essas bordas eram intencionais. A Duda vê o antes/depois e decide se
+aceita; o redesenho é comparado contra essa nova base.
+
 ## Fora do escopo
 
 Landing, páginas públicas de preview, o formulário interno do Clerk (só o container
@@ -44,8 +62,15 @@ Os valores novos ficam sob `:root:has(.app-shell)` (claro) e
 `:root[data-theme="dark"]:has(.app-shell)` (escuro). O `(app)/layout.tsx` renderiza
 o contêiner externo com `className="app-shell …"`; as páginas de login idem no
 `div` que centraliza. Como os tokens vivem em `:root`, o que é portalado para
-`document.body` (`CreateLeadModal`, `LeadDetail`) continua dentro do escopo. A
-landing e as páginas públicas não têm `.app-shell` e ficam com os tokens de hoje.
+`document.body` (`CreateLeadModal`; o `LeadDetail` renderiza inline com `fixed`)
+continua dentro do escopo. A landing e as páginas públicas não têm `.app-shell` e
+ficam com os tokens de hoje.
+
+Cascata: `:root:has(.app-shell)` (0,2,0) vem **depois** de `:root[data-theme="dark"]`
+(0,2,0) no arquivo, então vence no escuro para qualquer token que definir. Regra:
+todo token do bloco claro escopado que tenha valor escuro precisa ser repetido no
+bloco escuro escopado, e um token que só muda no escuro (`--muted`) **só** entra no
+bloco escuro escopado.
 
 O `body` só recebe a névoa sob o mesmo escopo:
 `:root:has(.app-shell) body { background-image: var(--mist) }`.
@@ -73,7 +98,7 @@ do escopo (fora dele, na landing, continua).
 | `--border-strong` | mantém | mantém |
 | `--muted` | `#656d7e` (mantém) | `#8a93a4` → `#a3abbb` |
 | `--radius` | `14px` → `18px` | idem |
-| `--radius-panel` (novo, só em `:root`, **não** no `@theme`) | `22px` | idem |
+| `--radius-panel` (novo, **só no bloco escopado**, não no `@theme`) | `22px` | idem |
 | `--shadow-sm` | → `0 4px 14px rgba(30,45,80,.06)` | → `0 4px 14px rgba(0,0,0,.25)` |
 | `--shadow-md` | → `0 10px 30px rgba(30,45,80,.08)` | → `0 10px 30px rgba(0,0,0,.35)` |
 | `--shadow-lg` | → `0 24px 60px rgba(30,45,80,.14)` | → `0 24px 60px rgba(0,0,0,.5)` |
@@ -90,12 +115,14 @@ Por que cada um:
   `#1d2f5a`: 7% de branco sobre ela dá ≈ `#2d3e66`, e `#8a93a4` mede 3,4:1 (falha).
   `#a3abbb` mede ≈ 4,6:1. É a única cor de texto que muda.
 - `--radius-panel` fica fora do `@theme inline` de propósito: um `--radius-lg` lá
-  sobrescreveria o `rounded-lg` do Tailwind (39 usos em botões e inputs).
+  sobrescreveria o `rounded-lg` do Tailwind (52 usos em botões e inputs).
 
 No `@theme inline`: ganha `--color-surface-solid: var(--surface-solid)` e
-`--radius-2xl: var(--radius-panel)` (assim `rounded-2xl`, já usado em card de lead,
-sites, modal e lane do Kanban, passa a ser 22px em vez de ficar **menor** que o
-`rounded-xl` de 18px). `--radius-xl` continua `var(--radius)`.
+`--radius-2xl: var(--radius-panel, 1rem)`. O fallback `1rem` (o default do Tailwind)
+passa intacto pelo `@theme inline`: na landing, onde `--radius-panel` não existe,
+`rounded-2xl` continua 16px; na área logada vira 22px (assim `rounded-2xl`, já usado
+em card de lead, sites, modal e lane do Kanban, não fica **menor** que o `rounded-xl`
+de 18px). `--radius-xl` continua `var(--radius)`.
 
 Marca (`--brand*`), semânticas (`--hot`, `--warm`, `--cold`, `--danger`), demais
 cores de texto, fontes e `--ring` **não mudam**.
@@ -106,7 +133,14 @@ Em `@layer components` (não `@utility`): compilado no repo, um `@utility` com v
 declarações sai **depois** de `border-2`, `border-brand`, `border-dashed`, `ring-2` e
 `shadow-[…]`, e venceria o card "Popular" de Plans, o estado selecionado do
 `LeadCard` e os `border-dashed` de vazio. Em `@layer components` os utilitários
-passam por cima.
+passam por cima. Depende do commit preparatório: com a regra `*` fora de camada, o
+`--glass-border` seria ignorado.
+
+Consequência: qualquer `border-border` que sobrar num elemento `glass` vence o
+`--glass-border`. Nos quatro lugares onde ele está num ramo condicional separado do
+`border` (`LeadCard` não selecionado, Plans não Popular, card de Sites, card do CRM,
+todos com `hover:border-border-strong`), o `border-border` do ramo **sai** e o
+`hover:border-border-strong` fica.
 
 ```css
 @layer components {
@@ -143,16 +177,18 @@ Raio não entra na classe: cada uso escolhe `rounded-xl` (18px) ou `rounded-2xl`
 ```css
 @media (prefers-reduced-transparency: reduce) {
   :root:has(.app-shell) {
-    --surface: rgba(255,255,255,.96); --elevated: #fff;
-    --glass-border: var(--border); --glass-blur: 0px; --glass-blur-lite: 0px;
+    --surface: rgba(255,255,255,.96); --elevated: #fff; --glass-border: var(--border);
   }
   :root[data-theme="dark"]:has(.app-shell) {
     --surface: rgba(22,28,40,.97); --elevated: #1d2531; --glass-border: var(--border);
   }
+  .glass, .glass-lite, .glass-dense { backdrop-filter: none; -webkit-backdrop-filter: none; }
 }
 ```
 
 `--glass-border` cai para `--border` para os cards opacos não ficarem sem contorno.
+`backdrop-filter: none` em vez de `blur(0px)`: zero ainda cria backdrop root e custa
+compositing.
 Sem suporte no Firefox (só Chrome 118+ e Safari); registrado, sem ação.
 `prefers-reduced-motion` já é tratado (`.animate-rise` desligado); não muda.
 
@@ -185,7 +221,8 @@ Substitui a `<nav>` de 240px:
   `text-muted hover:bg-surface-2/60`. `NavItem` **ganha** `aria-current="page"`
   quando ativo (hoje não tem).
 - Base (`mt-auto`), na ordem: `SettingsButton` no mesmo formato dos itens (ícone +
-  "Ajustes", `aria-current` quando em `/settings`), `ThemeToggle` (como é), e por
+  "Ajustes" visível, **sem** `aria-label="Configurações"`, que divergiria do texto;
+  `aria-current` quando em `/settings`), `ThemeToggle` (como é), e por
   último: em modo real `<UserButton />` do Clerk; em modo demo um chip `DEMO`
   (`font-mono text-[9px] bg-surface-2 rounded-full px-2 py-0.5`).
 - **`UsageFooter` é apagado.** Plano e uso já existem na aba "Plano & uso" de
@@ -212,8 +249,13 @@ encosta na névoa ou no overlay. Dentro de um vidro tudo é sólido:
 - `bg-surface-solid`: input, select, textarea, dropdown (inclui o `fieldCls` de
   `create-lead-modal.tsx` e os selects do formulário de Leads, que hoje usam
   `bg-surface-2`).
-- `bg-surface-2`: chips, blocos internos, `Note` tom "info" (`call-script-panel.tsx`,
-  `outreach-composer.tsx`), `contact-opt-in-button.tsx`, cabeçalhos de tabela.
+- `bg-surface-2`: chips, blocos internos, `contact-opt-in-button.tsx`, cabeçalhos
+  de tabela (`bg-surface-2/50`).
+- **Bloco que já está dentro de um `bg-surface-2` usa `bg-surface-solid`**, senão
+  some no pai. Casos: `Note` tom "info" (`CallScriptPanel` e `ComposerBody` têm raiz
+  `bg-surface-2`), `ScriptColumn`, o `<p>` do trecho citado, o chip de idioma e a
+  caixa "Tradução indisponível" do `call-script-panel.tsx`; o `<label>` "Máx" de
+  Leads (é visualmente um input).
 - Linhas de tabela dentro de vidro: **transparentes**, mantendo `hover:bg-surface-2/40`.
 - Nunca `glass` dentro de `glass`. `CallScriptPanel`, `WhatsAppFollowup`,
   `ContactOptInButton` e `OutreachComposer` **nunca** são primeiro nível (vivem em
@@ -228,9 +270,9 @@ Padrão de troca: `border border-border bg-surface shadow-[var(--shadow-sm|md)]`
 | `ui.tsx` `EmptyState` | `glass` (o `border-dashed border-border-strong` continua vencendo por ser utilitário; `bg-surface/40` sai) | |
 | `charts.tsx` `ChartCard` | `glass`, hover `shadow-lg` (é o painel do Dashboard) | |
 | Dashboard (`dashboard/page.tsx`) | nada além dos `StatCard`/`ChartCard` | cards de taxa dentro do painel → `bg-surface-2` |
-| Leads (`leads/page.tsx`, `lead-card.tsx`) | formulário de busca `glass`; cada `LeadCard` `glass-lite` (o estado selecionado `border-brand ring-2` continua vencendo) | selects → `bg-surface-solid` |
+| Leads (`leads/page.tsx`, `lead-card.tsx`) | formulário de busca `glass`; cada `LeadCard` `glass-lite` (o selecionado mantém `border-brand ring-2` **e** `shadow-[var(--shadow-sm)]` explícito, porque `ring-2` zera o `box-shadow` do `.glass-lite`) | selects e "Máx" → `bg-surface-solid` |
 | CRM (`crm/page.tsx`) | cada card de lead `glass-lite`; barra de busca `glass`; a faixa Hoje, quando existir | select de estágio, chips de filtro; lane de drop mantém `border-border/60 bg-surface-2/40`; cabeçalho de coluna sem fundo (já é) |
-| Outreach (`outreach/page.tsx`) | o wrapper da tabela do outbox `glass` (hoje sem fundo) | thead `bg-surface-2/50`, linhas transparentes |
+| Outreach (`outreach/page.tsx`) | o wrapper da tabela do outbox `glass` (hoje sem fundo) | thead `bg-surface-2/50` (como é), linhas transparentes |
 | Sites (`sites/page.tsx`) | cada card de site `glass` | |
 | Plans (`plans/page.tsx`) | cada card de plano `glass` (o "Popular" mantém `border-2 border-brand`) | |
 | Settings (`settings/page.tsx`) | o card único (sub-nav + painel) `glass` | sub-nav e painéis internos → transparentes/`bg-surface-2` |
@@ -253,8 +295,12 @@ Interações mantêm o que existe (`animate-rise`, `hover:-translate-y-0.5`).
 
 ### 4.2 Blur
 
-- `backdrop-filter` só nas três classes `glass*`. Nada de blur em elemento que anima
-  (`animate-rise` fica no wrapper do `main`, que não é vidro).
+- `backdrop-filter` só nas três classes `glass*` e nos overlays de drawer/modal
+  (`backdrop-blur-sm`, já existe; o selo do `SiteThumb` também já tem e fica).
+- Custo aceito, registrado: os cards de vidro mantêm `hover:-translate-y-0.5` e o
+  `animate-rise` do wrapper move todos os vidros por 0,5 s a cada navegação, o que
+  reamostra o backdrop de cada card por frame. Se engasgar na verificação (51 cards
+  em `/leads` e `/crm`), o `animate-rise` dentro de `.app-shell` vira só opacidade.
 - Card de lead usa `glass-lite` (12px). **Gatilho de recuo:** se arrastar um card com
   os 51 leads do seed engasgar visivelmente (Chrome, Mac), o card de lead passa a
   `bg-surface-solid` com `shadow-sm` e só a barra de busca (e a faixa Hoje, quando
@@ -273,7 +319,9 @@ Interações mantêm o que existe (`animate-rise`, `hover:-translate-y-0.5`).
   e o `<SignIn />` quebra); fica no roteiro manual. Ficam em `docs/redesign/` só as
   "depois" em 1440 (claro e escuro), para o README.
 - **Roteiro manual** (Duda, no navegador): alternar tema; arrastar card no CRM com o
-  seed de 51 leads; abrir o drawer do lead e o modal de criar lead por cima; card
+  seed de 51 leads (a imagem fantasma do drag HTML5 de um elemento com
+  `backdrop-filter` costuma sair sem blur e semitransparente no Chrome: aceitável,
+  mas conferir que dá pra ver qual card está sendo arrastado); abrir o drawer do lead e o modal de criar lead por cima; card
   "Popular" em Plans com borda azul; selecionar um lead em Leads e ver o anel;
   ativar "reduzir transparência" no macOS e conferir vidro opaco com contorno. Em
   modo real (quando ligar): `<UserButton />` abre o popover a partir do rail; abrir
@@ -283,4 +331,6 @@ Interações mantêm o que existe (`animate-rise`, `hover:-translate-y-0.5`).
 - Grep final: nenhum `bg-surface` (translúcido) em input/select/textarea; nenhum
   `glass` cujo ancestral também seja `glass`; nenhum `bg-surface/NN` (o alfa
   compõe com os 62% e fica invisível).
-- Landing: screenshot de `/` antes e depois, **iguais** (prova do escopo 1.0).
+- Landing: screenshot de `/` **depois do commit preparatório** e depois do
+  redesenho, iguais (prova do escopo 1.0). O antes/depois do próprio commit
+  preparatório é outro par, que a Duda avalia.
