@@ -28,6 +28,8 @@ import {
   actionStatus,
   isStalled,
   compareByNextAction,
+  formatMoney,
+  currencyForCountry,
   type Stage,
 } from "@convex/lib/domain";
 
@@ -235,6 +237,17 @@ export default function CrmPage() {
                 setOverCol(null);
               },
             };
+            // Soma de dealMonthly dos MESMOS leads que o N conta (depois de busca e filtro), na
+            // moeda do primeiro lead da coluna com valor (mistura de moedas numa coluna é caso
+            // raro: soma crua nessa moeda). Perdido não soma.
+            const priced = isLost ? [] : items.filter((l) => typeof l.dealMonthly === "number");
+            const monthlySum =
+              priced.length > 0
+                ? formatMoney(
+                    priced.reduce((sum, l) => sum + (l.dealMonthly ?? 0), 0),
+                    currencyForCountry(priced[0].countryCode),
+                  )
+                : null;
             const header = (
               <div className="mb-2.5 flex items-center justify-between px-1.5">
                 <span className="flex items-center gap-2 text-sm font-semibold">
@@ -245,6 +258,9 @@ export default function CrmPage() {
                   <span className="rounded-full bg-surface-2 px-2 py-0.5 font-mono text-[10px] tabular-nums text-muted">
                     {items.length}
                   </span>
+                  {monthlySum && (
+                    <span className="font-mono text-[10px] tabular-nums text-muted">· {monthlySum}/mês</span>
+                  )}
                   {isLost && (
                     <button
                       onClick={() => setLostOpen((v) => !v)}
