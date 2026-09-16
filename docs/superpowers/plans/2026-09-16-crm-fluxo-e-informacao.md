@@ -29,6 +29,7 @@
 
 - Os servidores já rodam em background: `./node_modules/.bin/convex dev` (local, `DEMO_MODE=1`; regenera `convex/_generated` e faz push do schema/funções a cada save) e Next em `http://localhost:3000` (`NEXT_PUBLIC_DEMO=1`). Não suba um segundo `convex dev`.
 - **`convex run` sempre com a saída redirecionada para arquivo** (`> "$OUT/x.json"`) e lida com `jq`. Encanar para `head` deixa o processo preso girando CPU (verificado nesta máquina). Rodando assim leva menos de 1 s.
+- **Todo bloco de shell que usa `$OUT` ou `$ID` deve começar com `export OUT=/private/tmp/claude-501/-Users-madu/b16b2cfb-9aa3-4eb3-9281-1ceb4aabcb03/scratchpad/crm` e, quando usar `$ID`, recalculá-lo com o `jq` da Tarefa 6** (o estado não persiste entre chamadas; sem isso o redirecionamento vira `> "/x.json"` e falha).
 - `OUT` é a pasta de evidências: `export OUT=/private/tmp/claude-501/-Users-madu/b16b2cfb-9aa3-4eb3-9281-1ceb4aabcb03/scratchpad/crm; mkdir -p "$OUT"`. Reexporte em cada shell (o estado não persiste entre chamadas).
 - Screenshot headless (Chrome cacheado):
   ```bash
@@ -1974,6 +1975,7 @@ export function LostReasonModal({
       <button aria-label="Fechar" onClick={onClose} className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
       <div
         role="dialog"
+        tabIndex={-1}
         aria-modal="true"
         aria-labelledby="lost-reason-title"
         onKeyDown={(e) => {
@@ -2501,7 +2503,7 @@ Esperado, na ordem:
 
 ```bash
 CH=$(ls -d ~/Library/Caches/ms-playwright/chromium_headless_shell-*/chrome-headless-shell-mac-arm64/chrome-headless-shell | tail -1)
-"$CH" --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=1440,900 --run-all-compositor-stages-before-draw --virtual-time-budget=15000 --screenshot="$OUT/b-lost-column.png" http://localhost:3000/crm
+"$CH" --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=2200,900 --run-all-compositor-stages-before-draw --virtual-time-budget=15000 --screenshot="$OUT/b-lost-column.png" http://localhost:3000/crm
 ```
 Confira na imagem: a última coluna "Perdido" recolhida (só cabeçalho com contagem e a seta de expandir). O modal, o drop e o cancelar ficam no roteiro manual (Tarefa 26).
 
@@ -3349,7 +3351,7 @@ Esperado: `{"withAction":4,"lost":4,"lostWithReason":2,"priced":["Klippet Nordic
 
 ```bash
 CH=$(ls -d ~/Library/Caches/ms-playwright/chromium_headless_shell-*/chrome-headless-shell-mac-arm64/chrome-headless-shell | tail -1)
-"$CH" --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=1440,900 --run-all-compositor-stages-before-draw --virtual-time-budget=15000 --screenshot="$OUT/final-crm.png" http://localhost:3000/crm
+"$CH" --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=2200,900 --run-all-compositor-stages-before-draw --virtual-time-budget=15000 --screenshot="$OUT/final-crm.png" http://localhost:3000/crm
 "$CH" --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=1440,900 --run-all-compositor-stages-before-draw --virtual-time-budget=15000 --screenshot="$OUT/final-dashboard.png" http://localhost:3000/dashboard
 ```
 Abra as duas (Read). No CRM: faixa Hoje em vidro, linhas nos cards, "Agendado" com `· £340/mês`, coluna Perdido recolhida no fim. No Dashboard: "Atividade recente" sem nenhuma nota. Se o virtual time não carregou os dados, diga isso no relatório e aponte para o Passo 3 e para a Tarefa 26.
@@ -3357,7 +3359,7 @@ Abra as duas (Read). No CRM: faixa Hoje em vidro, linhas nos cards, "Agendado" c
 - [ ] **Passo 5: `git log` e relatório**
 
 ```bash
-git log --oneline main..HEAD
+git log --oneline redesenho-vidro..HEAD   # a branch nasce de redesenho-vidro; se nasceu de main já com o redesenho mesclado, use main..HEAD e desconte os commits do redesenho
 ```
 Esperado: 18 commits, na ordem das tarefas (7 no Chunk 1, 3 no Chunk 2, 1 no 3a, 3 no 3b, 4 no Chunk 4). Relate: comandos e resultados, o que o screenshot mostrou ou não, e os desvios conscientes deste plano em relação à spec: (a) `src/lib/use-now.ts` e `src/components/crm/next-action-line.tsx` são arquivos além da tabela 3.4 (pureza do React Compiler e DRY da tabela 2.2); (b) o vazio do Histórico não usa o `EmptyState` de `ui.tsx` porque ele virou `glass` no redesenho e o drawer já é vidro; (c) a `TodayStrip` recebe `now` além de `items` e `onOpen`, para o "há N dias" usar o mesmo relógio da página.
 
