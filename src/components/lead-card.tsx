@@ -110,6 +110,15 @@ export function LeadCard({
             </span>
           )}
           <Badge tone={tier}>{TIER_LABEL[tier]}</Badge>
+          {lead.source === "osm" && (
+            // Dado ODbL sem nota: o selo avisa que "sem site" é "site não cadastrado no mapa".
+            <span
+              title="Dados do OpenStreetMap: sem nota; 'sem site' = site não cadastrado no mapa"
+              className="rounded-full bg-surface-2 px-1.5 font-mono text-[9px] text-faint"
+            >
+              OSM
+            </span>
+          )}
         </div>
         <div className="shrink-0 text-right">
           <div
