@@ -70,7 +70,10 @@ preview, nada muda ali).
 - **A. Dados + modelos + render público + retrocompatibilidade** (seções 1, 2.1
   a 2.3, 3.5, testes de 5). Entrega: todo preview/site existente e novo renderiza
   no modelo sugerido com paleta padrão; fluxo de outreach intacto; nenhuma UI de
-  edição ainda.
+  edição ainda. Como `generate` deixa de regravar o conteúdo, a linha "Regenerar
+  o conteúdo do site" do `SiteTab` (`lead-detail.tsx`) **sai já no plano A** e o
+  botão vira "Preparar preview"/"Abrir preview" (só rótulo), para A não entregar
+  um botão que não faz nada.
 - **B. Editor + uploads** (2.4, 3.1, e um link provisório "Editar site" no
   `SiteTab`). Entrega: ela edita, salva, preview e site refletem.
 - **C. Superfície + verificação** (3.2, 3.3, 3.4, screenshots, UAT em navegador
@@ -108,8 +111,11 @@ existe helper de contraste no repo hoje).
 | oficio | `laranja` (branco + laranja), `azul` (branco + azul-forte), `verde` (branco + verde-escuro) |
 | vitrine | `areia` (areia + preto), `nevoa` (cinza-azulado + azul), `vinho` (creme + vinho) |
 
-Padrão: a primeira de cada modelo. Os valores hex ficam em
-`src/components/site-templates/palettes.ts` e o teste os importa.
+Padrão: a primeira de cada modelo. Os **ids** das paletas por modelo ficam em
+`convex/lib/site.ts` (`PALETTE_IDS: Record<TemplateId, readonly string[]>`, que o
+`validateSiteContent` usa); os valores hex ficam em
+`src/components/site-templates/palettes.ts`, tipados por esses ids, e o teste de
+contraste importa os dois. Convex nunca importa de `src/`.
 
 ### 1.3 Fotos padrão
 
@@ -124,9 +130,12 @@ loja ou pessoa reconhecível**: a foto ilustra o negócio de terceiro.
 - `src/components/site-templates/index.ts`: `TEMPLATES` (catálogo: id, nome,
   descrição curta, paletas, caminhos das fotos padrão, rótulo da lista de itens
   por modelo) e `renderTemplate(view: SiteView, locale: Locale)`.
-- `SiteView = SiteContent & { heroUrl: string; galleryUrls: string[] }`: as URLs
-  já resolvidas (storage ou foto padrão). Quem monta o `SiteView` é a página
-  (pública ou editor), nunca o template.
+- `SiteView = SiteContent & { heroUrl: string; galleryUrls: string[] }`:
+  `heroUrl` é o upload ou, sem upload, a foto padrão `hero.jpg` do modelo;
+  `galleryUrls` são **só uploads** (vazio → a seção de galeria não renderiza,
+  regra "só se houver"). As fotos `g1`/`g2` do modelo são **decoração fixa** da
+  seção "sobre"/"destaques" (sempre `alt=""`), nunca entram na galeria. Quem
+  monta o `SiteView` é a página (pública ou editor), nunca o template.
 - `src/components/site-templates/{mesa,estudio,oficio,vitrine}.tsx`: um
   componente cada, props `{ view: SiteView; palette: Palette; tr: TemplateDict; locale: Locale }`.
   Sem dependência do tema/chrome da app: paleta via CSS custom properties no
@@ -135,8 +144,11 @@ loja ou pessoa reconhecível**: a foto ilustra o negócio de terceiro.
 - `src/components/site-templates/shared.tsx`: blocos comuns (contato, horário,
   lista de itens, galeria, CTA) para os quatro não repetirem.
 - `src/components/site-templates/template-thumb.tsx`: `TemplateThumb({ template,
-  palette, name, width })`, o hero do modelo escalado (`transform: scale`) num
-  contêiner com a largura pedida, `pointer-events: none`, `aria-hidden`.
+  palette, name })` preenche a largura do contêiner pai (mede com
+  `ResizeObserver`) mantendo proporção 16:10, renderiza **só o hero** (cada
+  modelo exporta `Hero` além do componente completo) numa largura virtual de
+  1280 px reduzido com CSS `zoom` (não `transform`, que deixa a caixa de layout
+  no tamanho original), `pointer-events: none`, `aria-hidden`.
 - `src/components/preview-site.tsx` **deixa de renderizar** e passa a ser só o
   ponto de entrada `PreviewSite({ view, locale })` → `renderTemplate`. O tipo
   `PreviewContent` some; quem importava passa a importar `SiteContent`/`SiteView`
@@ -153,7 +165,8 @@ loja ou pessoa reconhecível**: a foto ilustra o negócio de terceiro.
 (`itemsHeading` com o nome certo por modelo: cardápio / serviços / serviços /
 destaques, `galleryHeading`, `hoursHeading`, `areaHeading`, `quoteHeading`,
 `aboutHeading`, `visitHeading`, `contactHeading`), CTAs (`reserve`, `book`,
-`callNow`, `quote`, `whatsapp`, `email`) e `closed` (para o horário). Nomes dos
+`quote`, `email`) e `closed` (para o horário). `callNow` e `whatsapp` continuam
+**só no topo** do `PreviewDict` (já existem) e os modelos os leem de lá. Nomes dos
 dias vêm de `Intl.DateTimeFormat(locale, { weekday: "short" })`, sem string
 nova. Nos 10 idiomas.
 
@@ -172,17 +185,22 @@ idioma, e que a paridade de chaves entre os 10 idiomas cobre o objeto aninhado
 `primaryCta(content)` em `convex/lib/site.ts` devolve, nesta ordem, o primeiro
 que existir: `{ kind: "whatsapp", href: "https://wa.me/<digits>" }`,
 `{ kind: "phone", href: "tel:<phone>" }`, `{ kind: "email", href: "mailto:<email>" }`,
-ou `null`. Cada modelo usa o rótulo do seu segmento (`reserve`, `book`, `quote`,
-`callNow`) quando o kind é `phone`/`whatsapp`, e `email` quando é e-mail. Sem
-CTA, o hero não mostra botão. Nunca um botão que não leva a nada.
+ou `null`. O rótulo vem do catálogo: `TEMPLATES[id].ctaKey` = `reserve` (mesa),
+`book` (estudio), `quote` (oficio), `callNow` (vitrine), usado quando o kind é
+`phone`/`whatsapp`; `email` quando é e-mail. Sem CTA, o hero não mostra botão.
+Nunca um botão que não leva a nada.
 
 ### 1.7 Guardas migradas dos testes existentes
 
 `tests/preview-i18n.test.ts` hoje lê a fonte de `preview-site.tsx` e proíbe
-horário fixo e `<dd>` com texto do dicionário. Essas guardas passam a ler
-`src/components/site-templates/*.tsx` e `shared.tsx` com a regra nova: **horário,
-preço e itens só saem de `view.*`, nunca de `tr.*`**; texto de `tr.*` só em
-rótulos, CTAs, slogan e "sobre" padrão.
+horário fixo e `<dd>` com texto do dicionário, além de testar `allCopy`, as
+funções interpoladas, dois casos de francês e "nenhuma string PT hardcoded"
+usando `featureLocationBodyWithCity`/`visitBody`. Tudo isso é **reescrito no
+plano A** para o dicionário novo: as guardas passam a ler
+`src/components/site-templates/*.tsx` e `shared.tsx` com a regra **horário,
+preço e itens só saem de `view.*`, nunca de `tr.*`** (texto de `tr.*` só em
+rótulos, CTAs, slogan e "sobre" padrão); `allCopy` e a checagem de PT passam a
+percorrer `templates.<id>.*`; os casos de francês usam `templates.*.tagline`.
 
 ---
 
@@ -210,7 +228,7 @@ interface SiteContent {
   whatsapp?: string;               // só dígitos com DDI, ex. "447700900123"; vazio por padrão
   instagram?: string;              // handle sem @
   email?: string;
-  heroImage?: Id<"_storage">;      // ausente → foto padrão
+  heroImage?: Id<"_storage">;      // ausente → foto padrão (Id via `import type`, como em convex/model/tenant.ts: os testes rodam com --experimental-strip-types)
   gallery?: Id<"_storage">[];      // máx. 6
   category: string | null;         // dados do lead que a prévia atual já mostra
   rating: number | null;
@@ -257,7 +275,7 @@ quando não existe. **Nunca sobrescreve** `content` existente. `generate`,
 | `generate` (mutation) | `ensurePreview` e devolve o token. Já existindo, não toca no conteúdo (hoje regrava; muda). |
 | `ensureForLead` (internal, fluxo de outreach) | idem. |
 | `saveContent` (mutation, nova) | `{ leadId, content: siteContentValidator }` → ownership, `validateSiteContent`, cada `heroImage`/`gallery` precisa existir em `uploads` do mesmo org (`"Imagem inválida"`), `ensurePreview` e `patch({ content })`. |
-| `getForLead` (query) | devolve `content` parseado, `token`, `openCount`, `published`, `slug`, e `images: { heroUrl?: string; galleryUrls: string[] }` com as URLs do storage resolvidas (`ctx.storage.getUrl`) para as imagens enviadas; a página monta o `SiteView` (foto padrão onde não há upload). |
+| `getForLead` (query) | devolve `content` parseado, `token`, `openCount`, `published`, `slug`, e `images: { heroUrl?: string; galleryUrls: string[] }` com as URLs do storage resolvidas (`ctx.storage.getUrl`) para as imagens enviadas; a página monta o `SiteView` (foto padrão onde não há upload). Deixa de devolver `lastOpenedAt` (sem uso em `src/`): intencional. |
 | `getByToken`, `getBySlug` (queries públicas) | devolvem `content` parseado e as mesmas `images` resolvidas. |
 | `publish` (mutation) | `ensurePreview`, publica o `content` salvo (parseado), gera o slug como hoje, cobra 1 site como hoje. Já publicado: idempotente, como hoje. |
 | `listSites` (query) | devolve por site `template` e `palette` lidos de `parseSiteContent(content)`; **não** resolve URLs de storage (a miniatura usa só os defaults). |
@@ -269,17 +287,23 @@ quando não existe. **Nunca sobrescreve** `content` existente. `generate`,
 - `previews.registerUpload` (mutation): `{ leadId, storageId }` → `requireOrgId`,
   ownership do lead, grava em `uploads`. `saveContent` recusa storageId que não
   esteja em `uploads` do mesmo org.
-- `previews.removeUpload` (mutation): `{ storageId }` → ownership pela tabela,
-  `ctx.storage.delete`, apaga a linha e tira o id do `content` se estiver lá.
+- `previews.removeUpload` (mutation): `{ storageId }` → ownership pela tabela;
+  **recusa** (`"Imagem em uso"`) se o id estiver no `content` salvo; senão
+  `ctx.storage.delete` e apaga a linha.
 - Cliente (`src/lib/image-resize.ts`): recusa arquivo > 10 MB ou tipo fora de
   `image/jpeg|png|webp` antes de tudo; `createImageBitmap(file, {
   imageOrientation: "from-image" })` (respeita EXIF), redimensiona para ≤ 1600 px
   no lado maior, exporta JPEG qualidade 0,82; `fetch(uploadUrl, { method: "POST",
   headers: { "Content-Type": "image/jpeg" }, body })` → `{ storageId }` →
   `registerUpload`. A parte pura (`targetSize(w, h, max)`) tem teste.
-- Órfãos: ao **trocar** uma foto ou **remover** um slot, o editor chama
-  `removeUpload` do anterior; upload feito e página fechada sem salvar fica no
-  storage. Aceito, sem coleta de lixo nesta rodada.
+- **Nada é apagado antes do Salvar** (senão trocar uma foto alteraria o site
+  publicado e destruiria a foto anterior antes de ela confirmar). Trocar ou
+  remover um slot só muda o estado local; ao `saveContent` bem-sucedido, o
+  **servidor** compara os storageIds do `content` antigo com os do novo e apaga
+  do storage e de `uploads` os que saíram. `removeUpload` existe só para o
+  editor descartar um upload **ainda não salvo** (trocou de ideia antes de
+  salvar). Upload feito e página fechada sem salvar fica no storage: aceito,
+  sem coleta de lixo nesta rodada.
 - Foto enviada e ainda não salva aparece na prévia ao vivo via
   `URL.createObjectURL(file)` (revogado ao trocar/desmontar).
 
@@ -293,14 +317,20 @@ O drawer é estreito demais para editor + prévia lado a lado. O editor abre em
 **página inteira** dentro da área logada (mesmo rail; o item CRM já fica ativo
 porque o rail usa `pathname.startsWith("/crm/")`).
 
-- `src/app/(app)/crm/[leadId]/site/page.tsx`: server component, `const { leadId }
-  = await params` (Next 16: `params` é Promise, como em `/p/[token]`), renderiza
-  `<SiteEditor leadId={leadId} from={searchParams.from} />` (client). Lead
-  inexistente ou de outra org (`leads.get` devolve `null`) → estado "Lead não
-  encontrado" com link para o CRM, sem crash.
-- Volta: **"Voltar ao CRM"** leva a `/crm?lead=<id>`, e `crm/page.tsx` passa a
-  ler `?lead=` no mount para abrir o drawer daquele lead (hoje o drawer é só
-  estado, sem URL). Vindo de `/sites` (`?from=sites`), volta para `/sites`.
+- `src/app/(app)/crm/[leadId]/site/page.tsx`: server component; **`params` e
+  `searchParams` são Promises no Next 16**: `const { leadId } = await params;
+  const { from } = await searchParams;` e renderiza `<SiteEditor leadId={leadId}
+  from={from === "sites" ? "sites" : "crm"} />` (client). O `SiteEditor` consulta
+  `leads.get` com o id como **string** e trata `null` (inexistente ou outra org)
+  e id malformado (a query usa `ctx.db.normalizeId("leads", id)` e devolve
+  `null` em vez de lançar na validação) como estado "Lead não encontrado" com
+  link para o CRM, sem crash.
+- Volta: **"Voltar ao CRM"** leva a `/crm?lead=<id>`. Como `crm/page.tsx` é
+  client component estático, ler `useSearchParams` sem `<Suspense>` quebra o
+  `next build`; o mecanismo é um componente pequeno `OpenLeadFromQuery`
+  (`useSearchParams` + `useEffect` que chama `setOpenId`) renderizado dentro de
+  `<Suspense fallback={null}>` na página do CRM. Vindo de `/sites`
+  (`?from=sites`), volta para `/sites`.
 
 Layout: duas colunas em ≥ 1280 px (editor 440 px à esquerda, prévia ocupando o
 resto); uma coluna abaixo disso (prévia em cima, editor embaixo). Blocos do
@@ -324,23 +354,25 @@ editor, todos `glass` de primeiro nível com campos `bg-surface-solid`:
 
 Prévia ao vivo: o modelo renderizado de verdade (`renderTemplate` com o estado
 local, imagens enviadas por object URL), dentro de um contêiner com a largura
-simulada e `transform: scale()` para caber. Seletor "Desktop / Celular" muda a
+simulada reduzido com CSS `zoom` para caber (não `transform: scale`, que mantém
+a caixa de layout no tamanho original e cria rolagem dupla). Seletor "Desktop / Celular" muda a
 largura do contêiner (1280 / 390); funciona porque os modelos usam container
 queries (Decisões).
 
 Rodapé **`sticky bottom-0`** dentro do `<main>` (o `main` da área logada é quem
 rola; `fixed` cobriria o rail): **Salvar** (`saveContent`; desabilitado sem
 mudança; "Salvo" por 2 s; erro de validação do servidor ao lado, estado mantido),
-**Abrir preview** (link `/p/<token>`; o token existe desde o primeiro
-`getForLead`/`ensurePreview`), **Publicar** (o `PublishButton` que já existe),
+**Abrir preview** (link `/p/<token>`; o token existe assim que o `generate`
+do mount termina), **Publicar** (o `PublishButton` que já existe),
 **Voltar**. Quando o site está publicado, o rodapé mostra
 "Publicado: salvar altera o site no ar". Sair com mudanças não salvas pede
 confirmação (`beforeunload` + confirmação no botão Voltar).
 
 Estado local: `SiteContent` inteiro num `useState`, inicializado de
-`getForLead` (que já cria o preview se não existir, via `ensurePreview` chamado
-por uma mutation `generate` disparada no mount quando `getForLead` devolve
-`null`). "Alterado" = JSON diferente do salvo.
+`getForLead`. A query nunca cria nada: quando ela devolve `null`, o editor
+dispara `generate` uma vez no mount (`ensurePreview` cria a linha com token e
+conteúdo padrão) e a query reativa passa a devolver o preview. "Alterado" =
+JSON diferente do salvo.
 
 ### 3.2 Aba Site no drawer (`lead-detail.tsx` → `SiteTab`; plano C)
 
@@ -407,9 +439,14 @@ padrão). `tests/site-indexability.test.ts` continua valendo (só `/site` indexa
   textos padrão de `templates.*` sem dígito em todos os idiomas, paridade de
   chaves aninhadas, `defaultContentForLead`, `targetSize` do redimensionamento,
   e as guardas migradas de 1.7.
-- **Ao vivo (CLI)**: `generate` cria v2 e não sobrescreve; `saveContent` recusa
-  storageId de outro org e item nº 13; `publish` publica o `content` salvo;
-  `getByToken` devolve `images`.
+- **Ao vivo (CLI, modo demo: `npx convex run` só passa pelo `requireOrgId` com
+  `DEMO_MODE=1` + `CONVEX_ENV=development`)**: `generate` cria v2 e não
+  sobrescreve; `saveContent` recusa item nº 13 e storageId que não está em
+  `uploads` (para o caso "outro org", uma `internalMutation` de teste em
+  `convex/demo.ts`, só em modo demo, insere uma linha de `uploads` com
+  `orgId: "outro"` e um storageId real, e a chamada com ele precisa falhar com
+  `"Imagem inválida"`); `publish` publica o `content` salvo; `getByToken` devolve
+  `images`.
 - **Navegador real (CDP, como no UAT anterior; plano C)**: abrir o editor de um
   lead OSM, trocar modelo e paleta, adicionar 2 itens e o horário, enviar uma
   foto (arquivo pequeno gerado no scratchpad), salvar, abrir `/p/<token>` e
