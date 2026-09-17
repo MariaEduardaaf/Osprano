@@ -156,6 +156,18 @@ export default defineSchema({
     .index("by_slug", ["slug"])
     .index("by_org", ["orgId"]),
 
+  // Fotos enviadas para o site de um lead (spec 2.2/2.4). A linha existe para
+  // `saveContent` (plano B) só aceitar storageId do próprio org e para apagar o
+  // que saiu do conteúdo. As mutations de upload chegam no plano B; aqui só a tabela.
+  uploads: defineTable({
+    orgId: v.string(),
+    leadId: v.id("leads"),
+    storageId: v.id("_storage"),
+    at: v.number(),
+  })
+    .index("by_storage", ["storageId"])
+    .index("by_lead", ["leadId"]),
+
   outreach: defineTable({
     orgId: v.string(),
     leadId: v.id("leads"),

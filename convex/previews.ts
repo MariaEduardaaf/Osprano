@@ -2,6 +2,8 @@ import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { requireOrgId } from "./model/tenant";
 import { reserveUsage } from "./model/workspace";
+import { ensurePreview, readContent, resolveImages } from "./model/previews";
+import { parseSiteContent } from "./lib/site";
 import { userError } from "./lib/errors";
 
 function slugify(s: string): string {
@@ -15,7 +17,12 @@ function slugify(s: string): string {
   );
 }
 
-/** The preview site (if any) for a given lead — for the CRM detail Site tab. Authed. */
+/**
+ * O preview (se houver) de um lead, para a aba Site do CRM e para o editor. Authed.
+ * `content` já parseado (spec 2.1) e `images` com as URLs do storage resolvidas;
+ * quem monta o SiteView (foto padrão onde não há upload) é a página. Não devolve
+ * `lastOpenedAt`: sem uso em src/ (spec 2.3).
+ */
 export const getForLead = query({
   args: { leadId: v.id("leads") },
   handler: async (ctx, { leadId }) => {
@@ -25,47 +32,30 @@ export const getForLead = query({
       .withIndex("by_lead", (q) => q.eq("leadId", leadId))
       .first();
     if (!preview || preview.orgId !== orgId) return null;
+    const content = await readContent(ctx, preview);
     return {
       token: preview.token,
-      content: preview.content ?? null,
+      content,
       published: preview.published ?? false,
       slug: preview.slug ?? null,
       openCount: preview.openCount,
-      lastOpenedAt: preview.lastOpenedAt ?? null,
+      images: await resolveImages(ctx, content),
     };
   },
 });
 
-/** Generate (or refresh) a tracked preview site for a lead. Authed. */
+/**
+ * Garante o preview rastreado de um lead e devolve o token. Authed. Já existindo,
+ * NÃO toca no conteúdo (antes regravava a partir do lead; agora o conteúdo salvo
+ * é a fonte de verdade e o lead só o alimenta na criação).
+ */
 export const generate = mutation({
   args: { leadId: v.id("leads") },
   handler: async (ctx, { leadId }) => {
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.db.get(leadId);
     if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
-
-    const content = {
-      name: lead.name,
-      category: lead.category ?? null,
-      city: lead.city ?? null,
-      phone: lead.phone ?? null,
-      rating: lead.rating ?? null,
-      reviewsCount: lead.reviewsCount ?? null,
-      countryCode: lead.countryCode,
-    };
-
-    const existing = await ctx.db
-      .query("previews")
-      .withIndex("by_lead", (q) => q.eq("leadId", leadId))
-      .first();
-    if (existing) {
-      await ctx.db.patch(existing._id, { content });
-      return existing.token;
-    }
-
-    const token = crypto.randomUUID().replace(/-/g, "");
-    await ctx.db.insert("previews", { orgId, leadId, token, content, openCount: 0 });
-    return token;
+    return (await ensurePreview(ctx, lead)).token;
   },
 });
 
@@ -73,30 +63,13 @@ export const generate = mutation({
 export const ensureForLead = internalMutation({
   args: { leadId: v.id("leads") },
   handler: async (ctx, { leadId }) => {
-    const existing = await ctx.db
-      .query("previews")
-      .withIndex("by_lead", (q) => q.eq("leadId", leadId))
-      .first();
-    if (existing) return existing.token;
-
     const lead = await ctx.db.get(leadId);
     if (!lead) throw userError("Lead não encontrado");
-    const content = {
-      name: lead.name,
-      category: lead.category ?? null,
-      city: lead.city ?? null,
-      phone: lead.phone ?? null,
-      rating: lead.rating ?? null,
-      reviewsCount: lead.reviewsCount ?? null,
-      countryCode: lead.countryCode,
-    };
-    const token = crypto.randomUUID().replace(/-/g, "");
-    await ctx.db.insert("previews", { orgId: lead.orgId, leadId, token, content, openCount: 0 });
-    return token;
+    return (await ensurePreview(ctx, lead)).token;
   },
 });
 
-/** PUBLIC — the prospect opens this by token; no auth. Returns render content only. */
+/** PUBLIC, sem auth: o prospect abre pelo token. Devolve só o que a página renderiza. */
 export const getByToken = query({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
@@ -105,12 +78,13 @@ export const getByToken = query({
       .withIndex("by_token", (q) => q.eq("token", token))
       .first();
     if (!preview) return null;
-    return { content: preview.content, openCount: preview.openCount };
+    const content = await readContent(ctx, preview);
+    return { content, openCount: preview.openCount, images: await resolveImages(ctx, content) };
   },
 });
 
 /**
- * PUBLIC — records that the prospect opened the preview. This is the buying
+ * PUBLIC: records that the prospect opened the preview. This is the buying
  * signal: it advances the lead to "opened" so the reseller sees it live.
  */
 export const recordOpen = mutation({
@@ -151,7 +125,11 @@ export const recordOpen = mutation({
   },
 });
 
-/** Publish a preview as a white-label site with a stable slug. Charges 1 site of usage. */
+/**
+ * Publica o preview como site white-label com slug estável. Cobra 1 site de uso.
+ * Publica o `content` SALVO (parseado; um preview antigo é regravado já em v2),
+ * nunca uma cópia nova do lead. Já publicado: idempotente, devolve o slug.
+ */
 export const publish = mutation({
   args: { leadId: v.id("leads") },
   handler: async (ctx, { leadId }) => {
@@ -159,37 +137,19 @@ export const publish = mutation({
     const lead = await ctx.db.get(leadId);
     if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
 
-    const content = {
-      name: lead.name,
-      category: lead.category ?? null,
-      city: lead.city ?? null,
-      phone: lead.phone ?? null,
-      rating: lead.rating ?? null,
-      reviewsCount: lead.reviewsCount ?? null,
-      countryCode: lead.countryCode,
-    };
-
-    let preview = await ctx.db
-      .query("previews")
-      .withIndex("by_lead", (q) => q.eq("leadId", leadId))
-      .first();
-    if (!preview) {
-      const token = crypto.randomUUID().replace(/-/g, "");
-      const id = await ctx.db.insert("previews", { orgId, leadId, token, content, openCount: 0 });
-      preview = await ctx.db.get(id);
-    }
-    // Invariante (get logo após insert): Error comum de propósito — não é mensagem pra usuária.
-    if (!preview) throw new Error("Falha ao criar preview");
+    const preview = await ensurePreview(ctx, lead);
     if (preview.published && preview.slug) return preview.slug;
 
     await reserveUsage(ctx, orgId, "sites", 1);
-    const slug = `${slugify(lead.name)}-${crypto.randomUUID().slice(0, 6)}`;
+    const content = await readContent(ctx, preview);
+    // O slug sai do nome do SITE (o que ela salvou), não do nome cru do lead.
+    const slug = `${slugify(content.name)}-${crypto.randomUUID().slice(0, 6)}`;
     await ctx.db.patch(preview._id, { published: true, slug, content });
     return slug;
   },
 });
 
-/** PUBLIC — render a published white-label site by slug. */
+/** PUBLIC: render a published white-label site by slug. */
 export const getBySlug = query({
   args: { slug: v.string() },
   handler: async (ctx, { slug }) => {
@@ -198,11 +158,16 @@ export const getBySlug = query({
       .withIndex("by_slug", (q) => q.eq("slug", slug))
       .first();
     if (!p || !p.published) return null;
-    return { content: p.content, token: p.token };
+    const content = await readContent(ctx, p);
+    return { content, token: p.token, images: await resolveImages(ctx, content) };
   },
 });
 
-/** All previews/sites for the workspace, newest first, with lead context. */
+/**
+ * All previews/sites for the workspace, newest first, with lead context.
+ * `template`/`palette` saem de `parseSiteContent(content)`: não há coluna nova
+ * (spec 2.2) e não se resolve storage aqui (a miniatura usa só os defaults).
+ */
 export const listSites = query({
   args: {},
   handler: async (ctx) => {
@@ -214,6 +179,7 @@ export const listSites = query({
     const rows = await Promise.all(
       previews.map(async (p) => {
         const lead = await ctx.db.get(p.leadId);
+        const content = parseSiteContent(p.content);
         return {
           _id: p._id,
           leadId: p.leadId,
@@ -221,6 +187,9 @@ export const listSites = query({
           slug: p.slug ?? null,
           published: p.published ?? false,
           openCount: p.openCount,
+          template: content.template,
+          palette: content.palette,
+          // U+2014 escapado: o mesmo travessão de antes (a página Sites o mostra quando o lead sumiu).
           name: lead?.name ?? "—",
           city: lead?.city ?? null,
           category: lead?.category ?? null,

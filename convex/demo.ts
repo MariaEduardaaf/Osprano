@@ -1,4 +1,5 @@
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
+import { v } from "convex/values";
 import type { MutationCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { computeScore, tierFromScore, isEmailable, type Signals } from "./lib/domain";
@@ -468,5 +469,49 @@ export const seed = mutation({
     }
 
     return { seeded: NAMES.length + OPT_IN_LEADS.length };
+  },
+});
+
+/**
+ * Só demo: regrava o conteúdo do preview de um lead no formato ANTIGO
+ * (PreviewContent, sem `version`) para verificar pela CLI que a leitura converte
+ * para v2 e que a página pública renderiza um preview legado (spec 4).
+ */
+export const legacyPreview = mutation({
+  args: { leadId: v.id("leads") },
+  handler: async (ctx, { leadId }) => {
+    if (!isDemoEnabled()) throw userError("DEMO_MODE desligado");
+    const lead = await ctx.db.get(leadId);
+    if (!lead) throw userError("Lead não encontrado");
+    const preview = await ctx.db
+      .query("previews")
+      .withIndex("by_lead", (q) => q.eq("leadId", leadId))
+      .first();
+    if (!preview) throw userError("Lead sem preview");
+    await ctx.db.patch(preview._id, {
+      content: {
+        name: lead.name,
+        category: lead.category ?? null,
+        city: lead.city ?? null,
+        phone: lead.phone ?? null,
+        rating: lead.rating ?? null,
+        reviewsCount: lead.reviewsCount ?? null,
+        countryCode: lead.countryCode,
+      },
+    });
+    return preview.token;
+  },
+});
+
+/** Só demo: o `content` CRU do preview de um lead, sem parse (para provar que `generate` não regrava). */
+export const rawPreview = query({
+  args: { leadId: v.id("leads") },
+  handler: async (ctx, { leadId }) => {
+    if (!isDemoEnabled()) throw userError("DEMO_MODE desligado");
+    const preview = await ctx.db
+      .query("previews")
+      .withIndex("by_lead", (q) => q.eq("leadId", leadId))
+      .first();
+    return preview ? { token: preview.token, content: preview.content ?? null } : null;
   },
 });

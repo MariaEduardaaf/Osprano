@@ -3,23 +3,23 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@convex/_generated/api";
-import { PreviewSite, type PreviewContent } from "@/components/preview-site";
+import { PreviewSite } from "@/components/preview-site";
+import { buildSiteView } from "@/components/site-templates";
 import { DICTS, localeForLead } from "@/lib/preview-i18n";
 
 type Props = { params: Promise<{ slug: string }> };
 
 /**
  * `cache` dedupa a query entre generateMetadata e o render da página: as duas
- * rodam no mesmo request, então o Convex é consultado uma vez só.
+ * rodam no mesmo request, então o Convex é consultado uma vez só. `content` já
+ * chega parseado (v2) e `images` com as URLs do storage resolvidas.
  */
-const loadSite = cache(
-  async (slug: string): Promise<{ content: PreviewContent; token: string } | null> => {
-    const url = process.env.NEXT_PUBLIC_CONVEX_URL;
-    if (!url) return null;
-    const data = await new ConvexHttpClient(url).query(api.previews.getBySlug, { slug });
-    return data ? { content: data.content as PreviewContent, token: data.token } : null;
-  },
-);
+const loadSite = cache(async (slug: string) => {
+  const url = process.env.NEXT_PUBLIC_CONVEX_URL;
+  if (!url) return null;
+  const data = await new ConvexHttpClient(url).query(api.previews.getBySlug, { slug });
+  return data ? { content: data.content, images: data.images, token: data.token } : null;
+});
 
 /** Hosts que só resolvem na máquina de quem desenvolve (mesma lista de convex/lib/env.ts). */
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "0.0.0.0", "[::1]", "::1"]);
@@ -82,6 +82,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // Auto-referente: o mesmo conteúdo também responde em /p/[token] (noindex) e
   // aceita query string (utm etc.). O canonical junta tudo numa URL só.
   const canonical = origin ? `${origin}/site/${encodeURIComponent(slug)}` : null;
+  // `og:image` só quando a foto principal é upload dela (spec 3.5): a foto padrão
+  // do modelo é decoração genérica e não pode virar "a foto do negócio" no preview de link.
+  const heroUpload = site.images.heroUrl;
   return {
     title,
     description,
@@ -89,7 +92,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // definido junto do canonical porque vem da mesma (única) fonte verificada.
     ...(origin ? { metadataBase: new URL(origin) } : {}),
     ...(canonical ? { alternates: { canonical } } : {}),
-    openGraph: { type: "website", title, description, ...(canonical ? { url: canonical } : {}) },
+    openGraph: {
+      type: "website",
+      title,
+      description,
+      ...(canonical ? { url: canonical } : {}),
+      ...(heroUpload ? { images: [{ url: heroUpload }] } : {}),
+    },
     robots: { index: true, follow: true },
   };
 }
@@ -106,5 +115,6 @@ export default async function SitePage({ params }: Props) {
   // em previews.recordOpen só pega o dono logado (identity Clerk); um crawler
   // não tem sessão e entraria como prospect real. O sinal de abertura pertence
   // exclusivamente ao link de abordagem em /p/[token].
-  return <PreviewSite content={site.content} />;
+  const view = buildSiteView(site.content, site.images);
+  return <PreviewSite view={view} locale={localeForLead(view.countryCode, view.city)} />;
 }
