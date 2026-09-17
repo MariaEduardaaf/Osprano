@@ -223,7 +223,7 @@ interface SiteContent {
   (`PreviewContent` sem `version`) e converte (`template =
   suggestTemplate(category)`, `palette` = primeira, `whatsapp` ausente, campos
   novos ausentes); com `raw` nulo ou corrompido devolve um `SiteContent` mínimo
-  (`vitrine`, nome "—" substituído pelo nome do lead quando o chamador o tem) em
+  (`vitrine`, nome vazio, substituído pelo nome do lead quando o chamador o tem) em
   vez de lançar: uma query lançando derruba o drawer inteiro.
 - `defaultContentForLead(lead)`: monta o `SiteContent` inicial a partir do lead
   (nome, categoria, cidade, país, telefone, endereço, nota, avaliações, modelo
