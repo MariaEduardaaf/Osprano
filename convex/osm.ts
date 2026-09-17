@@ -24,6 +24,7 @@ import {
  */
 
 const USER_AGENT = "Osprano/1.0 (+https://github.com/MariaEduardaaf/Osprano)";
+const OVERPASS_POOL = 200;
 
 interface NominatimResult {
   osm_type?: string;
@@ -75,9 +76,10 @@ export const search = action({
       if (!relation?.osm_id) throw userError("Cidade não encontrada no OpenStreetMap");
       const areaId = 3600000000 + relation.osm_id;
 
-      // 2) Overpass: pede mais do que precisa para poder priorizar quem não tem site.
-      const limit = Math.min(200, want * 4);
-      const query = buildOverpassQuery(areaId, filters, limit);
+      // 2) Overpass: pool fixo de 200, independente do `want`. O Overpass devolve os
+      // elementos de id mais baixo (nós antigos, com poucas tags): com um pool pequeno
+      // o ranking "sem site + com telefone" não tem de onde escolher.
+      const query = buildOverpassQuery(areaId, filters, OVERPASS_POOL);
       const res = await fetch("https://overpass-api.de/api/interpreter", {
         method: "POST",
         headers: {
@@ -99,7 +101,7 @@ export const search = action({
 
       const picked = rankForOutreach(candidates).slice(0, want);
       for (const p of picked) {
-        const leadId = await ctx.runMutation(internal.leads.insertDiscovered, {
+        const { leadId, created } = await ctx.runMutation(internal.leads.insertDiscovered, {
           orgId,
           source: "osm",
           placeId: p.placeId,
@@ -112,7 +114,9 @@ export const search = action({
           website: p.website,
           email: p.email,
         });
-        inserted += 1;
+        // Lead que já existia só foi atualizado: não conta nem gasta cota (a reserva é
+        // devolvida pelo `want - inserted`), mas repontua do mesmo jeito.
+        if (created) inserted += 1;
         await ctx.scheduler.runAfter(0, internal.scoring.scoreLead, { leadId });
       }
     } catch (err) {
