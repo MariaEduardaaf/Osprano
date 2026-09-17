@@ -249,6 +249,27 @@ async function clearOrg(ctx: MutationCtx): Promise<void> {
     await ctx.db.delete(w._id);
 }
 
+/**
+ * Zera o workspace demo sem semear nada: para prospectar de verdade em modo
+ * demo (sem login), com a chave real do Google Places no deployment.
+ * Recria o workspace vazio (plano pro, contadores em zero). Demo mode only.
+ */
+export const clear = mutation({
+  args: {},
+  handler: async (ctx) => {
+    if (!isDemoEnabled()) throw userError("DEMO_MODE desligado");
+    await clearOrg(ctx);
+    await ctx.db.insert("workspaces", {
+      orgId: ORG,
+      plan: "pro",
+      leadsUsed: 0,
+      sitesUsed: 0,
+      periodStart: Date.now(),
+    });
+    return { cleared: true };
+  },
+});
+
 /** Populate the demo workspace with a rich sample dataset. Demo mode only. */
 export const seed = mutation({
   args: {},
