@@ -44,7 +44,9 @@ function eventLabel(type: string, meta: { to?: string; channel?: string } | null
     case "reply":
       return "respondeu";
     case "stage_change":
-      return meta?.to ? `movido para ${meta.to}` : "mudou de estágio";
+      return meta?.to
+        ? `movido para ${PIPELINE_STAGES.find((s) => s.id === meta.to)?.label ?? meta.to}`
+        : "mudou de estágio";
     default:
       return type;
   }

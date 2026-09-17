@@ -55,17 +55,16 @@ export function CreateLeadModal({ onClose }: { onClose: () => void }) {
   const [legalForm, setLegalForm] = useState<(typeof LEGAL)[number]["v"]>("unknown");
   const [contactType, setContactType] = useState<(typeof CONTACT)[number]["v"]>("unknown");
 
-  // close on Escape + lock background scroll while open
+  // lock background scroll while open. Esc é tratado no próprio dialog (abaixo)
+  // com stopPropagation: um listener no window disputaria com o do drawer do
+  // lead e o Esc fechava o drawer em vez do modal.
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
-      window.removeEventListener("keydown", onKey);
       document.body.style.overflow = prev;
     };
-  }, [onClose]);
+  }, []);
 
   const cities = CITIES_BY_COUNTRY[countryCode] ?? [];
 
@@ -105,13 +104,25 @@ export function CreateLeadModal({ onClose }: { onClose: () => void }) {
         onClick={onClose}
         className="absolute inset-0 bg-black/30 backdrop-blur-sm"
       />
-      <div className="glass-dense relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="create-lead-title"
+        tabIndex={-1}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            e.stopPropagation();
+            onClose();
+          }
+        }}
+        className="glass-dense relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl"
+      >
         <div className="flex shrink-0 items-center justify-between border-b border-border px-6 py-4">
           <div>
             <div className="font-mono text-[10px] font-semibold uppercase tracking-wider text-brand">
               Novo lead
             </div>
-            <h2 className="font-display text-lg font-bold">Criar lead manualmente</h2>
+            <h2 id="create-lead-title" className="font-display text-lg font-bold">Criar lead manualmente</h2>
           </div>
           <button
             onClick={onClose}
