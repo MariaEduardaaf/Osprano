@@ -274,7 +274,7 @@ quando não existe. **Nunca sobrescreve** `content` existente. `generate`,
 |---|---|
 | `generate` (mutation) | `ensurePreview` e devolve o token. Já existindo, não toca no conteúdo (hoje regrava; muda). |
 | `ensureForLead` (internal, fluxo de outreach) | idem. |
-| `saveContent` (mutation, nova) | `{ leadId, content: siteContentValidator }` → ownership, `validateSiteContent`, cada `heroImage`/`gallery` precisa existir em `uploads` do mesmo org (`"Imagem inválida"`), `ensurePreview` e `patch({ content })`. |
+| `saveContent` (mutation, nova) | `{ leadId, content: siteContentValidator }` → ownership, `validateSiteContent`, cada `heroImage`/`gallery` precisa existir em `uploads` do mesmo org (`"Imagem inválida"`), `ensurePreview`, `patch({ content })` e, **depois** de gravar, apaga do storage e de `uploads` os storageIds que estavam no `content` antigo e não estão no novo (seção 2.4). |
 | `getForLead` (query) | devolve `content` parseado, `token`, `openCount`, `published`, `slug`, e `images: { heroUrl?: string; galleryUrls: string[] }` com as URLs do storage resolvidas (`ctx.storage.getUrl`) para as imagens enviadas; a página monta o `SiteView` (foto padrão onde não há upload). Deixa de devolver `lastOpenedAt` (sem uso em `src/`): intencional. |
 | `getByToken`, `getBySlug` (queries públicas) | devolvem `content` parseado e as mesmas `images` resolvidas. |
 | `publish` (mutation) | `ensurePreview`, publica o `content` salvo (parseado), gera o slug como hoje, cobra 1 site como hoje. Já publicado: idempotente, como hoje. |
@@ -322,9 +322,11 @@ porque o rail usa `pathname.startsWith("/crm/")`).
   const { from } = await searchParams;` e renderiza `<SiteEditor leadId={leadId}
   from={from === "sites" ? "sites" : "crm"} />` (client). O `SiteEditor` consulta
   `leads.get` com o id como **string** e trata `null` (inexistente ou outra org)
-  e id malformado (a query usa `ctx.db.normalizeId("leads", id)` e devolve
-  `null` em vez de lançar na validação) como estado "Lead não encontrado" com
-  link para o CRM, sem crash.
+  e id malformado (a query `leads.get` existente em `convex/leads.ts` passa a
+  aceitar `id: v.string()` e usar `ctx.db.normalizeId("leads", id)`, devolvendo
+  `null` em vez de lançar na validação; o único caller atual,
+  `src/components/outreach-composer.tsx`, passa um `Id<"leads">` e continua
+  válido) como estado "Lead não encontrado" com link para o CRM, sem crash.
 - Volta: **"Voltar ao CRM"** leva a `/crm?lead=<id>`. Como `crm/page.tsx` é
   client component estático, ler `useSearchParams` sem `<Suspense>` quebra o
   `next build`; o mecanismo é um componente pequeno `OpenLeadFromQuery`
