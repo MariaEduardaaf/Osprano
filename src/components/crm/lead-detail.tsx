@@ -459,7 +459,7 @@ function SiteTab({ lead }: { lead: Doc<"leads"> }) {
         <MdOutlineLanguage size={30} className="mx-auto text-faint" />
         <p className="mt-3 font-display text-lg font-semibold">Nenhum site gerado ainda</p>
         <p className="mx-auto mt-1 max-w-sm text-sm text-muted">
-          Gere um preview profissional do site do negócio num link único rastreado — pronto pra mostrar na abordagem.
+          Prepare um preview do site do negócio num link único e rastreado, pronto para mostrar na abordagem.
         </p>
         <div className="mt-5 flex flex-wrap justify-center gap-2">
           <GeneratePreviewButton leadId={lead._id} />
@@ -488,17 +488,13 @@ function SiteTab({ lead }: { lead: Doc<"leads"> }) {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 rounded-lg border border-border-strong px-3 py-2 text-sm font-semibold hover:bg-surface-2"
           >
-            Ver prévia rastreada <MdOpenInNew size={14} />
+            Abrir preview <MdOpenInNew size={14} />
           </a>
           <PublishButton leadId={lead._id} slug={preview.slug} />
         </div>
       </div>
-      <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-2/40 px-4 py-3">
-        <span className="text-sm text-muted">Regenerar o conteúdo do site</span>
-        <div className="flex flex-wrap items-center gap-2">
-          <WhatTheyHaveButton lead={lead} />
-          <GeneratePreviewButton leadId={lead._id} />
-        </div>
+      <div className="flex items-center justify-end gap-2 rounded-xl border border-border bg-surface-2/40 px-4 py-3">
+        <WhatTheyHaveButton lead={lead} />
       </div>
     </div>
   );

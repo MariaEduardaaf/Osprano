@@ -6,7 +6,7 @@ import { useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 
-/** Generates a tracked preview for a lead, then reveals the open link. */
+/** Prepara (garante) o preview rastreado do lead e então revela o link de abrir. Dois passos: um link que aparece depois do clique não cai no bloqueador de pop-up. */
 export function GeneratePreviewButton({
   leadId,
   variant = "compact",
@@ -54,7 +54,7 @@ export function GeneratePreviewButton({
       }
     >
       <MdOutlineAutoAwesome size={primary ? 16 : 14} />
-      {busy ? "Gerando…" : "Gerar preview"}
+      {busy ? "Preparando…" : "Preparar preview"}
     </button>
   );
 }
