@@ -16,7 +16,7 @@ com a qualidade ajustada para caber em 250 KB.
 | estudio/g1.jpg | https://unsplash.com/photos/gray-stainless-steel-scissors-on-towel-pu20JkUx--A | Arthur Humeau | Unsplash License |
 | estudio/g2.jpg | https://unsplash.com/photos/black-leather-barber-chair-near-brown-brick-wall-EW_rqoSdDes | Nathon Oski | Unsplash License |
 | oficio/hero.jpg | https://unsplash.com/photos/flat-lay-photography-of-assorted-color-mechanical-tool-set-TtN_obfWlGw | Wesley Caribe | Unsplash License |
-| oficio/g1.jpg | https://unsplash.com/photos/a-kitchen-with-a-stove-top-oven-next-to-a-window-vfFVFPHYeko | Mat Kilkeary | Unsplash License |
+| oficio/g1.jpg | https://unsplash.com/photos/person-holding-screwdriver--Ifr1HGFeW8 | Caleb Woods | Unsplash License |
 | oficio/g2.jpg | https://unsplash.com/photos/a-bunch-of-blue-bins-filled-with-lots-of-copper-ONZIRho_-TM | Guille B | Unsplash License |
 | vitrine/hero.jpg | placeholder de gradiente gerado localmente, a substituir pela dona | — | — |
 | vitrine/g1.jpg | https://unsplash.com/photos/a-rack-of-shirts-and-pants-in-a-store-6D_1ODPb7Os | Declan Sun | Unsplash License |
