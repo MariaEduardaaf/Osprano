@@ -30,7 +30,7 @@ const OVERPASS_POOL = 200;
 /** Instância principal e um espelho público: a principal responde 429/503/504 com frequência. */
 const OVERPASS_ENDPOINTS = [
   "https://overpass-api.de/api/interpreter",
-  "https://overpass.kumi.systems/api/interpreter",
+  "https://overpass.osm.ch/api/interpreter",
 ];
 const OVERPASS_RETRY_DELAY_MS = 2000;
 /** A consulta pede [timeout:25]; acima disso o endpoint está travado, não lento. */
