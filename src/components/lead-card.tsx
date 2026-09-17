@@ -4,7 +4,6 @@ import {
   MdOutlineBlock,
   MdCheckCircle,
   MdRadioButtonUnchecked,
-  MdOutlineLanguage,
   MdOutlineCall,
   MdOutlinePlace,
   MdOutlineHome,
@@ -60,19 +59,6 @@ export function LeadCard({
   const category = (lead.category ?? "").replace(/_/g, " ");
   const callMode = variant === "call";
 
-  const siteLink = hasSite ? (
-    <a
-      href={lead.website}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={(e) => e.stopPropagation()}
-      title={lead.website}
-      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border-strong px-4 py-2.5 text-sm font-semibold text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
-    >
-      <MdOutlineLanguage size={16} />
-      Site atual
-    </a>
-  ) : null;
 
   return (
     <div
@@ -211,7 +197,6 @@ export function LeadCard({
                 Ligar
               </a>
             )}
-            {siteLink}
           </div>
           {/* país + cidade: o painel rotula o script com o idioma real (a Suíça é
               multilíngue — Genebra sai em francês, Zurique em alemão). */}
@@ -242,7 +227,6 @@ export function LeadCard({
             </span>
           )}
           <WhatTheyHaveButton lead={lead} variant="primary" />
-          {siteLink}
         </div>
       )}
     </div>
