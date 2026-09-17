@@ -18,7 +18,7 @@ com a qualidade ajustada para caber em 250 KB.
 | oficio/hero.jpg | https://unsplash.com/photos/flat-lay-photography-of-assorted-color-mechanical-tool-set-TtN_obfWlGw | Wesley Caribe | Unsplash License |
 | oficio/g1.jpg | https://unsplash.com/photos/person-holding-screwdriver--Ifr1HGFeW8 | Caleb Woods | Unsplash License |
 | oficio/g2.jpg | https://unsplash.com/photos/a-bunch-of-blue-bins-filled-with-lots-of-copper-ONZIRho_-TM | Guille B | Unsplash License |
-| vitrine/hero.jpg | placeholder de gradiente gerado localmente, a substituir pela dona | — | — |
+| vitrine/hero.jpg | https://unsplash.com/photos/a-large-room-with-a-white-counter-and-black-walls-ORecYn0PCdU | Intenza Fitness | Unsplash License |
 | vitrine/g1.jpg | https://unsplash.com/photos/a-rack-of-shirts-and-pants-in-a-store-6D_1ODPb7Os | Declan Sun | Unsplash License |
 | vitrine/g2.jpg | https://unsplash.com/photos/a-tree-in-front-of-a-window-with-a-shelf-on-it-OZtfopnB2FM | Joey Huang | Unsplash License |
 
