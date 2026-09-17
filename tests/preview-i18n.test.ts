@@ -1,8 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { DICTS, localeForCountry, localeForLead } from "../src/lib/preview-i18n.ts";
+import { DICTS, localeForCountry, localeForLead, type Locale } from "../src/lib/preview-i18n.ts";
 import { SEARCHABLE_MARKETS } from "../convex/lib/domain.ts";
+import { TEMPLATE_IDS } from "../convex/lib/site.ts";
+
+const LOCALES = Object.keys(DICTS) as Locale[];
 
 test("preview-i18n: countryCode mapeia para o locale correto", () => {
   assert.equal(localeForCountry("GB"), "en");
@@ -19,24 +22,24 @@ test("preview-i18n: countryCode mapeia para o locale correto", () => {
   assert.equal(localeForCountry("DK"), "da");
   assert.equal(localeForCountry("gb"), "en"); // case-insensitive
   assert.equal(localeForCountry("de"), "de"); // case-insensitive
-  assert.equal(localeForCountry("JP"), "en"); // país desconhecido → fallback
+  assert.equal(localeForCountry("JP"), "en"); // país desconhecido: fallback
   assert.equal(localeForCountry(""), "en");
 });
 
 test("preview-i18n: a Suíça sai do alemão único e segue a região linguística", () => {
-  // Romandia → francês. A forma LOCAL é a que chega pela descoberta (o select);
+  // Romandia: francês. A forma LOCAL é a que chega pela descoberta (o select);
   // a inglesa é cobertura defensiva de criação manual, não a saída do Places.
   assert.equal(localeForLead("CH", "Geneva"), "fr");
   assert.equal(localeForLead("CH", "Genève"), "fr");
   assert.equal(localeForLead("CH", "Lausanne"), "fr");
-  // Ticino → italiano.
+  // Ticino: italiano.
   assert.equal(localeForLead("CH", "Lugano"), "it");
   assert.equal(localeForLead("CH", "Bellinzona"), "it");
-  // Suíça alemã → alemão.
+  // Suíça alemã: alemão.
   assert.equal(localeForLead("CH", "Zurich"), "de");
   assert.equal(localeForLead("CH", "Zürich"), "de");
   assert.equal(localeForLead("CH", "Berne"), "de");
-  // Fallback DELIBERADO: cidade ausente, vazia ou desconhecida → alemão (~62%).
+  // Fallback DELIBERADO: cidade ausente, vazia ou desconhecida vira alemão (~62%).
   assert.equal(localeForLead("CH", undefined), "de");
   assert.equal(localeForLead("CH", null), "de");
   assert.equal(localeForLead("CH", ""), "de");
@@ -57,66 +60,77 @@ test("preview-i18n: fora da Suíça a cidade é ignorada", () => {
 });
 
 /**
- * Toda a copy de um locale, com as funções já materializadas: é o texto que o
- * prospect realmente lê, não só as chaves fixas.
+ * Toda a copy de um locale, com as funções já materializadas: o que o prospect
+ * realmente lê, no topo do dicionário e nos quatro modelos.
  */
-function allCopy(locale: keyof typeof DICTS): string[] {
+function allCopy(locale: Locale): string[] {
   const d = DICTS[locale];
-  return [
+  const top = [
     ...Object.values(d).filter((v): v is string => typeof v === "string"),
-    d.featureLocationBodyWithCity("Madrid"),
-    d.visitBody({ name: "Casa Nova", category: "café", city: "Madrid" }),
-    d.visitBody({ name: "Casa Nova", category: null, city: null }),
     d.metaTitle({ name: "Casa Nova", city: "Madrid" }),
     d.metaDescription({ name: "Casa Nova", city: "Madrid" }),
     d.metaDescription({ name: "Casa Nova", city: null }),
   ];
+  const nested = TEMPLATE_IDS.flatMap((t) => {
+    const td = d.templates[t];
+    return [...Object.values(td).filter((v): v is string => typeof v === "string"), td.inCity("Madrid")];
+  });
+  return [...top, ...nested];
 }
 
-/** Fonte do componente sem comentários: o que é RENDERIZADO, não o que se explica. */
-function previewSiteCode(): string {
-  const src = readFileSync(new URL("../src/components/preview-site.tsx", import.meta.url), "utf8");
-  return src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+/** Só slogan e "sobre": o texto corrido que se apresenta como fala do negócio. */
+function proseCopy(locale: Locale): string[] {
+  return TEMPLATE_IDS.flatMap((t) => [DICTS[locale].templates[t].tagline, DICTS[locale].templates[t].about]);
 }
 
 test("preview-i18n: nenhum dicionário afirma horário de funcionamento", () => {
-  // O horário NUNCA veio de dado: o field mask do Places (convex/places.ts) não
-  // pede `regularOpeningHours`. A prévia é pública e leva o nome do negócio real,
-  // então um horário fixo do dicionário mandava o cliente do prospect à porta
-  // fechada. A chave foi removida; este teste impede que volte, em qualquer idioma.
+  // Horário só existe como DADO (SiteContent.hours) e só aparece quando ela
+  // preencheu. No dicionário há apenas o RÓTULO da seção (templates.*.hoursHeading);
+  // no topo do PreviewDict não pode voltar chave de horário, e nenhuma copy pode
+  // trazer um valor com cara de horário.
   const hoursWord =
     /hour|horári|horario|orari|horaire|öppettid|åpningstid|åbningstid|openingstijd|öffnungszeit/i;
-  // "9:00–19:00", "9h00", "9am", "9–19 Uhr" — valor com cara de horário.
+  // "9:00-19:00", "9h00", "9am", "9-19 Uhr": valor com cara de horário.
   const hoursValue = /\d{1,2}\s*[:.h]\s*\d{2}|\b\d{1,2}\s*(am|pm)\b|\bUhr\b/i;
-  for (const l of Object.keys(DICTS) as (keyof typeof DICTS)[]) {
+  for (const l of LOCALES) {
     for (const key of Object.keys(DICTS[l])) {
-      assert.equal(hoursWord.test(key), false, `${l}: chave de horário de volta (${key})`);
+      assert.equal(hoursWord.test(key), false, `${l}: chave de horário no topo do dicionário (${key})`);
     }
     for (const s of allCopy(l)) {
-      assert.equal(hoursWord.test(s), false, `${l}: copy promete horário: ${JSON.stringify(s)}`);
       assert.equal(hoursValue.test(s), false, `${l}: copy afirma horário: ${JSON.stringify(s)}`);
+    }
+    for (const s of proseCopy(l)) {
+      assert.equal(hoursWord.test(s), false, `${l}: slogan/sobre promete horário: ${JSON.stringify(s)}`);
     }
   }
 });
 
 test("preview-i18n: a copy não afirma localização que a base não tem", () => {
-  // Do lead só se sabe a CIDADE (Places). "Em pleno centro de X" / "no coração da
-  // cidade" é endereço inventado — boa parte dos leads fica em bairro ou periferia.
-  // Heurística com as formas que já estiveram no dicionário, uma por idioma —
-  // pega o copiar/colar da versão antiga, que é como isto voltaria.
+  // Do lead só se sabe a CIDADE. "Em pleno centro de X" / "no coração da cidade"
+  // é endereço inventado: boa parte dos leads fica em bairro ou periferia.
   const centreClaim =
     /pleno centro|pieno centro|plein centre|centro de|centre of|centre de|centrum|zentrum|herzen der stadt|heart of|cœur de|cuore della|corazón de|coração|mitt i stan|mitt i centrala|midt i sentrum|midt i byen/i;
-  for (const l of Object.keys(DICTS) as (keyof typeof DICTS)[]) {
+  for (const l of LOCALES) {
     for (const s of allCopy(l)) {
       assert.equal(centreClaim.test(s), false, `${l}: afirma centralidade: ${JSON.stringify(s)}`);
     }
   }
 });
 
-test("preview-i18n: todos os locales têm as mesmas chaves", () => {
+test("preview-i18n: todos os locales têm as mesmas chaves, inclusive templates.<id>.*", () => {
   const keys = Object.keys(DICTS.en).sort();
-  for (const l of Object.keys(DICTS) as (keyof typeof DICTS)[]) {
+  const nestedKeys = Object.keys(DICTS.en.templates.mesa).sort();
+  for (const l of LOCALES) {
     assert.deepEqual(Object.keys(DICTS[l]).sort(), keys, `locale ${l} fora de paridade`);
+    for (const t of TEMPLATE_IDS) {
+      assert.deepEqual(Object.keys(DICTS[l].templates[t]).sort(), nestedKeys, `${l}.templates.${t} fora de paridade`);
+    }
+  }
+});
+
+test("preview-i18n: as chaves do template único não voltam", () => {
+  for (const key of ["heroSubtitle", "featureQualityTitle", "featureLocationBodyWithCity", "visitHeading", "visitBody"]) {
+    assert.equal(key in DICTS.en, false, `${key} voltou ao topo do dicionário`);
   }
 });
 
@@ -125,21 +139,13 @@ test("preview-i18n: todo mercado pesquisável tem dicionário completo (paridade
   for (const cc of SEARCHABLE_MARKETS) {
     const locale = localeForCountry(cc);
     const dict = DICTS[locale];
-    assert.ok(dict, `mercado ${cc} → locale "${locale}" sem dicionário`);
-    assert.deepEqual(
-      Object.keys(dict).sort(),
-      enKeys,
-      `mercado ${cc} (locale ${locale}) com chaves faltando`,
-    );
+    assert.ok(dict, `mercado ${cc} sem dicionário para "${locale}"`);
+    assert.deepEqual(Object.keys(dict).sort(), enKeys, `mercado ${cc} (locale ${locale}) com chaves faltando`);
     // Um mercado novo sem tradução cairia em "en" silenciosamente: só GB/IE podem.
     if (locale === "en") {
       assert.ok(["GB", "IE"].includes(cc), `mercado ${cc} caiu no fallback "en" sem tradução`);
     }
-    for (const [key, value] of Object.entries(dict)) {
-      if (typeof value === "string") {
-        assert.ok(value.trim().length > 0, `${locale}.${key} vazio`);
-      }
-    }
+    for (const s of allCopy(locale)) assert.ok(s.trim().length > 0, `${locale}: copy vazia`);
   }
 });
 
@@ -148,82 +154,108 @@ test("preview-i18n: os três idiomas da Suíça têm dicionário completo e não
   // Uma cidade por região: o que o lead suíço real abre precisa estar traduzido.
   for (const city of ["Geneva", "Lugano", "Zurich", undefined]) {
     const locale = localeForLead("CH", city);
-    const dict = DICTS[locale];
-    assert.ok(dict, `CH/${city} → locale "${locale}" sem dicionário`);
     assert.notEqual(locale, "en", `CH/${city} caiu no fallback "en"`);
-    assert.deepEqual(Object.keys(dict).sort(), enKeys, `CH/${city} (${locale}) com chaves faltando`);
-    for (const [key, value] of Object.entries(dict)) {
-      if (typeof value === "string") {
-        assert.ok(value.trim().length > 0, `${locale}.${key} vazio`);
-      }
-    }
+    assert.deepEqual(Object.keys(DICTS[locale]).sort(), enKeys, `CH/${city} (${locale}) com chaves faltando`);
+    for (const s of allCopy(locale)) assert.ok(s.trim().length > 0, `${locale}: copy vazia`);
   }
 });
 
 test("preview-i18n: o dicionário francês está em francês, não em português", () => {
   // Guarda contra copiar/colar do dicionário pt: as duas línguas se parecem o
   // bastante para um erro passar despercebido em revisão.
-  const strings = Object.values(DICTS.fr).filter((v): v is string => typeof v === "string");
-  const body = [
-    ...strings,
-    DICTS.fr.featureLocationBodyWithCity("Genève"),
-    DICTS.fr.visitBody({ name: "Chez Marc", category: "boulangerie", city: "Genève" }),
-    DICTS.fr.metaDescription({ name: "Chez Marc", city: "Genève" }),
-  ].join(" | ");
-  assert.equal(body.match(/Ligar|Venha|Horário|Telefone|avaliações|Qualidade/), null, body);
+  const body = allCopy("fr").join(" | ");
+  assert.equal(body.match(/Ligar|Venha|Horário|Telefone|avaliações|Qualidade|Reservar mesa/), null, body);
   assert.ok(DICTS.fr.call === "Appeler" && DICTS.fr.phoneLabel === "Téléphone");
+  assert.equal(DICTS.fr.templates.mesa.tagline, "Une table dressée avec soin");
 });
 
 test("preview-i18n: a copy francesa nunca usa espaço normal antes de ? ! : ;", () => {
   // Em francês essa pontuação leva espaço INSECÁVEL (U+00A0). Com espaço normal a
-  // quebra de linha joga o sinal sozinho para o começo da linha — um leitor romando
-  // nota na hora. Hoje nenhuma linha FR usa essa pontuação: o teste é a guarda de
-  // quem escrever a próxima.
-  const strings = Object.values(DICTS.fr).filter((v): v is string => typeof v === "string");
-  const fr = [
-    ...strings,
-    DICTS.fr.featureLocationBodyWithCity("Genève"),
-    DICTS.fr.visitBody({ name: "Chez Marc", category: "boulangerie", city: "Genève" }),
-    DICTS.fr.visitBody({ name: "Chez Marc", category: null, city: null }),
-    DICTS.fr.metaTitle({ name: "Chez Marc", city: "Genève" }),
-    DICTS.fr.metaDescription({ name: "Chez Marc", city: "Genève" }),
-  ];
-  for (const s of fr) {
+  // quebra de linha joga o sinal sozinho para o começo da linha. Vale também para
+  // os quatro modelos.
+  for (const s of allCopy("fr")) {
     assert.equal(s.match(/ [?!:;]/), null, `espaço normal antes da pontuação: ${JSON.stringify(s)}`);
   }
 });
 
 test("preview-i18n: funções interpoladas incluem os argumentos", () => {
-  assert.ok(DICTS.sv.featureLocationBodyWithCity("Stockholm").includes("Stockholm"));
-  const body = DICTS.en.visitBody({ name: "Joe", category: "café", city: "London" });
-  assert.ok(body.includes("Joe") && body.includes("London"));
-
-  for (const l of Object.keys(DICTS) as (keyof typeof DICTS)[]) {
-    assert.ok(
-      DICTS[l].featureLocationBodyWithCity("Madrid").includes("Madrid"),
-      `${l}.featureLocationBodyWithCity não interpola a cidade`,
-    );
-    const b = DICTS[l].visitBody({ name: "Casa Nova", category: "café", city: "Madrid" });
-    assert.ok(b.includes("Casa Nova") && b.includes("Madrid"), `${l}.visitBody não interpola`);
-    const noCity = DICTS[l].visitBody({ name: "Casa Nova", category: null, city: null });
-    assert.ok(noCity.includes("Casa Nova"), `${l}.visitBody sem cidade não interpola o nome`);
+  for (const l of LOCALES) {
+    const t = DICTS[l].metaTitle({ name: "Casa Nova", city: "Madrid" });
+    assert.ok(t.includes("Casa Nova") && t.includes("Madrid"), `${l}.metaTitle não interpola`);
+    const d = DICTS[l].metaDescription({ name: "Casa Nova", city: "Madrid" });
+    assert.ok(d.includes("Casa Nova") && d.includes("Madrid"), `${l}.metaDescription não interpola`);
+    assert.ok(DICTS[l].metaDescription({ name: "Casa Nova", city: null }).includes("Casa Nova"));
+    for (const id of TEMPLATE_IDS) {
+      assert.ok(DICTS[l].templates[id].inCity("Madrid").includes("Madrid"), `${l}.${id}.inCity não interpola`);
+    }
   }
 });
 
-test("preview-site: nenhuma string PT hardcoded permanece", () => {
-  assert.equal(previewSiteCode().match(/Venha|Tradição|Seg–Sáb/), null);
+/* ------------------------------------------------ guardas na fonte dos modelos */
+
+const TEMPLATE_FILES = ["mesa", "estudio", "oficio", "vitrine"] as const;
+
+/** Fonte sem comentários: o que é RENDERIZADO, não o que se explica sobre ele. */
+function source(name: string): string {
+  const src = readFileSync(new URL(`../src/components/site-templates/${name}.tsx`, import.meta.url), "utf8");
+  return src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+}
+
+test("site-templates: nenhuma string PT hardcoded nos modelos", () => {
+  for (const f of [...TEMPLATE_FILES, "shared"]) {
+    assert.equal(source(f).match(/Venha|Tradição|Seg–Sáb|Reservar|Fechado/), null, `${f}.tsx com texto PT fixo`);
+  }
 });
 
-test("preview-site: o bloco de fatos só renderiza dado do lead", () => {
-  const code = previewSiteCode();
-  // Nenhuma referência a horário sobrou (nem via dicionário, nem hardcoded).
-  assert.equal(code.match(/hours/i), null, "referência a horário de volta no componente");
-  // Sem separador "." aqui: classe Tailwind (`tracking-[0.22em]`) daria falso positivo.
-  assert.equal(code.match(/\b\d{1,2}\s*[:h]\s*\d{2}\b|\b\d{1,2}\s*(am|pm)\b|\d{1,2}[.:h]\d{2}\s*[–-]/i), null);
-  // Todo <dd> do bloco de contato sai de `facts`, que é montado só com o que veio
-  // do Places para este lead. Um `<dd>` com `tr.` seria valor vindo do dicionário
-  // — foi exatamente assim que o horário inventado entrou.
-  for (const dd of code.match(/<dd[^>]*>[\s\S]*?<\/dd>/g) ?? []) {
-    assert.equal(dd.match(/\btr\./), null, `<dd> com valor do dicionário: ${dd}`);
+test("site-templates: horário, preço e itens só saem de view.*, nunca de tr.*", () => {
+  // Foi assim que um horário inventado entrou no template antigo: valor vindo do
+  // dicionário num bloco que se apresenta como registro do negócio.
+  for (const f of TEMPLATE_FILES) {
+    const code = source(f);
+    for (const m of code.match(/hours=\{[^}]*\}/g) ?? []) {
+      assert.equal(m, "hours={view.hours}", `${f}.tsx: ${m}`);
+    }
+    for (const m of code.match(/items=\{[^}]*\}/g) ?? []) {
+      assert.equal(m, "items={view.items}", `${f}.tsx: ${m}`);
+    }
+    for (const m of code.match(/urls=\{[^}]*\}/g) ?? []) {
+      assert.equal(m, "urls={view.galleryUrls}", `${f}.tsx: ${m}`);
+    }
+  }
+  for (const f of [...TEMPLATE_FILES, "shared"]) {
+    const code = source(f);
+    // Sem separador "." aqui: classe Tailwind (`tracking-[0.22em]`) daria falso positivo.
+    assert.equal(
+      code.match(/\b\d{1,2}\s*[:h]\s*\d{2}\b|\b\d{1,2}\s*(am|pm)\b|\d{1,2}[:h]\d{2}\s*[-]/i),
+      null,
+      `${f}.tsx com horário fixo`,
+    );
+    for (const dd of code.match(/<dd[^>]*>[\s\S]*?<\/dd>/g) ?? []) {
+      assert.equal(dd.match(/\btr\./), null, `${f}.tsx: <dd> com valor do dicionário: ${dd}`);
+    }
+  }
+});
+
+test("site-templates: container queries, sem unidade de viewport nem sticky/fixed", () => {
+  // A prévia ao vivo e as miniaturas mostram o modelo num div menor que a janela
+  // (spec, Decisões): media query de viewport daria o layout errado.
+  assert.match(source("shared"), /className="@container /, "a raiz perdeu o @container");
+  for (const f of [...TEMPLATE_FILES, "shared", "index", "template-thumb"]) {
+    const code = source(f);
+    assert.equal(code.match(/\b(min-h|h|w|max-h|max-w)-(dvh|svh|lvh|vh|vw|screen)\b/), null, `${f}.tsx usa viewport`);
+    assert.equal(code.match(/\b\d+(dvh|svh|lvh|vh|vw)\b/), null, `${f}.tsx usa unidade de viewport`);
+    assert.equal(code.match(/\b(sticky|fixed)\b/), null, `${f}.tsx usa sticky/fixed`);
+    // Variante de VIEWPORT (sm:, md:, lg:) fora das de contêiner (@sm:, @md:, @lg:).
+    assert.equal(code.match(/[\s"`][a-z]*(?<!@)\b(sm|md|lg|xl|2xl):[a-z]/), null, `${f}.tsx usa variante de viewport`);
+  }
+});
+
+test("site-templates: foto padrão nunca leva o nome do negócio no alt", () => {
+  for (const f of TEMPLATE_FILES) {
+    const code = source(f);
+    for (const m of code.match(/src=\{photos\.g[12]\}[^/]*alt=\{?"?[^"}]*"?\}?/g) ?? []) {
+      assert.match(m, /alt=""/, `${f}.tsx: decoração com alt não vazio: ${m}`);
+    }
+    assert.match(code, /alt=\{heroAlt\(view\)\}/, `${f}.tsx: hero sem heroAlt`);
   }
 });
