@@ -70,19 +70,33 @@ function quote(s: string): string {
 }
 
 /**
- * Consulta Overpass QL: um `nwr[...]` por filtro (union = OR), restrito à área
- * (relation do Nominatim + 3600000000). `out center` dá um ponto para ways/relations.
+ * Onde buscar: a área de uma relation do OSM (id do Nominatim + 3600000000), ou,
+ * quando a cidade não tem relation (Brighton, por exemplo), um raio em metros em
+ * volta do ponto que o Nominatim devolveu.
  */
-export function buildOverpassQuery(areaId: number, filters: OsmTagFilter[], limit: number): string {
+export type OverpassScope = { areaId: number } | { lat: number; lon: number; radius: number };
+
+/**
+ * Consulta Overpass QL: um `nwr[...]` por filtro (union = OR), restrito ao escopo.
+ * `out center` dá um ponto para ways/relations.
+ */
+export function buildOverpassQuery(
+  scope: OverpassScope,
+  filters: OsmTagFilter[],
+  limit: number,
+): string {
+  const where =
+    "areaId" in scope ? "(area.a)" : `(around:${scope.radius},${scope.lat},${scope.lon})`;
   const clauses = filters
     .map((f) => {
       const tags = Object.entries(f)
         .map(([k, v]) => `[${quote(k)}=${quote(v)}]`)
         .join("");
-      return `nwr${tags}(area.a);`;
+      return `nwr${tags}${where};`;
     })
     .join("");
-  return `[out:json][timeout:25];area(${areaId})->.a;(${clauses});out center tags ${limit};`;
+  const prelude = "areaId" in scope ? `area(${scope.areaId})->.a;` : "";
+  return `[out:json][timeout:25];${prelude}(${clauses});out center tags ${limit};`;
 }
 
 /** Elemento como vem do Overpass (`out center tags`). */

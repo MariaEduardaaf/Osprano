@@ -12,6 +12,7 @@ import {
   shouldRetryOverpass,
   overpassErrorMessage,
   type OsmElement,
+  type OverpassScope,
 } from "./lib/osm";
 
 /**
@@ -27,18 +28,26 @@ import {
 
 const USER_AGENT = "Osprano/1.0 (+https://github.com/MariaEduardaaf/Osprano)";
 const OVERPASS_POOL = 200;
-/** Instância principal e um espelho público: a principal responde 429/503/504 com frequência. */
+/**
+ * Instância principal e um espelho de PLANETA INTEIRO (z.overpass-api.de): a
+ * principal responde 429/503/504 com frequência. Espelho regional (overpass.osm.ch
+ * é só Suíça) responde 200 vazio para GB/ES e parece "nada encontrado".
+ */
 const OVERPASS_ENDPOINTS = [
   "https://overpass-api.de/api/interpreter",
-  "https://overpass.osm.ch/api/interpreter",
+  "https://z.overpass-api.de/api/interpreter",
 ];
 const OVERPASS_RETRY_DELAY_MS = 2000;
 /** A consulta pede [timeout:25]; acima disso o endpoint está travado, não lento. */
 const OVERPASS_FETCH_TIMEOUT_MS = 30_000;
+/** Cidade sem relation no OSM: raio em metros em volta do ponto do Nominatim. */
+const AROUND_RADIUS_M = 8000;
 
 interface NominatimResult {
   osm_type?: string;
   osm_id?: number;
+  lat?: string;
+  lon?: string;
 }
 
 type OverpassAttempt =
@@ -52,9 +61,11 @@ type OverpassAttempt =
 async function postOverpass(endpoint: string, query: string): Promise<OverpassAttempt> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), OVERPASS_FETCH_TIMEOUT_MS);
-  let res: Response;
+  let status: number;
+  let body: string;
   try {
-    res = await fetch(endpoint, {
+    // O corpo também é lido dentro do timeout: o abort cobre o download, não só o cabeçalho.
+    const res = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -63,19 +74,27 @@ async function postOverpass(endpoint: string, query: string): Promise<OverpassAt
       body: `data=${encodeURIComponent(query)}`,
       signal: controller.signal,
     });
+    status = res.status;
+    body = await res.text();
   } catch (err) {
     console.error(`Overpass ${endpoint} erro de rede:`, String(err).slice(0, 240));
     return { ok: false, status: 0, retryable: true };
   } finally {
     clearTimeout(timer);
   }
-  if (!res.ok) {
+  if (status < 200 || status >= 300) {
     // Corpo da resposta só nos logs do Convex: nunca vaza pro cliente.
-    console.error(`Overpass ${endpoint} ${res.status}:`, (await res.text()).slice(0, 240));
-    return { ok: false, status: res.status, retryable: shouldRetryOverpass(res.status) };
+    console.error(`Overpass ${endpoint} ${status}:`, body.slice(0, 240));
+    return { ok: false, status, retryable: shouldRetryOverpass(status) };
   }
-  const data = (await res.json()) as { elements?: OsmElement[] };
-  return { ok: true, elements: data.elements ?? [] };
+  let data: { elements?: OsmElement[] };
+  try {
+    data = JSON.parse(body) as { elements?: OsmElement[] };
+  } catch {
+    console.error(`Overpass ${endpoint} 200 com corpo inválido:`, body.slice(0, 240));
+    throw userError("Overpass devolveu uma resposta inválida");
+  }
+  return { ok: true, elements: Array.isArray(data.elements) ? data.elements : [] };
 }
 
 /**
@@ -87,7 +106,14 @@ async function fetchOverpass(query: string): Promise<OsmElement[]> {
   for (const [i, endpoint] of OVERPASS_ENDPOINTS.entries()) {
     if (i > 0) await new Promise((r) => setTimeout(r, OVERPASS_RETRY_DELAY_MS));
     const attempt = await postOverpass(endpoint, query);
-    if (attempt.ok) return attempt.elements;
+    if (attempt.ok) {
+      // Espelho vazio logo depois da principal falhar: pode ser cobertura parcial do
+      // espelho, não "nada na cidade". Fica no log, não é erro.
+      if (i > 0 && attempt.elements.length === 0) {
+        console.warn(`Overpass ${endpoint} respondeu 200 sem elementos após falha da principal`);
+      }
+      return attempt.elements;
+    }
     if (attempt.status > 0) status = attempt.status;
     if (!attempt.retryable) break;
   }
@@ -135,21 +161,46 @@ export const search = action({
         throw userError(`Nominatim respondeu ${geoRes.status}`);
       }
       const geo = (await geoRes.json()) as NominatimResult[];
+      const first = geo[0];
+      if (!first) throw userError("Cidade não encontrada no OpenStreetMap");
+      // Cidade com relation → área. Sem relation (Brighton é node/way no OSM) → raio
+      // em volta do ponto que o Nominatim devolveu, em vez de falhar.
       const relation = geo.find((r) => r.osm_type === "relation" && typeof r.osm_id === "number");
-      if (!relation?.osm_id) throw userError("Cidade não encontrada no OpenStreetMap");
-      const areaId = 3600000000 + relation.osm_id;
+      let scope: OverpassScope;
+      if (relation?.osm_id) {
+        scope = { areaId: 3600000000 + relation.osm_id };
+      } else {
+        const lat = Number(first.lat);
+        const lon = Number(first.lon);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+          throw userError("Cidade não encontrada no OpenStreetMap");
+        }
+        scope = { lat, lon, radius: AROUND_RADIUS_M };
+      }
 
       // 2) Overpass: pool fixo de 200, independente do `want`. O Overpass devolve os
       // elementos de id mais baixo (nós antigos, com poucas tags): com um pool pequeno
       // o ranking "sem site + com telefone" não tem de onde escolher.
-      const query = buildOverpassQuery(areaId, filters, OVERPASS_POOL);
+      const query = buildOverpassQuery(scope, filters, OVERPASS_POOL);
       const elements = await fetchOverpass(query);
       const candidates = elements
         .map((el) => osmElementToLead(el, args.city))
         .filter((l): l is NonNullable<typeof l> => l !== null);
+      // `found` é o TAMANHO DO POOL com nome (até OVERPASS_POOL), não quantos negócios
+      // existem na cidade: para categoria grande vira ~200 sempre. A UI diz "até X no mapa".
       found = candidates.length;
 
-      const picked = rankForOutreach(candidates).slice(0, want);
+      // 3) "Buscar mais": pula o que a org já tem, senão a mesma busca devolve os
+      // mesmos leads (atualizados, não criados) enquanto o pool não muda.
+      const existing = new Set<string>(
+        await ctx.runQuery(internal.leads.existingPlaceIds, {
+          orgId,
+          placeIds: candidates.map((c) => c.placeId),
+        }),
+      );
+      const fresh = candidates.filter((c) => !existing.has(c.placeId));
+
+      const picked = rankForOutreach(fresh).slice(0, want);
       for (const p of picked) {
         const { leadId, created } = await ctx.runMutation(internal.leads.insertDiscovered, {
           orgId,

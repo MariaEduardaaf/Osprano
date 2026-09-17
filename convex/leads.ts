@@ -402,6 +402,26 @@ export const getInternal = internalQuery({
 });
 
 /** Insert (or refresh) a discovered business, deduped by placeId within the org. */
+/**
+ * Quais destes placeIds já existem na org. As fontes de descoberta chamam uma vez
+ * com o pool inteiro para pular o que já foi trazido ("buscar mais" traz lead novo).
+ * Uma leitura por índice por placeId: barato e não cresce com o tamanho da org.
+ */
+export const existingPlaceIds = internalQuery({
+  args: { orgId: v.string(), placeIds: v.array(v.string()) },
+  handler: async (ctx, args): Promise<string[]> => {
+    const found: string[] = [];
+    for (const placeId of args.placeIds) {
+      const hit = await ctx.db
+        .query("leads")
+        .withIndex("by_org_place", (q) => q.eq("orgId", args.orgId).eq("placeId", placeId))
+        .first();
+      if (hit) found.push(placeId);
+    }
+    return found;
+  },
+});
+
 export const insertDiscovered = internalMutation({
   args: {
     orgId: v.string(),

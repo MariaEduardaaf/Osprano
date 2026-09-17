@@ -44,21 +44,38 @@ test("osmTagsForCategory: categoria desconhecida → []", () => {
 // buildOverpassQuery
 // ---------------------------------------------------------------------------
 
-test("buildOverpassQuery: um nwr por filtro, área e limite no lugar", () => {
-  const q = buildOverpassQuery(3600146656, [{ amenity: "restaurant" }, { shop: "bakery" }], 40);
+test("buildOverpassQuery: escopo por área, um nwr por filtro, limite no lugar", () => {
+  const q = buildOverpassQuery(
+    { areaId: 3600146656 },
+    [{ amenity: "restaurant" }, { shop: "bakery" }],
+    40,
+  );
   assert.equal(
     q,
     '[out:json][timeout:25];area(3600146656)->.a;(nwr["amenity"="restaurant"](area.a);nwr["shop"="bakery"](area.a););out center tags 40;',
   );
 });
 
+test("buildOverpassQuery: escopo por raio (cidade sem relation) usa around: sem área", () => {
+  const q = buildOverpassQuery(
+    { lat: 50.8214, lon: -0.1400, radius: 8000 },
+    [{ amenity: "cafe" }],
+    200,
+  );
+  assert.equal(
+    q,
+    '[out:json][timeout:25];(nwr["amenity"="cafe"](around:8000,50.8214,-0.14););out center tags 200;',
+  );
+  assert.ok(!q.includes("area("));
+});
+
 test("buildOverpassQuery: filtro com duas tags vira AND no mesmo nwr", () => {
-  const q = buildOverpassQuery(1, [{ amenity: "restaurant", cuisine: "pizza" }], 5);
+  const q = buildOverpassQuery({ areaId: 1 }, [{ amenity: "restaurant", cuisine: "pizza" }], 5);
   assert.ok(q.includes('nwr["amenity"="restaurant"]["cuisine"="pizza"](area.a);'));
 });
 
 test("buildOverpassQuery: escapa aspas e barra invertida nos valores", () => {
-  const q = buildOverpassQuery(1, [{ name: 'a"b\\c' }], 1);
+  const q = buildOverpassQuery({ areaId: 1 }, [{ name: 'a"b\\c' }], 1);
   assert.ok(q.includes('["name"="a\\"b\\\\c"]'));
 });
 

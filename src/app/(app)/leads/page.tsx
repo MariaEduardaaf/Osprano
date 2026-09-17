@@ -103,8 +103,9 @@ export default function LeadsPage() {
     };
     try {
       let prefix = "";
+      let usedOsm = source === "osm";
       let res: { found: number; inserted: number };
-      if (source === "osm") {
+      if (usedOsm) {
         res = await searchOsm(params);
       } else {
         try {
@@ -113,13 +114,16 @@ export default function LeadsPage() {
           // Sem chave do Google: cai pro OpenStreetMap em vez de deixar a usuária sem lead.
           if (!errorMessage(err, "").includes("GOOGLE_PLACES_API_KEY")) throw err;
           setSource("osm");
+          usedOsm = true;
           prefix = "Google sem chave configurada; usando OpenStreetMap. ";
           res = await searchOsm(params);
         }
       }
-      setMsg(
-        `${prefix}Encontrados ${res.found} · adicionados ${res.inserted}. Pontuando em segundo plano…`,
-      );
+      // No OSM, `found` é o tamanho do pool consultado (até 200), não a contagem da cidade.
+      const foundText = usedOsm
+        ? `Encontrados até ${res.found} no mapa`
+        : `Encontrados ${res.found}`;
+      setMsg(`${prefix}${foundText} · adicionados ${res.inserted}. Pontuando em segundo plano…`);
     } catch (err) {
       setMsg(errorMessage(err, "Falha na busca"));
     } finally {
