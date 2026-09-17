@@ -30,6 +30,7 @@ import { LostReasonModal } from "@/components/crm/lost-reason-modal";
 import { LeadTimeline } from "@/components/crm/lead-timeline";
 import { OutreachComposer } from "@/components/outreach-composer";
 import { GeneratePreviewButton } from "@/components/generate-preview-button";
+import { WhatTheyHaveButton } from "@/components/what-they-have-button";
 import { PublishButton } from "@/components/publish-button";
 import { CallScriptPanel } from "@/components/call-script-panel";
 import { ContactOptInButton } from "@/components/contact-opt-in-button";
@@ -460,8 +461,9 @@ function SiteTab({ lead }: { lead: Doc<"leads"> }) {
         <p className="mx-auto mt-1 max-w-sm text-sm text-muted">
           Gere um preview profissional do site do negócio num link único rastreado — pronto pra mostrar na abordagem.
         </p>
-        <div className="mt-5 flex justify-center">
+        <div className="mt-5 flex flex-wrap justify-center gap-2">
           <GeneratePreviewButton leadId={lead._id} />
+          <WhatTheyHaveButton lead={lead} />
         </div>
       </div>
     );
@@ -491,9 +493,12 @@ function SiteTab({ lead }: { lead: Doc<"leads"> }) {
           <PublishButton leadId={lead._id} slug={preview.slug} />
         </div>
       </div>
-      <div className="flex items-center justify-between rounded-xl border border-border bg-surface-2/40 px-4 py-3">
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-2/40 px-4 py-3">
         <span className="text-sm text-muted">Regenerar o conteúdo do site</span>
-        <GeneratePreviewButton leadId={lead._id} />
+        <div className="flex flex-wrap items-center gap-2">
+          <WhatTheyHaveButton lead={lead} />
+          <GeneratePreviewButton leadId={lead._id} />
+        </div>
       </div>
     </div>
   );
