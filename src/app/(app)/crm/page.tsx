@@ -20,6 +20,7 @@ import { LeadDetail } from "@/components/crm/lead-detail";
 import { LostReasonModal } from "@/components/crm/lost-reason-modal";
 import { TodayStrip, type TodayItem } from "@/components/crm/today-strip";
 import { CardActionLine } from "@/components/crm/next-action-line";
+import { OsmAttribution } from "@/components/osm-attribution";
 import { useNow } from "@/lib/use-now";
 import {
   PIPELINE_STAGES,
@@ -400,6 +401,9 @@ export default function CrmPage() {
           })}
         </div>
       )}
+
+      {/* ODbL: quadro com lead do OpenStreetMap precisa da atribuição, como na tela de Leads */}
+      {crmLeads.some((l) => l.source === "osm") && <OsmAttribution className="mt-4" />}
 
       {createOpen && <CreateLeadModal onClose={() => setCreateOpen(false)} />}
       {lostLead && (

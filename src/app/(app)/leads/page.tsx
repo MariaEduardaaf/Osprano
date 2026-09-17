@@ -16,6 +16,7 @@ import { MdOutlineSearch, MdOutlineSend, MdOutlineGavel } from "react-icons/md";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { LeadCard } from "@/components/lead-card";
 import { GeneratePreviewButton } from "@/components/generate-preview-button";
+import { OsmAttribution } from "@/components/osm-attribution";
 import { errorMessage } from "@/lib/errors";
 
 /** OPTIN-02: cada aba controla o select de países, o filtro da lista e a variante do card. */
@@ -242,20 +243,7 @@ export default function LeadsPage() {
         </button>
       </form>
 
-      {showOsmAttribution && (
-        <p className="-mt-4 mb-4 text-[11px] text-faint">
-          Dados ©{" "}
-          <a
-            href="https://www.openstreetmap.org/copyright"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline decoration-border underline-offset-2 hover:text-muted"
-          >
-            OpenStreetMap contributors
-          </a>{" "}
-          (ODbL)
-        </p>
-      )}
+      {showOsmAttribution && <OsmAttribution className="-mt-4 mb-4" />}
 
       {msg && (
         <p className="mb-4 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-muted">
