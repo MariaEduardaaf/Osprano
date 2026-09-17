@@ -144,3 +144,20 @@ export function rankForOutreach<T extends { website?: string; phone?: string }>(
   const rank = (l: T) => (l.website ? 2 : 0) + (l.phone ? 0 : 1);
   return [...leads].sort((a, b) => rank(a) - rank(b));
 }
+
+/**
+ * Política de retentativa do Overpass: os espelhos públicos respondem 429 (limite
+ * por IP), 503 e 504 (instância ocupada) mesmo com a consulta correta. Nesses
+ * casos vale tentar UMA vez num segundo espelho; qualquer outro status é erro real.
+ */
+export function shouldRetryOverpass(status: number): boolean {
+  return status === 429 || status === 503 || status === 504;
+}
+
+/** Mensagem para a usuária: "ocupado" (retentável) vs. erro de verdade. */
+export function overpassErrorMessage(status: number): string {
+  if (shouldRetryOverpass(status)) {
+    return `Overpass ocupado agora (HTTP ${status}); tente de novo em alguns segundos.`;
+  }
+  return `Overpass respondeu ${status}`;
+}

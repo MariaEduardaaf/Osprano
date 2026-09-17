@@ -9,6 +9,8 @@ import {
   buildOverpassQuery,
   osmElementToLead,
   rankForOutreach,
+  shouldRetryOverpass,
+  overpassErrorMessage,
   type OsmElement,
 } from "./lib/osm";
 
@@ -25,10 +27,71 @@ import {
 
 const USER_AGENT = "Osprano/1.0 (+https://github.com/MariaEduardaaf/Osprano)";
 const OVERPASS_POOL = 200;
+/** Instância principal e um espelho público: a principal responde 429/503/504 com frequência. */
+const OVERPASS_ENDPOINTS = [
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.kumi.systems/api/interpreter",
+];
+const OVERPASS_RETRY_DELAY_MS = 2000;
+/** A consulta pede [timeout:25]; acima disso o endpoint está travado, não lento. */
+const OVERPASS_FETCH_TIMEOUT_MS = 30_000;
 
 interface NominatimResult {
   osm_type?: string;
   osm_id?: number;
+}
+
+type OverpassAttempt =
+  | { ok: true; elements: OsmElement[] }
+  | { ok: false; status: number; retryable: boolean };
+
+/**
+ * Uma tentativa num endpoint. Erro de rede ou estouro do timeout conta como
+ * retentável (status 0): um espelho fora do ar não pode travar a busca.
+ */
+async function postOverpass(endpoint: string, query: string): Promise<OverpassAttempt> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), OVERPASS_FETCH_TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "User-Agent": USER_AGENT,
+      },
+      body: `data=${encodeURIComponent(query)}`,
+      signal: controller.signal,
+    });
+  } catch (err) {
+    console.error(`Overpass ${endpoint} erro de rede:`, String(err).slice(0, 240));
+    return { ok: false, status: 0, retryable: true };
+  } finally {
+    clearTimeout(timer);
+  }
+  if (!res.ok) {
+    // Corpo da resposta só nos logs do Convex: nunca vaza pro cliente.
+    console.error(`Overpass ${endpoint} ${res.status}:`, (await res.text()).slice(0, 240));
+    return { ok: false, status: res.status, retryable: shouldRetryOverpass(res.status) };
+  }
+  const data = (await res.json()) as { elements?: OsmElement[] };
+  return { ok: true, elements: data.elements ?? [] };
+}
+
+/**
+ * Tenta a instância principal; se ela estiver ocupada (429/503/504) ou fora do
+ * ar, espera 2 s e tenta UMA vez no espelho. Só depois disso vira erro pra usuária.
+ */
+async function fetchOverpass(query: string): Promise<OsmElement[]> {
+  let status = 503; // erro de rede não tem código HTTP: reporta como "ocupado"
+  for (const [i, endpoint] of OVERPASS_ENDPOINTS.entries()) {
+    if (i > 0) await new Promise((r) => setTimeout(r, OVERPASS_RETRY_DELAY_MS));
+    const attempt = await postOverpass(endpoint, query);
+    if (attempt.ok) return attempt.elements;
+    if (attempt.status > 0) status = attempt.status;
+    if (!attempt.retryable) break;
+  }
+  throw userError(overpassErrorMessage(status));
 }
 
 export const search = action({
@@ -80,21 +143,8 @@ export const search = action({
       // elementos de id mais baixo (nós antigos, com poucas tags): com um pool pequeno
       // o ranking "sem site + com telefone" não tem de onde escolher.
       const query = buildOverpassQuery(areaId, filters, OVERPASS_POOL);
-      const res = await fetch("https://overpass-api.de/api/interpreter", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": USER_AGENT,
-        },
-        body: `data=${encodeURIComponent(query)}`,
-      });
-      if (!res.ok) {
-        // Corpo da resposta só nos logs do Convex: nunca vaza pro cliente.
-        console.error(`Overpass ${res.status}:`, (await res.text()).slice(0, 240));
-        throw userError(`Overpass respondeu ${res.status}`);
-      }
-      const data = (await res.json()) as { elements?: OsmElement[] };
-      const candidates = (data.elements ?? [])
+      const elements = await fetchOverpass(query);
+      const candidates = elements
         .map((el) => osmElementToLead(el, args.city))
         .filter((l): l is NonNullable<typeof l> => l !== null);
       found = candidates.length;

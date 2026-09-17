@@ -6,6 +6,8 @@ import {
   buildOverpassQuery,
   osmElementToLead,
   rankForOutreach,
+  shouldRetryOverpass,
+  overpassErrorMessage,
 } from "../convex/lib/osm.ts";
 
 // ---------------------------------------------------------------------------
@@ -181,4 +183,25 @@ test("rankForOutreach: não muta a entrada", () => {
   const copy = [...input];
   rankForOutreach(input);
   assert.deepEqual(input, copy);
+});
+
+// ---------------------------------------------------------------------------
+// retentativa do Overpass
+// ---------------------------------------------------------------------------
+
+test("shouldRetryOverpass: só 429/503/504 são retentáveis", () => {
+  assert.equal(shouldRetryOverpass(429), true);
+  assert.equal(shouldRetryOverpass(503), true);
+  assert.equal(shouldRetryOverpass(504), true);
+  assert.equal(shouldRetryOverpass(200), false);
+  assert.equal(shouldRetryOverpass(400), false);
+  assert.equal(shouldRetryOverpass(500), false);
+});
+
+test("overpassErrorMessage: ocupado vs. erro de verdade", () => {
+  assert.equal(
+    overpassErrorMessage(504),
+    "Overpass ocupado agora (HTTP 504); tente de novo em alguns segundos.",
+  );
+  assert.equal(overpassErrorMessage(400), "Overpass respondeu 400");
 });
