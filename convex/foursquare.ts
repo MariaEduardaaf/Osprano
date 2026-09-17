@@ -75,7 +75,7 @@ export const search = action({
       for (const p of results) {
         const placeId = p.fsq_id ?? p.fsq_place_id;
         if (!placeId || !p.name) continue;
-        const leadId = await ctx.runMutation(internal.leads.insertDiscovered, {
+        const { leadId, created } = await ctx.runMutation(internal.leads.insertDiscovered, {
           orgId,
           source: "fsq",
           placeId,
@@ -88,7 +88,9 @@ export const search = action({
           website: p.website,
           email: p.email,
         });
-        inserted += 1;
+        // Lead que já existia só foi atualizado: não conta nem gasta cota (a reserva é
+        // devolvida pelo `want - inserted`), mas repontua do mesmo jeito.
+        if (created) inserted += 1;
         await ctx.scheduler.runAfter(0, internal.scoring.scoreLead, { leadId });
       }
     } catch (err) {

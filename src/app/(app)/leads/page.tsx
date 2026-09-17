@@ -16,6 +16,7 @@ import { MdOutlineSearch, MdOutlineSend, MdOutlineGavel } from "react-icons/md";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { LeadCard } from "@/components/lead-card";
 import { GeneratePreviewButton } from "@/components/generate-preview-button";
+import { OsmAttribution } from "@/components/osm-attribution";
 import { errorMessage } from "@/lib/errors";
 
 /** OPTIN-02: cada aba controla o select de países, o filtro da lista e a variante do card. */
@@ -25,8 +26,16 @@ const TABS = [
 ] as const;
 type LeadsTab = (typeof TABS)[number]["id"];
 
+/** Fonte da descoberta: Google Places (chave paga) ou OpenStreetMap (grátis, sem chave). */
+const SOURCES = [
+  { id: "places", label: "Google Places" },
+  { id: "osm", label: "OpenStreetMap (grátis)" },
+] as const;
+type Source = (typeof SOURCES)[number]["id"];
+
 export default function LeadsPage() {
   const [tab, setTab] = useState<LeadsTab>("email");
+  const [source, setSource] = useState<Source>("places");
   const [country, setCountry] = useState("GB");
   const [category, setCategory] = useState("");
   const [city, setCity] = useState("");
@@ -35,7 +44,8 @@ export default function LeadsPage() {
   const [msg, setMsg] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<Id<"leads">>>(new Set());
 
-  const search = useAction(api.places.search);
+  const searchPlaces = useAction(api.places.search);
+  const searchOsm = useAction(api.osm.search);
   const saveMany = useMutation(api.leads.saveMany);
   const leads = useQuery(api.leads.list, {});
 
@@ -51,6 +61,8 @@ export default function LeadsPage() {
     tab === "call" ? OPT_IN_MARKETS.includes(l.countryCode) : !OPT_IN_MARKETS.includes(l.countryCode),
   );
   const allSelected = shownLeads.length > 0 && shownLeads.every((l) => selected.has(l._id));
+  // ODbL: a atribuição aparece sempre que há dado do OSM na tela, não só com a fonte selecionada.
+  const showOsmAttribution = source === "osm" || shownLeads.some((l) => l.source === "osm");
 
   function switchTab(next: LeadsTab) {
     if (next === tab) return;
@@ -84,14 +96,35 @@ export default function LeadsPage() {
     if (!category.trim() || !city.trim()) return;
     setBusy(true);
     setMsg(null);
+    const params = {
+      countryCode: country,
+      category: category.trim(),
+      city: city.trim(),
+      max: limit,
+    };
     try {
-      const res = await search({
-        countryCode: country,
-        category: category.trim(),
-        city: city.trim(),
-        max: limit,
-      });
-      setMsg(`Encontrados ${res.found} · adicionados ${res.inserted}. Pontuando em segundo plano…`);
+      let prefix = "";
+      let usedOsm = source === "osm";
+      let res: { found: number; inserted: number };
+      if (usedOsm) {
+        res = await searchOsm(params);
+      } else {
+        try {
+          res = await searchPlaces(params);
+        } catch (err) {
+          // Sem chave do Google: cai pro OpenStreetMap em vez de deixar a usuária sem lead.
+          if (!errorMessage(err, "").includes("GOOGLE_PLACES_API_KEY")) throw err;
+          setSource("osm");
+          usedOsm = true;
+          prefix = "Google sem chave configurada; usando OpenStreetMap. ";
+          res = await searchOsm(params);
+        }
+      }
+      // No OSM, `found` é o tamanho do pool consultado (até 200), não a contagem da cidade.
+      const foundText = usedOsm
+        ? `Encontrados até ${res.found} no mapa`
+        : `Encontrados ${res.found}`;
+      setMsg(`${prefix}${foundText} · adicionados ${res.inserted}. Pontuando em segundo plano…`);
     } catch (err) {
       setMsg(errorMessage(err, "Falha na busca"));
     } finally {
@@ -132,6 +165,18 @@ export default function LeadsPage() {
         onSubmit={onSearch}
         className="glass mb-6 flex flex-wrap items-center gap-2 rounded-[var(--radius)] p-3"
       >
+        <select
+          value={source}
+          onChange={(e) => setSource(e.target.value as Source)}
+          aria-label="Fonte da busca"
+          className="rounded-lg border border-border bg-surface-solid px-3 py-2 text-sm"
+        >
+          {SOURCES.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.label}
+            </option>
+          ))}
+        </select>
         <select
           value={country}
           onChange={(e) => {
@@ -197,6 +242,8 @@ export default function LeadsPage() {
           {busy ? "Buscando…" : "Buscar"}
         </button>
       </form>
+
+      {showOsmAttribution && <OsmAttribution className="-mt-4 mb-4" />}
 
       {msg && (
         <p className="mb-4 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-muted">

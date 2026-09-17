@@ -5,6 +5,7 @@ import {
   internalMutation,
 } from "./_generated/server";
 import { v } from "convex/values";
+import type { Id } from "./_generated/dataModel";
 import { requireOrgId } from "./model/tenant";
 import { userError } from "./lib/errors";
 import {
@@ -401,6 +402,26 @@ export const getInternal = internalQuery({
 });
 
 /** Insert (or refresh) a discovered business, deduped by placeId within the org. */
+/**
+ * Quais destes placeIds já existem na org. As fontes de descoberta chamam uma vez
+ * com o pool inteiro para pular o que já foi trazido ("buscar mais" traz lead novo).
+ * Uma leitura por índice por placeId: barato e não cresce com o tamanho da org.
+ */
+export const existingPlaceIds = internalQuery({
+  args: { orgId: v.string(), placeIds: v.array(v.string()) },
+  handler: async (ctx, args): Promise<string[]> => {
+    const found: string[] = [];
+    for (const placeId of args.placeIds) {
+      const hit = await ctx.db
+        .query("leads")
+        .withIndex("by_org_place", (q) => q.eq("orgId", args.orgId).eq("placeId", placeId))
+        .first();
+      if (hit) found.push(placeId);
+    }
+    return found;
+  },
+});
+
 export const insertDiscovered = internalMutation({
   args: {
     orgId: v.string(),
@@ -417,7 +438,9 @@ export const insertDiscovered = internalMutation({
     rating: v.optional(v.number()),
     reviewsCount: v.optional(v.number()),
   },
-  handler: async (ctx, args) => {
+  // `created=false` quando só atualizou um lead que já existia (mesmo placeId na org):
+  // quem chama conta e cobra cota SÓ o que foi criado, e devolve o resto da reserva.
+  handler: async (ctx, args): Promise<{ leadId: Id<"leads">; created: boolean }> => {
     const now = Date.now();
     const web = classifyWebsite(args.website);
     const signals: Signals = {
@@ -457,10 +480,10 @@ export const insertDiscovered = internalMutation({
         emailable,
         fetchedAt: now,
       });
-      return existing._id;
+      return { leadId: existing._id, created: false };
     }
 
-    return await ctx.db.insert("leads", {
+    const leadId = await ctx.db.insert("leads", {
       orgId: args.orgId,
       source: args.source,
       placeId: args.placeId,
@@ -486,6 +509,7 @@ export const insertDiscovered = internalMutation({
       saved: false, // discovered → sits on the Leads screen until "Enviar para CRM"
       fetchedAt: now,
     });
+    return { leadId, created: true };
   },
 });
 

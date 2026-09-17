@@ -23,7 +23,8 @@ recorrente** com hospedagem white-label na sua marca.
 
 ## ✨ O que ela faz
 
-- **Descoberta de leads** — busca por país, cidade e categoria (Google Places), 1–50 por vez.
+- **Descoberta de leads** — busca por país, cidade e categoria em duas fontes: Google Places
+  ou OpenStreetMap (grátis, sem chave), 1–50 por vez.
 - **Digital Presence Score (0–100)** — pontua a dor por sinais reais: sem site, só rede
   social, sem HTTPS, não-mobile, lento, perfil incompleto. Maior score = lead mais quente.
 - **Guardrail de compliance** — só libera abordagem onde é legal (mercado opt-out) e para
@@ -54,7 +55,7 @@ recorrente** com hospedagem white-label na sua marca.
 | Auth | **Clerk** |
 | Email | **Resend** (opcional) |
 | Billing | **Stripe** (checkout + portal, opcional) |
-| Dados | Google Places (Text Search, New) · PageSpeed · Foursquare (secundário) |
+| Dados | Google Places (Text Search, New) · OpenStreetMap/Overpass (fonte grátis, sem chave) · PageSpeed · Foursquare (secundário) |
 | IA | **Anthropic** (Claude) para redigir a abordagem |
 
 ---
