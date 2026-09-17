@@ -12,7 +12,7 @@
 
 ## Contexto obrigatório para quem executa
 
-Leia antes de qualquer tarefa. Tudo aqui foi verificado no repositório em 2026-09-17 (branch `feat/modelos-de-site`, HEAD `a456bd7`). O código de cada tarefa foi compilado (`tsc`), lintado (config do repo) e testado num projeto de rascunho antes de entrar neste plano; os quatro modelos foram renderizados e fotografados em 1280 e 390 px. Copie o código como está.
+Leia antes de qualquer tarefa. Tudo aqui foi verificado no repositório em 2026-09-17 (branch `feat/modelos-de-site`, HEAD `435f67e`). O código de cada tarefa foi compilado (`tsc`), lintado (config do repo) e testado num projeto de rascunho antes de entrar neste plano; os quatro modelos foram renderizados e fotografados em 1280 e 390 px. Copie o código como está.
 
 ### Fontes de verdade
 
@@ -1153,7 +1153,7 @@ const enTemplates = templateSet(
     mesa: {
       tagline: "A table set with care",
       about:
-        "We cook with attention to every detail and welcome you the way we would at home. Come for lunch, dinner or a drink with friends.",
+        "We take care of every detail and welcome you the way we would at home. Come and see us.",
       itemsHeading: "From the menu",
       aboutHeading: "About us",
       visitHeading: "Where to find us",
@@ -1216,7 +1216,7 @@ const nlTemplates = templateSet(
     mesa: {
       tagline: "Een tafel met zorg gedekt",
       about:
-        "We koken met aandacht voor elk detail en ontvangen u zoals we dat thuis zouden doen. Kom lunchen, dineren of iets drinken met vrienden.",
+        "We letten op elk detail en ontvangen u zoals we dat thuis zouden doen. Kom gerust langs.",
       itemsHeading: "Van de kaart",
       aboutHeading: "Over ons",
       visitHeading: "Waar u ons vindt",
@@ -1275,7 +1275,7 @@ const svTemplates = templateSet(
     mesa: {
       tagline: "Ett bord dukat med omsorg",
       about:
-        "Vi lagar mat med omsorg om varje detalj och tar emot dig som hemma. Kom på lunch, middag eller en drink med vänner.",
+        "Vi bryr oss om varje detalj och tar emot dig som hemma. Kom gärna förbi.",
       itemsHeading: "Ur menyn",
       aboutHeading: "Om oss",
       visitHeading: "Hitta hit",
@@ -1334,7 +1334,7 @@ const noTemplates = templateSet(
     mesa: {
       tagline: "Et bord dekket med omhu",
       about:
-        "Vi lager mat med omtanke for hver detalj og tar imot deg som hjemme. Kom til lunsj, middag eller en drink med venner.",
+        "Vi tar vare på hver detalj og tar imot deg som hjemme. Kom gjerne innom.",
       itemsHeading: "Fra menyen",
       aboutHeading: "Om oss",
       visitHeading: "Her finner du oss",
@@ -1393,7 +1393,7 @@ const esTemplates = templateSet(
     mesa: {
       tagline: "Una mesa puesta con cariño",
       about:
-        "Cocinamos con atención a cada detalle y le recibimos como en casa. Venga a comer, a cenar o a tomar algo con amigos.",
+        "Cuidamos cada detalle y le recibimos como en casa. Venga a conocernos.",
       itemsHeading: "De la carta",
       aboutHeading: "Sobre nosotros",
       visitHeading: "Dónde encontrarnos",
@@ -1434,6 +1434,8 @@ E `  templates: esTemplates,` como última propriedade de `es`.
 Antes de `const it: PreviewDict = {`:
 
 ```ts
+// Botões (reserve/book/quote/email) no imperativo informal, padrão dos sites italianos e
+// coerente com o `callNow: "Chiama ora"` que já existe no topo; títulos e texto corrido em Lei.
 const itTemplates = templateSet(
   {
     galleryHeading: "Galleria",
@@ -1452,7 +1454,7 @@ const itTemplates = templateSet(
     mesa: {
       tagline: "Una tavola apparecchiata con cura",
       about:
-        "Cuciniamo con attenzione a ogni dettaglio e La accogliamo come a casa. Venga a pranzo, a cena o per un aperitivo con gli amici.",
+        "Curiamo ogni dettaglio e La accogliamo come a casa. Venga a trovarci.",
       itemsHeading: "Dal menù",
       aboutHeading: "Chi siamo",
       visitHeading: "Dove trovarci",
@@ -1511,7 +1513,7 @@ const ptTemplates = templateSet(
     mesa: {
       tagline: "Uma mesa posta com cuidado",
       about:
-        "Cozinhamos com atenção a cada detalhe e recebemo-lo como em casa. Venha almoçar, jantar ou beber um copo com amigos.",
+        "Fazemos tudo com atenção a cada detalhe e recebemo-lo como em casa. Venha conhecer-nos.",
       itemsHeading: "Da ementa",
       aboutHeading: "Sobre nós",
       visitHeading: "Onde estamos",
@@ -1570,7 +1572,7 @@ const deTemplates = templateSet(
     mesa: {
       tagline: "Ein Tisch, mit Sorgfalt gedeckt",
       about:
-        "Wir kochen mit Liebe zum Detail und empfangen Sie wie zu Hause. Kommen Sie zum Mittagessen, zum Abendessen oder auf ein Glas mit Freunden.",
+        "Wir achten auf jedes Detail und empfangen Sie wie zu Hause. Schauen Sie vorbei.",
       itemsHeading: "Aus der Karte",
       aboutHeading: "Über uns",
       visitHeading: "So finden Sie uns",
@@ -1629,7 +1631,7 @@ const daTemplates = templateSet(
     mesa: {
       tagline: "Et bord dækket med omhu",
       about:
-        "Vi laver mad med sans for hver detalje og tager imod dig som derhjemme. Kom til frokost, middag eller en drink med venner.",
+        "Vi går op i hver detalje og tager imod dig som derhjemme. Kig gerne forbi.",
       itemsHeading: "Fra menuen",
       aboutHeading: "Om os",
       visitHeading: "Her finder du os",
@@ -1688,7 +1690,7 @@ const frTemplates = templateSet(
     mesa: {
       tagline: "Une table dressée avec soin",
       about:
-        "Nous cuisinons avec attention à chaque détail et vous accueillons comme à la maison. Venez déjeuner, dîner ou prendre un verre entre amis.",
+        "Nous soignons chaque détail et vous accueillons comme à la maison. Venez nous voir.",
       itemsHeading: "À la carte",
       aboutHeading: "Qui sommes-nous",
       visitHeading: "Où nous trouver",
@@ -1812,7 +1814,7 @@ Ao fim da chunk: 12 fotos em `public/templates/`, `LICENSES.md`, `palettes.ts`, 
 - Create: `public/templates/{mesa,estudio,oficio,vitrine}/{hero,g1,g2}.jpg` (12 arquivos)
 - Create: `public/templates/LICENSES.md`
 
-Contexto: as fotos foram escolhidas e conferidas uma a uma (sem marca, sem nome de loja, sem rosto; a única com pessoas é `mesa/g1.jpg`, só mãos servindo um prato). Os hashes abaixo são os nomes das imagens no CDN do Unsplash (`images.unsplash.com/photo-<hash>`), verificados em 2026-09-17; as páginas e autores estão em `LICENSES.md`. A qualidade cai de 72 até 40 até o arquivo caber em 250 KB (a 1600 px, três delas só cabem em q=40, e ficam bem).
+Contexto: as fotos foram escolhidas e conferidas uma a uma (sem marca, sem nome de loja, sem texto legível, sem rosto; a única com pessoas é `mesa/g1.jpg`, só mãos servindo um prato). Uma candidata anterior para `mesa/g2` foi descartada na revisão por mostrar o nome de um bar num cartão; a atual é um close de taças numa mesa posta, sem texto. Os hashes abaixo são os nomes das imagens no CDN do Unsplash (`images.unsplash.com/photo-<hash>`), verificados em 2026-09-17; as páginas e autores estão em `LICENSES.md`. A qualidade cai de 72 até 40 até o arquivo caber em 250 KB (a 1600 px, três delas só cabem em q=40, e ficam bem).
 
 - [ ] **Step 1: Baixar**
 
@@ -1836,7 +1838,7 @@ while read -r t s h; do
 done <<'LIST'
 mesa hero 1667388969250-1c7220bf3f37
 mesa g1 1414235077428-338989a2e8c0
-mesa g2 1768949005507-8c0f571285f4
+mesa g2 1663147475798-7e672b522463
 estudio hero 1635531955929-91958b3b33ea
 estudio g1 1549271568-e87e07c5406b
 estudio g2 1585747860715-2ba37e788b70
@@ -1853,26 +1855,39 @@ echo "falhas: $falhas"
 Run: `sh "$OUT/fotos.sh"`
 Expected: 12 linhas `modelo/slot.jpg q=NN <bytes> bytes` e, no fim, `falhas: 0`. Cada linha abaixo de 256000 bytes.
 
-- [ ] **Step 2: Fallback (SÓ se alguma linha saiu `FALHOU`)**
+- [ ] **Step 2: Fallback, SÓ para os slots que saíram `FALHOU` no passo 1**
 
-Se a rede não entregar alguma foto, gere placeholders de gradiente para os 12 slots com o ffmpeg desta máquina (`/usr/local/bin/ffmpeg`), e em `LICENSES.md` (passo 4) troque a linha do arquivo por `placeholder de gradiente gerado localmente, a substituir pela dona`. Script:
+Pule este passo se `falhas: 0`. Para cada slot que falhou (e só para ele), gere um placeholder de gradiente com o ffmpeg desta máquina (`/usr/local/bin/ffmpeg`) passando `modelo slot` como argumentos, e em `LICENSES.md` (passo 4) troque a linha daquele arquivo por `placeholder de gradiente gerado localmente, a substituir pela dona`. Os slots que baixaram no passo 1 ficam como estão. Script:
 
 ```bash
 #!/bin/sh
-# FALLBACK (só se o download falhar): 12 JPEGs de gradiente, 1600x1000, gerados
-# com o ffmpeg desta máquina (/usr/local/bin/ffmpeg). Marcar em LICENSES.md como
-# placeholder a substituir pela dona.
+# FALLBACK (só para slot que falhou no download): JPEG de gradiente 1600x1000
+# gerado com o ffmpeg desta máquina (/usr/local/bin/ffmpeg). Uso:
+#   sh fotos-fallback.sh mesa g2 [oficio hero ...]
+# Marcar cada arquivo gerado em LICENSES.md como placeholder a substituir pela dona.
 cd /Users/madu/Developer/mine/osprano || exit 1
-mk() { ffmpeg -loglevel error -y -f lavfi -i "gradients=size=1600x1000:c0=$3:c1=$4:nb_colors=2:x0=0:y0=0:x1=1600:y1=1000" -frames:v 1 -q:v 8 "public/templates/$1/$2.jpg"; }
-mk mesa hero 0xb8532e 0xf6f1e7;   mk mesa g1 0x6b3a22 0xe9d8c4;   mk mesa g2 0x2a221c 0x8a5a3a
-mk estudio hero 0x0f0f0f 0x4a4a4a; mk estudio g1 0xc9a24a 0x2a2a2a; mk estudio g2 0x3a3a3a 0xb3ada3
-mk oficio hero 0xc2410c 0xffffff;  mk oficio g1 0x5f5f5f 0xf6f6f4;  mk oficio g2 0x1c1c1c 0xc2410c
-mk vitrine hero 0xece6da 0x5e574d; mk vitrine g1 0x161412 0xece6da; mk vitrine g2 0x7a1f33 0xf7f2ea
-ls -la public/templates/*/*.jpg
+cores() {
+  case "$1/$2" in
+    mesa/hero) echo 0xb8532e 0xf6f1e7 ;;    mesa/g1) echo 0x6b3a22 0xe9d8c4 ;;    mesa/g2) echo 0x2a221c 0x8a5a3a ;;
+    estudio/hero) echo 0x0f0f0f 0x4a4a4a ;; estudio/g1) echo 0xc9a24a 0x2a2a2a ;; estudio/g2) echo 0x3a3a3a 0xb3ada3 ;;
+    oficio/hero) echo 0xc2410c 0xffffff ;;  oficio/g1) echo 0x5f5f5f 0xf6f6f4 ;;  oficio/g2) echo 0x1c1c1c 0xc2410c ;;
+    vitrine/hero) echo 0xece6da 0x5e574d ;; vitrine/g1) echo 0x161412 0xece6da ;; vitrine/g2) echo 0x7a1f33 0xf7f2ea ;;
+    *) echo "slot desconhecido: $1/$2" >&2; exit 1 ;;
+  esac
+}
+while [ $# -ge 2 ]; do
+  t="$1"; s="$2"; shift 2
+  set -- "$@"
+  c=$(cores "$t" "$s") || exit 1
+  c0=${c%% *}; c1=${c##* }
+  mkdir -p "public/templates/$t"
+  ffmpeg -loglevel error -y -f lavfi -i "gradients=size=1600x1000:c0=$c0:c1=$c1:nb_colors=2:x0=0:y0=0:x1=1600:y1=1000" -frames:v 1 -q:v 8 "public/templates/$t/$s.jpg"
+  echo "placeholder gerado: public/templates/$t/$s.jpg $(stat -f %z "public/templates/$t/$s.jpg") bytes"
+done
 ```
 
-Run: `sh "$OUT/fotos-fallback.sh"` (só os slots que falharam precisam ser mantidos; refaça o passo 1 para os outros).
-Expected: 12 JPEGs de 1600x1000 com ~22 KB.
+Run (exemplo para um slot): `sh "$OUT/fotos-fallback.sh" mesa g2`
+Expected: uma linha `placeholder gerado: public/templates/mesa/g2.jpg <bytes> bytes` por slot pedido (JPEG 1600x1000, ~22 KB).
 
 - [ ] **Step 3: Verificar dimensão e tamanho**
 
@@ -1897,7 +1912,7 @@ com a qualidade ajustada para caber em 250 KB.
 |---|---|---|---|
 | mesa/hero.jpg | https://unsplash.com/photos/a-room-with-tables-and-chairs-e4B5AvA7Jqo | Glenov Brankovic | Unsplash License |
 | mesa/g1.jpg | https://unsplash.com/photos/dish-on-white-ceramic-plate-N_Y88TWmGwA | Jay Wennington | Unsplash License |
-| mesa/g2.jpg | https://unsplash.com/photos/candle-lit-in-a-glass-holder-on-a-bar-counter-OroGI4DFNX0 | Orion Stephens | Unsplash License |
+| mesa/g2.jpg | https://unsplash.com/photos/a-glass-of-wine-sitting-on-top-of-a-table-bc6imtlm29M | engin akyurt | Unsplash License |
 | estudio/hero.jpg | https://unsplash.com/photos/a-black-and-white-photo-of-a-barber-shop-R4NC2ChuZSc | Stefan Schauberger | Unsplash License |
 | estudio/g1.jpg | https://unsplash.com/photos/gray-stainless-steel-scissors-on-towel-pu20JkUx--A | Arthur Humeau | Unsplash License |
 | estudio/g2.jpg | https://unsplash.com/photos/black-leather-barber-chair-near-brown-brick-wall-EW_rqoSdDes | Nathon Oski | Unsplash License |
@@ -1939,7 +1954,7 @@ MSG
 - Create: `src/components/site-templates/palettes.ts`
 - Test: `tests/palettes.test.ts`
 
-Contexto: hex escolhidos para passar 4,5:1 nos quatro pares da spec 1.2 (verificado com o `contrastRatio` da Task 1; o par mais apertado é `rosa` accentFg/accent, 5,20). `paletteFor` cai na padrão do modelo quando o id não é dele: o `parseSiteContent` já faz isso no servidor, mas a view pode chegar de um estado local do editor (plano B).
+Contexto: hex escolhidos para passar 4,5:1 nos quatro pares da spec 1.2 (verificado com o `contrastRatio` da Task 1; o par mais apertado é `terracota` accentFg/accent, 4,62). O par accent/bg NÃO faz parte da spec e em `terracota` dá 4,3: `accent` é cor de fundo (botão, faixa), ícone e sublinhado, nunca texto corrido sobre `bg`; os modelos seguem isso (texto pequeno usa `text` ou `muted`), e o comentário do arquivo registra a regra. `paletteFor` cai na padrão do modelo quando o id não é dele: o `parseSiteContent` já faz isso no servidor, mas a view pode chegar de um estado local do editor (plano B).
 
 - [ ] **Step 1: Escrever o teste que falha**
 
@@ -2006,6 +2021,10 @@ import { PALETTE_IDS, type PaletteId, type TemplateId } from "../../../convex/li
  * text/bg, text/surface, muted/bg e accentFg/accent, garantido por
  * tests/palettes.test.ts com `contrastRatio` de convex/lib/contrast.ts. Mudou um
  * hex, rode o teste antes de olhar o resultado.
+ *
+ * `accent` é cor de FUNDO (botão, faixa) e de ícone/sublinhado, não de texto
+ * corrido sobre `bg`: o par accent/bg não é testado e em `terracota` dá 4,3.
+ * Texto pequeno em cima do fundo usa `text` ou `muted`.
  */
 export interface Palette {
   id: string;
@@ -2327,7 +2346,7 @@ MSG
 
 ## Chunk 4: blocos comuns e os modelos Mesa e Estúdio
 
-Componentes React sem hooks (renderizam no servidor). Sem teste unitário próprio: `tsc` + `eslint` aqui, render real na chunk 6 (páginas públicas) e guardas de fonte na chunk 7 (Task 17: horário/preço/itens só de `view.*`, `@container`, sem viewport, sem `sticky`, `alt` da foto padrão vazio). Escreva os arquivos exatamente como estão: eles já passam nessas guardas.
+Componentes React sem hooks (renderizam no servidor). Sem teste unitário próprio: `tsc` + `eslint` aqui, render real na chunk 6 (páginas públicas) e guardas de fonte na chunk 7 (Task 16: horário/preço/itens só de `view.*`, `@container`, sem viewport, sem `sticky`, `alt` da foto padrão vazio). Escreva os arquivos exatamente como estão: eles já passam nessas guardas.
 
 Convenções dos modelos (spec 1.4 e Decisões):
 - raiz com `@container`; variantes `@md:` (≥ 448 px de contêiner), `@3xl:` (≥ 768 px) e `@5xl:` (≥ 1024 px); nunca `sm:`/`md:`/`lg:` de viewport;
@@ -2845,13 +2864,13 @@ export function Hero({ view, tr, locale }: TemplateProps) {
   return (
     <>
       <header className={`${CONTAINER} flex items-center justify-between gap-6 py-5`}>
-        <span className={`${serif} text-2xl font-semibold tracking-tight`}>{view.name}</span>
+        <h1 className={`${serif} text-2xl font-semibold tracking-tight`}>{view.name}</h1>
         <PrimaryCta
           view={view}
           tr={tr}
           locale={locale}
           ctaKey={CTA}
-          className="hidden items-center gap-2 text-sm font-medium underline decoration-(--site-accent) underline-offset-4 hover:text-(--site-accent) @md:inline-flex"
+          className="hidden items-center gap-2 text-sm font-medium underline decoration-(--site-accent) underline-offset-4 hover:opacity-70 @md:inline-flex"
         />
       </header>
       <section className={`${CONTAINER} grid gap-8 pb-14 pt-2 @5xl:grid-cols-[300px_1fr] @5xl:gap-14 @5xl:pb-20`}>
@@ -2869,7 +2888,6 @@ export function Hero({ view, tr, locale }: TemplateProps) {
         <Photo
           src={view.heroUrl}
           alt={heroAlt(view)}
-         
           className="order-1 aspect-[4/3] w-full object-cover @5xl:order-2 @5xl:aspect-[16/11]"
         />
       </section>
@@ -2983,7 +3001,7 @@ const solid =
 export function Hero({ view, tr, locale }: TemplateProps) {
   return (
     <section className="relative isolate flex min-h-[640px] flex-col text-white @5xl:min-h-[760px]">
-      <Photo src={view.heroUrl} alt={heroAlt(view)}  className="absolute inset-0 -z-20 h-full w-full object-cover" />
+      <Photo src={view.heroUrl} alt={heroAlt(view)} className="absolute inset-0 -z-20 h-full w-full object-cover" />
       <div
         className="absolute inset-0 -z-10 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.55),rgba(0,0,0,0.35)_40%,rgba(0,0,0,0.8))]"
         aria-hidden
@@ -3103,7 +3121,7 @@ Abra com Read `/private/tmp/claude-501/-Users-madu/b16b2cfb-9aa3-4eb3-9281-1ceb4
 
 - [ ] **Step 2: Criar `oficio.tsx`**
 
-Observação: a tabela da spec 1.1 não lista horário para o Ofício; aqui o horário aparece ao lado do contato (só quando preenchido), para um horário digitado no editor não sumir do site.
+Observações: a tabela da spec 1.1 não lista horário para o Ofício; aqui o horário aparece ao lado do contato (só quando preenchido), para um horário digitado no editor não sumir do site. O Ofício tem galeria "nosso trabalho" (`Gallery`, só uploads dela; vazia não renderiza). Quando há cidade, o endereço já aparece em "área atendida", então `Contact` recebe `withPlace={!view.city}` e não o repete; sem cidade, o contato mostra o endereço.
 
 ```tsx
 import { MdOutlinePlace } from "react-icons/md";
@@ -3135,7 +3153,8 @@ import { ctaOptions } from "@convex/lib/site";
  * inspirada em Kohr Construction: CTA de orçamento sempre visível no cabeçalho,
  * hero dividido (texto objetivo à esquerda, foto grande do trabalho à direita),
  * serviços com ícone, "como trabalhamos" com fotos de apoio, área atendida que
- * só nomeia a cidade, faixa de orçamento. Serifada (Fraunces) nos títulos.
+ * só nomeia a cidade, galeria "nosso trabalho" (só uploads dela), faixa de
+ * orçamento. Serifada (Fraunces) nos títulos.
  */
 const serif = "[font-family:var(--font-fraunces)]";
 const h2 = `${serif} text-3xl font-medium tracking-tight @3xl:text-4xl`;
@@ -3176,7 +3195,7 @@ export function Hero({ view, tr, locale }: TemplateProps) {
           </div>
           <Rating view={view} locale={locale} className="mt-6" />
         </div>
-        <Photo src={view.heroUrl} alt={heroAlt(view)}  className="aspect-[4/3] w-full rounded-lg object-cover" />
+        <Photo src={view.heroUrl} alt={heroAlt(view)} className="aspect-[4/3] w-full rounded-lg object-cover" />
       </section>
     </>
   );
@@ -3230,9 +3249,10 @@ export function Oficio(props: TemplateProps) {
         </section>
       )}
 
-      {(hasContact(view) || hasHours(view)) && (
+      {/* Com cidade, o endereço já apareceu em "área atendida": o contato não repete */}
+      {(hasContact(view, !view.city) || hasHours(view)) && (
         <Section className="grid gap-12 @3xl:grid-cols-2">
-          <Contact view={view} heading={tr.contactHeading} headingClass={h2} />
+          <Contact view={view} heading={tr.contactHeading} headingClass={h2} withPlace={!view.city} />
           <Hours hours={view.hours} heading={tr.hoursHeading} closed={tr.closed} locale={locale} headingClass={h2} />
         </Section>
       )}
@@ -3317,7 +3337,6 @@ export function Hero({ view, tr, locale }: TemplateProps) {
         <Photo
           src={view.heroUrl}
           alt={heroAlt(view)}
-         
           className="aspect-[4/3] w-full rounded-2xl object-cover @5xl:aspect-[4/5]"
         />
       </div>
@@ -4147,13 +4166,13 @@ Sem commit. Precisa dos dois servidores de pé (ver Contexto). O `convex dev` ap
 cd /Users/madu/Developer/mine/osprano
 OUT=/private/tmp/claude-501/-Users-madu/b16b2cfb-9aa3-4eb3-9281-1ceb4aabcb03/scratchpad/plano-a; mkdir -p "$OUT"
 ./node_modules/.bin/convex run leads:list '{}' > "$OUT/leads.json"
-ID=$(jq -r '.[0]._id' "$OUT/leads.json"); jq -r '.[0] | "\(.name) | \(.category) | \(.city) | phone=\(.phone)"' "$OUT/leads.json"
+ID=$(jq -r 'map(select(.category == "barber shop"))[0]._id' "$OUT/leads.json"); jq -r 'map(select(.category == "barber shop"))[0] | "\(.name) | \(.category) | \(.city) | phone=\(.phone)"' "$OUT/leads.json"
 ./node_modules/.bin/convex run previews:generate "{\"leadId\":\"$ID\"}" > "$OUT/gen1.txt" 2>&1; T1=$(jq -r . "$OUT/gen1.txt"); echo "token=$T1"
 ./node_modules/.bin/convex run demo:legacyPreview "{\"leadId\":\"$ID\"}" > "$OUT/legacy.txt" 2>&1; jq -r . "$OUT/legacy.txt"
 ./node_modules/.bin/convex run demo:rawPreview "{\"leadId\":\"$ID\"}" > "$OUT/raw1.json" 2>&1; jq -c '.content | {version, name, category}' "$OUT/raw1.json"
 ```
 
-Expected: a linha do lead (um dos 37 do OSM, ex. `Alexanders of Didsbury | barber shop | Manchester | phone=null`); `token=<32 hex>`; o mesmo token de volta do `legacyPreview`; e `{"version":null,"name":"...","category":"barber shop"}` (formato antigo, sem `version`).
+Expected: a linha do primeiro lead OSM de categoria `barber shop` (a categoria é o que garante o modelo Estúdio nas conferências abaixo; ex. `Alexanders of Didsbury | barber shop | Manchester | phone=null`); `token=<32 hex>`; o mesmo token de volta do `legacyPreview`; e `{"version":null,"name":"...","category":"barber shop"}` (formato antigo, sem `version`).
 
 - [ ] **Step 2: `generate` não sobrescreve; a leitura converte**
 
@@ -4175,6 +4194,8 @@ curl -s "http://localhost:3000/p/$T1" > "$OUT/p.html"; grep -o 'lang="en"' "$OUT
 Expected: `lang="en"`, `1` (ou mais), `/templates/estudio/hero.jpg`, e um número ≥ 3 (hero padrão e as duas fotos de decoração com alt vazio).
 
 - [ ] **Step 4: `publish` publica o conteúdo salvo e `getBySlug` devolve `images`**
+
+`publish` cobra 1 site da cota do workspace demo. Confira antes: `./node_modules/.bin/convex run workspaces:current '{}' > "$OUT/ws.json"; jq -c '{plan, sitesUsed, limits}' "$OUT/ws.json"`. Em 2026-09-17 o demo estava em `{"plan":"pro","sitesUsed":0,"limits":{"leads":2000,"sites":50}}`; se o workspace estiver no plano `free` (2 sites/mês) com `sitesUsed >= limits.sites`, `publish` lança `Limite do plano free atingido`: pule este passo, registre no relatório e NÃO rode `demo:clear`/`demo:seed` para liberar cota (apagam os 37 leads reais).
 
 ```bash
 ./node_modules/.bin/convex run previews:publish "{\"leadId\":\"$ID\"}" > "$OUT/pub.txt" 2>&1; SLUG=$(jq -r . "$OUT/pub.txt"); echo "slug=$SLUG"
@@ -4682,7 +4703,7 @@ MSG
 
 - [ ] **Step 6: Reportar**
 
-No relatório final, inclua: os comandos de verificação com a saída (tsc x2, eslint, `pass 265`, build), a lista dos commits (`git log --oneline a456bd7..HEAD`), os 8 caminhos das capturas, o resultado da Task 14 (token estável, conversão do formato antigo, publish idempotente), e as observações abaixo, que a Duda precisa saber:
+No relatório final, inclua: os comandos de verificação com a saída (tsc x2, eslint, `pass 265`, build), a lista dos commits (`git log --oneline 435f67e..HEAD`), os 8 caminhos das capturas, o resultado da Task 14 (token estável, conversão do formato antigo, publish idempotente), e as observações abaixo, que a Duda precisa saber:
 
 1. Quatro leads manuais ficaram no demo (Casa Aurora, Studio Norte, Bakker Installaties, Óptica Meridiano) e um lead do OSM ficou com site publicado (Task 14); `demo:seed` apagaria os 37 leads reais, então não foi rodado.
 2. Previews antigos são convertidos na leitura e regravados em v2 só ao publicar (ou ao salvar, no plano B); não há job de migração.
