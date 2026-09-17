@@ -16,6 +16,7 @@ import { MARKETS, canContactByEmail } from "@convex/lib/domain";
 import { Badge } from "./ui";
 import { CallScriptPanel } from "./call-script-panel";
 import { ContactOptInButton } from "./contact-opt-in-button";
+import { WhatTheyHaveButton } from "./what-they-have-button";
 
 type Lead = Doc<"leads">;
 
@@ -225,16 +226,22 @@ export function LeadCard({
           {/* o slot do pai é a prévia do site (não é envio de email) — precisa existir ANTES da
               ligação, já que o script promete mostrar uma prévia pronta. O gate de cold email é
               server-side (outreach.draft/send/markSent); a UI não esconde a geração de prévia. */}
-          {action && <div>{action}</div>}
+          {action && (
+            <div className="flex flex-wrap items-stretch gap-2">
+              {action}
+              <WhatTheyHaveButton lead={lead} variant="primary" />
+            </div>
+          )}
           <ContactOptInButton leadId={lead._id} optInAt={lead.contactOptInAt} />
         </div>
       ) : (
-        <div className="mt-3 flex items-stretch gap-2.5">
+        <div className="mt-3 flex flex-wrap items-stretch gap-2">
           {action && (
             <span className="flex-1" onClick={(e) => e.stopPropagation()}>
               {action}
             </span>
           )}
+          <WhatTheyHaveButton lead={lead} variant="primary" />
           {siteLink}
         </div>
       )}
