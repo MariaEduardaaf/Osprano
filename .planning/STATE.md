@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
 status: milestone-complete
-stopped_at: Fases 5 e 6 mergeadas (redesenho vidro sobre névoa + CRM fluxo do dia); milestone v1.1 completo, falta UAT manual e produção
+stopped_at: Fases 5 e 6 mergeadas e UAT feito em browser real via CDP (2026-09-17, 22/22 após 1 fix); milestone v1.1 completo, falta só produção (contas e chaves da Duda)
 last_updated: "2026-09-16T00:00:00.000Z"
 progress:
   total_phases: 6
@@ -37,8 +37,10 @@ Próximo passo:
 1. `docs/CHECKLIST-MODO-REAL.md` seção 9 (Vercel + Convex prod), começando
    pelo 3.0 (rotacionar a chave da Anthropic, impressa num terminal nesta
    sessão).
-2. UAT manual da Duda: última tarefa de cada plano (`Task 29` do redesenho,
-   `Tarefa 26` do CRM), roteiro no navegador com o seed do demo.
+2. UAT: feito em 2026-09-17 num Chromium real via CDP (scripts no scratchpad da
+   sessão), 22 itens, 1 bug achado e corrigido (`89523a0`: Esc no modal Criar
+   lead fechava o drawer). Sobra pra Duda só o que exige olho: tema escuro ao
+   vivo, sensação do arrasto com 51 cards, "reduzir transparência" no macOS.
 O backlog v2 (SCAL-01..03, GDPR-01/02, BILL-04/05) segue em REQUIREMENTS.md.
 
 ## Performance Metrics
@@ -146,4 +148,4 @@ Resume file: docs/CHECKLIST-MODO-REAL.md (seção 3.0 e seção 9) e os roteiros
 - Falta ainda: `GOOGLE_PLACES_API_KEY` (busca real), `ANTHROPIC_API_KEY` (script/email por IA), `RESEND_API_KEY` (envio).
 - `pnpm test/typecheck/lint` abortam neste terminal (`ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY`). Usar `./node_modules/.bin/tsc --noEmit`, `./node_modules/.bin/eslint`, `node --experimental-strip-types --test tests/*.test.ts`, ou `pnpm install` num terminal com TTY.
 - 2026-09-16: a `ANTHROPIC_API_KEY` atual foi impressa num terminal durante a sessão. Rotacionar antes de qualquer deploy (checklist 3.0).
-- 2026-09-16: UAT manual pendente com a Duda: Task 29 do plano do redesenho e Tarefa 26 do plano do CRM (roteiros no navegador, modo demo).
+- 2026-09-17: UAT executado em browser real (CDP), 22/22 PASS após o fix `89523a0`; roteiros de Task 29 e Tarefa 26 cobertos, exceto o que é sensação (arrasto, tema ao vivo, reduzir transparência).
