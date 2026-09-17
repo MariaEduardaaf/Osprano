@@ -75,11 +75,21 @@ export const list = query({
   },
 });
 
+/**
+ * `id` é string, não `v.id("leads")`: o editor do site (plano B) lê o id da URL
+ * (`/crm/[leadId]/site`) e um id malformado precisa virar "Lead não encontrado"
+ * na tela, não erro de validação de argumento (que derruba a query inteira).
+ * `normalizeId` devolve null para string que não é id desta tabela. O caller
+ * atual (`src/components/outreach-composer.tsx`) passa um `Id<"leads">`, que
+ * continua válido.
+ */
 export const get = query({
-  args: { id: v.id("leads") },
+  args: { id: v.string() },
   handler: async (ctx, args) => {
     const orgId = await requireOrgId(ctx);
-    const lead = await ctx.db.get(args.id);
+    const id = ctx.db.normalizeId("leads", args.id);
+    if (!id) return null;
+    const lead = await ctx.db.get(id);
     if (!lead || lead.orgId !== orgId) return null;
     return lead;
   },

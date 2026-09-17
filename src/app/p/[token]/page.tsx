@@ -3,21 +3,23 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@convex/_generated/api";
-import { PreviewSite, type PreviewContent } from "@/components/preview-site";
+import { PreviewSite } from "@/components/preview-site";
 import { PreviewTracker } from "@/components/preview-tracker";
+import { buildSiteView } from "@/components/site-templates";
 import { DICTS, localeForLead } from "@/lib/preview-i18n";
 
 type Props = { params: Promise<{ token: string }> };
 
 /**
  * `cache` dedupa a query entre generateMetadata e o render da página: as duas
- * rodam no mesmo request, então o Convex é consultado uma vez só.
+ * rodam no mesmo request, então o Convex é consultado uma vez só. `content` já
+ * chega parseado (v2) e `images` com as URLs do storage resolvidas.
  */
-const loadPreview = cache(async (token: string): Promise<PreviewContent | null> => {
+const loadPreview = cache(async (token: string) => {
   const url = process.env.NEXT_PUBLIC_CONVEX_URL;
   if (!url) return null;
   const data = await new ConvexHttpClient(url).query(api.previews.getByToken, { token });
-  return data ? (data.content as PreviewContent) : null;
+  return data ? { content: data.content, images: data.images } : null;
 });
 
 /**
@@ -36,25 +38,29 @@ const loadPreview = cache(async (token: string): Promise<PreviewContent | null> 
  */
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { token } = await params;
-  const content = await loadPreview(token);
-  if (!content) return { robots: { index: false } };
+  const preview = await loadPreview(token);
+  if (!preview) return { robots: { index: false } };
 
+  const { name, city, countryCode } = preview.content;
   // Cidade junto do país: só assim a Suíça francófona/italófona sai do alemão.
-  const tr = DICTS[localeForLead(content.countryCode, content.city)];
-  const title = tr.metaTitle({ name: content.name, city: content.city });
-  const description = tr.metaDescription({ name: content.name, city: content.city });
+  const tr = DICTS[localeForLead(countryCode, city)];
+  const title = tr.metaTitle({ name, city });
+  const description = tr.metaDescription({ name, city });
   return { title, description, openGraph: { title, description }, robots: { index: false } };
 }
 
 export default async function PreviewPage({ params }: Props) {
   const { token } = await params;
-  const content = await loadPreview(token);
-  if (!content) notFound();
+  const preview = await loadPreview(token);
+  if (!preview) notFound();
 
+  // A página monta o SiteView (foto padrão onde não há upload), nunca o modelo (spec 3.5).
+  const view = buildSiteView(preview.content, preview.images);
+  const locale = localeForLead(view.countryCode, view.city);
   return (
     <>
       <PreviewTracker token={token} />
-      <PreviewSite content={content} />
+      <PreviewSite view={view} locale={locale} />
     </>
   );
 }
