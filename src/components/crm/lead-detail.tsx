@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Doc } from "@convex/_generated/dataModel";
@@ -448,6 +449,10 @@ function ApproachTab({ lead }: { lead: Doc<"leads"> }) {
 
 /* ----------------------------------------------------------------------- Site */
 
+/** Link provisório para o editor (plano B); o plano C redesenha esta aba com o resumo do modelo (spec 3.2). */
+const editLinkCls =
+  "inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-brand-fg shadow-[var(--shadow-sm)] transition-colors hover:bg-brand-hover";
+
 function SiteTab({ lead }: { lead: Doc<"leads"> }) {
   const preview = useQuery(api.previews.getForLead, { leadId: lead._id });
 
@@ -463,6 +468,9 @@ function SiteTab({ lead }: { lead: Doc<"leads"> }) {
         </p>
         <div className="mt-5 flex flex-wrap justify-center gap-2">
           <GeneratePreviewButton leadId={lead._id} />
+          <Link href={`/crm/${lead._id}/site`} className={editLinkCls}>
+            Editar site
+          </Link>
           <WhatTheyHaveButton lead={lead} />
         </div>
       </div>
@@ -482,6 +490,9 @@ function SiteTab({ lead }: { lead: Doc<"leads"> }) {
           </span>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
+          <Link href={`/crm/${lead._id}/site`} className={editLinkCls}>
+            Editar site
+          </Link>
           <a
             href={`/p/${preview.token}`}
             target="_blank"
