@@ -16,6 +16,7 @@ import { Badge } from "./ui";
 import { CallScriptPanel } from "./call-script-panel";
 import { ContactOptInButton } from "./contact-opt-in-button";
 import { WhatTheyHaveButton } from "./what-they-have-button";
+import { SocialButtons } from "./social-buttons";
 
 type Lead = Doc<"leads">;
 
@@ -215,6 +216,7 @@ export function LeadCard({
             <div className="flex flex-wrap items-stretch gap-2">
               {action}
               <WhatTheyHaveButton lead={lead} variant="primary" />
+              <SocialButtons lead={lead} variant="primary" />
             </div>
           )}
           <ContactOptInButton leadId={lead._id} optInAt={lead.contactOptInAt} />
@@ -227,6 +229,7 @@ export function LeadCard({
             </span>
           )}
           <WhatTheyHaveButton lead={lead} variant="primary" />
+          <SocialButtons lead={lead} variant="primary" />
         </div>
       )}
     </div>

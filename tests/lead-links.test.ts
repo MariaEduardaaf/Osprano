@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { whatTheyHaveLink } from "../src/lib/lead-links.ts";
+import { whatTheyHaveLink, socialLinks } from "../src/lib/lead-links.ts";
 
 const BASE = {
   website: undefined as string | undefined,
@@ -80,4 +80,71 @@ test("whatTheyHaveLink: sem endereço e sem cidade cai para nome + país", () =>
 test("whatTheyHaveLink: país fora de MARKETS usa o próprio código", () => {
   const r = whatTheyHaveLink({ ...BASE, countryCode: "XX" });
   assert.equal(query(r.href), "Padaria Central, Rua A, 123, XX");
+});
+
+// ---------------------------------------------------------------------------
+// socialLinks
+// ---------------------------------------------------------------------------
+
+test("socialLinks: instagram salvo vira link direto ao perfil", () => {
+  const { instagram } = socialLinks({
+    instagram: "padariacentral",
+    facebook: undefined,
+    name: "Padaria Central",
+    city: "Lisboa",
+  });
+  assert.equal(instagram.href, "https://www.instagram.com/padariacentral/");
+  assert.equal(instagram.label, "Instagram");
+});
+
+test("socialLinks: sem instagram busca pelo nome", () => {
+  const { instagram } = socialLinks({
+    instagram: undefined,
+    facebook: undefined,
+    name: "Padaria Central",
+    city: "Lisboa",
+  });
+  assert.equal(instagram.label, "Achar no Instagram");
+  assert.equal(
+    instagram.href,
+    "https://www.instagram.com/explore/search/keyword/?q=" + encodeURIComponent("Padaria Central"),
+  );
+});
+
+test("socialLinks: facebook salvo (já é URL) vira link direto", () => {
+  const { facebook } = socialLinks({
+    instagram: undefined,
+    facebook: "https://www.facebook.com/padariacentral",
+    name: "Padaria Central",
+    city: "Lisboa",
+  });
+  assert.equal(facebook.href, "https://www.facebook.com/padariacentral");
+  assert.equal(facebook.label, "Facebook");
+});
+
+test("socialLinks: sem facebook busca por nome + cidade", () => {
+  const { facebook } = socialLinks({
+    instagram: undefined,
+    facebook: undefined,
+    name: "Padaria Central",
+    city: "Lisboa",
+  });
+  assert.equal(facebook.label, "Achar no Facebook");
+  assert.equal(
+    facebook.href,
+    "https://www.facebook.com/search/pages/?q=" + encodeURIComponent("Padaria Central Lisboa"),
+  );
+});
+
+test("socialLinks: sem facebook e sem cidade busca só pelo nome (com espaço sobrando)", () => {
+  const { facebook } = socialLinks({
+    instagram: undefined,
+    facebook: undefined,
+    name: "Padaria Central",
+    city: undefined,
+  });
+  assert.equal(
+    facebook.href,
+    "https://www.facebook.com/search/pages/?q=" + encodeURIComponent("Padaria Central "),
+  );
 });

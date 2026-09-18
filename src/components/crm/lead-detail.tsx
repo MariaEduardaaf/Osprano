@@ -32,6 +32,7 @@ import { LeadTimeline } from "@/components/crm/lead-timeline";
 import { OutreachComposer } from "@/components/outreach-composer";
 import { GeneratePreviewButton } from "@/components/generate-preview-button";
 import { WhatTheyHaveButton } from "@/components/what-they-have-button";
+import { SocialButtons } from "@/components/social-buttons";
 import { PublishButton } from "@/components/publish-button";
 import { CallScriptPanel } from "@/components/call-script-panel";
 import { ContactOptInButton } from "@/components/contact-opt-in-button";
@@ -519,6 +520,7 @@ function SiteTab({ lead }: { lead: Doc<"leads"> }) {
         <GeneratePreviewButton leadId={lead._id} />
         {preview && <PublishButton leadId={lead._id} slug={preview.slug} />}
         <WhatTheyHaveButton lead={lead} />
+        <SocialButtons lead={lead} />
       </div>
     </div>
   );
