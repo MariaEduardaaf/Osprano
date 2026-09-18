@@ -117,13 +117,19 @@ export const generateUploadUrl = mutation({
  * Registra um arquivo enviado como upload do lead (spec 2.4). `saveContent` só
  * aceita storageId que passou por aqui. Idempotente para o mesmo org.
  */
+const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
 export const registerUpload = mutation({
   args: { leadId: v.id("leads"), storageId: v.id("_storage") },
   handler: async (ctx, { leadId, storageId }) => {
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.db.get(leadId);
     if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
-    if (!(await ctx.db.system.get("_storage", storageId))) throw userError("Arquivo não encontrado");
+    const file = await ctx.db.system.get("_storage", storageId);
+    if (!file) throw userError("Arquivo não encontrado");
+    // O cliente já redimensiona para JPEG, mas quem faz POST direto na URL de
+    // upload pode mandar qualquer coisa; SVG/HTML servido do storage não entra.
+    if (!IMAGE_TYPES.has(file.contentType ?? "")) throw userError("Envie uma imagem JPEG, PNG ou WebP");
     const existing = await uploadRow(ctx, storageId);
     if (existing) {
       if (existing.orgId !== orgId) throw userError("Imagem inválida");
@@ -246,7 +252,8 @@ export const getBySlug = query({
       .first();
     if (!p || !p.published) return null;
     const content = await readContent(ctx, p);
-    return { content, token: p.token, images: await resolveImages(ctx, content) };
+    // Sem o token: o site publicado é público e o token é a credencial da prévia rastreada.
+    return { content, images: await resolveImages(ctx, content) };
   },
 });
 

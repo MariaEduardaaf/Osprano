@@ -18,7 +18,7 @@ const loadSite = cache(async (slug: string) => {
   const url = process.env.NEXT_PUBLIC_CONVEX_URL;
   if (!url) return null;
   const data = await new ConvexHttpClient(url).query(api.previews.getBySlug, { slug });
-  return data ? { content: data.content, images: data.images, token: data.token } : null;
+  return data ? { content: data.content, images: data.images } : null;
 });
 
 /** Hosts que só resolvem na máquina de quem desenvolve (mesma lista de convex/lib/env.ts). */
