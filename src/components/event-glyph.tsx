@@ -14,7 +14,7 @@ import {
  */
 export function eventDot(type: string): string {
   if (type === "preview_open") return "var(--warm)";
-  if (type === "email_sent" || type === "reply") return "var(--brand)";
+  if (type === "email_sent" || type === "reply" || type === "dm_sent") return "var(--brand)";
   if (type === "note") return "var(--faint)";
   return "var(--faint)";
 }
@@ -23,6 +23,7 @@ export function eventIcon(type: string, meta: { channel?: string } | null): Reac
   if (type === "note") return <MdOutlineStickyNote2 size={15} />;
   if (type === "preview_open") return <MdOutlineVisibility size={15} />;
   if (type === "email_sent") return meta?.channel === "whatsapp" ? <MdOutlineChat size={15} /> : <MdOutlineSend size={15} />;
+  if (type === "dm_sent") return <MdOutlineChat size={15} />;
   if (type === "reply") return <MdOutlineChat size={15} />;
   return <MdOutlineSwapHoriz size={15} />;
 }
