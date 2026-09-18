@@ -241,19 +241,28 @@ function ComposerBody({
         <button
           onClick={() =>
             run("copy", async () => {
-              await navigator.clipboard.writeText(`${subject}\n\n${body}`);
-              void updateDraft({ leadId, subject, body }).catch(() => {});
+              // `updateDraft` re-garante o rodapé de opt-out e devolve o par normalizado —
+              // copiar o `body` local (o que a IA gerou, sem o rodapé injetado no `draft`)
+              // era exatamente o defeito de compliance: aguarda o servidor ANTES de escrever
+              // no clipboard, e atualiza o textarea para mostrar o texto que foi de fato copiado.
+              const normalized = await updateDraft({ leadId, subject, body });
+              setSubject(normalized.subject);
+              setBody(normalized.body);
+              await navigator.clipboard.writeText(`${normalized.subject}\n\n${normalized.body}`);
               setMsg("Copiado — envie do seu email.");
             })
           }
-          className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-semibold hover:bg-surface"
+          disabled={busy === "copy"}
+          className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-semibold hover:bg-surface disabled:opacity-50"
         >
           <MdOutlineContentCopy size={14} />
           Copiar
         </button>
         <button
           onClick={() => run("mark", async () => {
-            await updateDraft({ leadId, subject, body });
+            const normalized = await updateDraft({ leadId, subject, body });
+            setSubject(normalized.subject);
+            setBody(normalized.body);
             await markSent({ leadId });
             setMsg("Marcado como enviado.");
           })}
@@ -282,7 +291,9 @@ function ComposerBody({
                 setMsg(`Envio cancelado — troque ${NAME_PLACEHOLDER} pelo seu nome.`);
                 return;
               }
-              await updateDraft({ leadId, subject, body });
+              const normalized = await updateDraft({ leadId, subject, body });
+              setSubject(normalized.subject);
+              setBody(normalized.body);
               await send({ leadId });
               setMsg("Enviado via Resend.");
             })}

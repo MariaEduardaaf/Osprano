@@ -129,6 +129,10 @@ function withOptOutFooter(body: string, lead: Doc<"leads"> | null, token: string
   return `${body}${optOutFooter(lang, url, sender)}`;
 }
 
+/** Devolve o rascunho REALMENTE persistido (assunto + corpo já com o rodapé de opt-out), não
+    os argumentos recebidos: `draft` (convex/outreach.ts) repassa este retorno para o cliente,
+    e o textarea do composer só mostra o rodapé se ele vier daqui — não do `email.body` cru
+    da IA. Ver `src/components/outreach-composer.tsx`. */
 export const upsertDraft = internalMutation({
   args: {
     orgId: v.string(),
@@ -137,7 +141,7 @@ export const upsertDraft = internalMutation({
     body: v.string(),
     previewToken: v.string(),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<{ subject: string; body: string }> => {
     const lead = await ctx.db.get(args.leadId);
     // Defesa em profundidade: hoje o único chamador é `draft` (já gateado), mas o gate
     // mora também aqui, colado na escrita — qualquer chamador interno futuro passaria
@@ -157,18 +161,19 @@ export const upsertDraft = internalMutation({
         unsubscribeToken,
         status: "draft",
       });
-      return existing._id;
+    } else {
+      await ctx.db.insert("outreach", {
+        orgId: args.orgId,
+        leadId: args.leadId,
+        channel: "email",
+        subject: args.subject,
+        body,
+        previewToken: args.previewToken,
+        unsubscribeToken,
+        status: "draft",
+      });
     }
-    return await ctx.db.insert("outreach", {
-      orgId: args.orgId,
-      leadId: args.leadId,
-      channel: "email",
-      subject: args.subject,
-      body,
-      previewToken: args.previewToken,
-      unsubscribeToken,
-      status: "draft",
-    });
+    return { subject: args.subject, body };
   },
 });
 
@@ -251,14 +256,17 @@ export const draft = action({
       callerName: callerNameFrom(process.env.RESEND_FROM),
     });
 
-    await ctx.runMutation(internal.outreach.upsertDraft, {
+    // Devolve o que foi REALMENTE persistido (com o rodapé de opt-out), não `email` cru:
+    // `email.body` nunca viu `withOptOutFooter` (rodada só dentro de `upsertDraft`), e a
+    // usuária copia/envia exatamente o que está no textarea — que precisa ser este valor.
+    const persisted = await ctx.runMutation(internal.outreach.upsertDraft, {
       orgId,
       leadId,
       subject: email.subject,
       body: email.body,
       previewToken: token,
     });
-    return email;
+    return { subject: persisted.subject, body: persisted.body, warnings: email.warnings };
   },
 });
 
@@ -359,14 +367,17 @@ export const markReplied = mutation({
 });
 
 /** OUTR-01: persiste o que o usuário editou no composer, antes de send/markSent/copy.
-    NÃO injeta rodapé de opt-out — o send (Fase 2) re-garante footer/headers de forma
-    idempotente, então uma edição do usuário nunca remove a garantia de compliance.
+    RE-INJETA o rodapé de opt-out via `withOptOutFooter` (idempotente: não duplica se o
+    corpo editado já termina com ele) — ao contrário do que o comentário antigo dizia, ESTA
+    é a única escrita que fica entre "o que a IA gerou" e "o que a usuária copia/manda", então
+    é aqui que a garantia de compliance precisa valer, não só no `send`. Devolve o par
+    normalizado para o composer atualizar o textarea e copiar/persistir o texto certo.
     OPTIN-04: mesmo gate de draft/send/markSent — persistir rascunho de email para um lead
     sem base legal não deve acontecer. Não quebra fluxo legítimo: só existe rascunho para
     editar se `draft` (já gateado) rodou antes. */
 export const updateDraft = mutation({
   args: { leadId: v.id("leads"), subject: v.string(), body: v.string() },
-  handler: async (ctx, { leadId, subject, body }) => {
+  handler: async (ctx, { leadId, subject, body }): Promise<{ subject: string; body: string }> => {
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.db.get(leadId);
     if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
@@ -375,7 +386,14 @@ export const updateDraft = mutation({
     }
     const row = await emailRowForLead(ctx, leadId);
     if (!row) throw userError("Nenhum rascunho encontrado para este lead.");
-    await ctx.db.patch(row._id, { subject, body });
+    const unsubscribeToken = row.unsubscribeToken ?? crypto.randomUUID().replace(/-/g, "");
+    const normalizedBody = withOptOutFooter(body, lead, unsubscribeToken);
+    await ctx.db.patch(row._id, {
+      subject,
+      body: normalizedBody,
+      unsubscribeToken,
+    });
+    return { subject, body: normalizedBody };
   },
 });
 
