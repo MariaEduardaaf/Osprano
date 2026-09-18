@@ -15,8 +15,9 @@ import {
   isEmailable,
   canContactByEmail,
   inferLegalForm,
-  inferContactType,
+  emailFields,
   type Signals,
+  type ContactType,
 } from "./lib/domain";
 
 const legalFormV = v.union(
@@ -248,15 +249,23 @@ function cleanAmount(value: number | null): number | undefined {
   return value;
 }
 
+/** "algo@algo.algo": local e domínio não vazios, com um ponto depois do @. */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 /**
- * Contato e valores do negócio: patch SÓ dos campos enviados. String: trim, vazia limpa.
+ * Contato, email e valores do negócio: patch SÓ dos campos enviados. String: trim, vazia limpa.
  * Número: null limpa. Valores ficam na moeda do país (currencyForCountry), sem campo de moeda.
+ *
+ * Email muda `contactType`/`emailable` junto (mesma regra de `insertDiscovered`, via
+ * `emailFields`): quem preenche "info@negocio.com" à mão destrava abordabilidade igual à
+ * descoberta automática teria destravado.
  */
 export const updateInfo = mutation({
   args: {
     id: v.id("leads"),
     contactName: v.optional(v.string()),
     contactRole: v.optional(v.string()),
+    email: v.optional(v.string()),
     dealSetup: v.optional(v.union(v.number(), v.null())),
     dealMonthly: v.optional(v.union(v.number(), v.null())),
   },
@@ -264,11 +273,28 @@ export const updateInfo = mutation({
     const orgId = await requireOrgId(ctx);
     const lead = await ctx.db.get(args.id);
     if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
-    const patch: { contactName?: string; contactRole?: string; dealSetup?: number; dealMonthly?: number } = {};
+    const patch: {
+      contactName?: string;
+      contactRole?: string;
+      dealSetup?: number;
+      dealMonthly?: number;
+      email?: string;
+      contactType?: ContactType;
+      emailable?: boolean;
+    } = {};
     if (args.contactName !== undefined) patch.contactName = args.contactName.trim() || undefined;
     if (args.contactRole !== undefined) patch.contactRole = args.contactRole.trim() || undefined;
     if (args.dealSetup !== undefined) patch.dealSetup = cleanAmount(args.dealSetup);
     if (args.dealMonthly !== undefined) patch.dealMonthly = cleanAmount(args.dealMonthly);
+    if (args.email !== undefined) {
+      const trimmed = args.email.trim().toLowerCase();
+      const email = trimmed || undefined;
+      if (email && !EMAIL_RE.test(email)) throw userError("E-mail inválido");
+      const fields = emailFields({ countryCode: lead.countryCode, legalForm: lead.legalForm }, email);
+      patch.email = fields.email;
+      patch.contactType = fields.contactType;
+      patch.emailable = fields.emailable;
+    }
     await ctx.db.patch(args.id, patch); // chave presente com undefined = remove o campo
   },
 });
@@ -463,8 +489,7 @@ export const insertDiscovered = internalMutation({
     };
     const score = computeScore(signals);
     const legalForm = inferLegalForm(args.name, args.countryCode);
-    const contactType = inferContactType(args.email);
-    const emailable = isEmailable({ countryCode: args.countryCode, legalForm, contactType });
+    const { contactType, emailable } = emailFields({ countryCode: args.countryCode, legalForm }, args.email);
 
     const existing = await ctx.db
       .query("leads")

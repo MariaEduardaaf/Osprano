@@ -22,13 +22,15 @@ function InlineField({
   placeholder,
   type = "text",
   prefix,
+  hint,
   onSave,
 }: {
   label: string;
   value: string;
   placeholder?: string;
-  type?: "text" | "number";
+  type?: "text" | "number" | "email";
   prefix?: string;
+  hint?: string;
   onSave: (draft: string) => Promise<unknown>;
 }) {
   const [draft, setDraft] = useState(value);
@@ -73,6 +75,7 @@ function InlineField({
           className={fieldCls}
         />
       </span>
+      {hint && !msg && <span className="mt-1 block text-[11px] text-faint">{hint}</span>}
       {msg && <span className="mt-1 block text-[11px] text-danger">{msg}</span>}
     </label>
   );
@@ -103,6 +106,17 @@ export function LeadInfoFields({ lead }: { lead: Doc<"leads"> }) {
           placeholder="Dono, gerente…"
           onSave={(v) => updateInfo({ id: lead._id, contactRole: v })}
         />
+        <div className="col-span-2">
+          <InlineField
+            key={`email:${lead.email ?? ""}`}
+            label="E-mail do negócio"
+            type="email"
+            value={lead.email ?? ""}
+            placeholder="info@negocio.com"
+            hint="Onde achar: site (Contato), ficha no Google, Facebook/Instagram"
+            onSave={(v) => updateInfo({ id: lead._id, email: v })}
+          />
+        </div>
       </div>
       <h3 className="mb-2 mt-4 font-mono text-[10px] font-semibold uppercase tracking-wider text-faint">Negócio</h3>
       <div className="grid grid-cols-2 gap-3">

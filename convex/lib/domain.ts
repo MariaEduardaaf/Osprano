@@ -442,6 +442,25 @@ export function inferContactType(email?: string | null): ContactType {
   return "unknown";
 }
 
+/**
+ * Deriva contactType + emailable a partir de um email (novo ou existente) e do
+ * país/forma jurídica do lead. Única fonte da regra "mudou o email → recalcula
+ * abordabilidade": usada tanto pela descoberta (insertDiscovered) quanto pela
+ * edição manual no CRM (leads.updateInfo) — as duas precisam concordar sempre.
+ */
+export function emailFields(
+  lead: { countryCode: string; legalForm?: LegalForm | null },
+  email: string | undefined,
+): { email: string | undefined; contactType: ContactType; emailable: boolean } {
+  const contactType = inferContactType(email);
+  const emailable = isEmailable({
+    countryCode: lead.countryCode,
+    legalForm: lead.legalForm ?? "unknown",
+    contactType,
+  });
+  return { email, contactType, emailable };
+}
+
 // ---------------------------------------------------------------------------
 // Website classification — "has a real site?" / "social-only?" (free, no API)
 // ---------------------------------------------------------------------------

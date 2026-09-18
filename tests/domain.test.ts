@@ -9,6 +9,7 @@ import {
   canContactByEmail,
   inferLegalForm,
   inferContactType,
+  emailFields,
   clampDiscoveryCount,
   normalizeEmail,
   hasWaOptIn,
@@ -147,6 +148,34 @@ test("inferContactType: role vs named", () => {
   assert.equal(inferContactType("maria@x.com"), "named");
   assert.equal(inferContactType(undefined), "unknown");
   assert.equal(inferContactType("x1y2z3@x.com"), "unknown");
+});
+
+test("emailFields: role inbox vira contactType role e destrava emailable no launch market", () => {
+  const r = emailFields({ countryCode: "GB", legalForm: "unknown" }, "info@negocio.co.uk");
+  assert.equal(r.email, "info@negocio.co.uk");
+  assert.equal(r.contactType, "role");
+  assert.equal(r.emailable, true);
+});
+
+test("emailFields: endereço nomeado vira contactType named e NÃO destrava emailable", () => {
+  const r = emailFields({ countryCode: "GB", legalForm: "unknown" }, "joao@negocio.co.uk");
+  assert.equal(r.contactType, "named");
+  assert.equal(r.emailable, false);
+});
+
+test("emailFields: email undefined vira contactType unknown", () => {
+  const r = emailFields({ countryCode: "GB", legalForm: "unknown" }, undefined);
+  assert.equal(r.email, undefined);
+  assert.equal(r.contactType, "unknown");
+  assert.equal(r.emailable, false);
+});
+
+test("emailFields: lead incorporado no Reino Unido — role inbox abordável, named não", () => {
+  // Mesmo cenário do lead do Reino Unido que motivou a feature.
+  const role = emailFields({ countryCode: "GB", legalForm: "incorporated" }, "info@negocio.co.uk");
+  assert.equal(role.emailable, true);
+  const named = emailFields({ countryCode: "GB", legalForm: "incorporated" }, "joao@negocio.co.uk");
+  assert.equal(named.emailable, false);
 });
 
 test("clampDiscoveryCount: default when undefined", () => {
