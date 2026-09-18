@@ -119,3 +119,18 @@ export const setLeadSocial = internalMutation({
     return { name: lead.name, ...patch };
   },
 });
+
+/** Manda leads para o CRM (saved=true), como o botão "Enviar pro CRM". Só CLI. */
+export const saveLeads = internalMutation({
+  args: { leadIds: v.array(v.id("leads")) },
+  handler: async (ctx, { leadIds }) => {
+    let n = 0;
+    for (const id of leadIds) {
+      const lead = await ctx.db.get(id);
+      if (!lead) continue;
+      await ctx.db.patch(id, { saved: true });
+      n += 1;
+    }
+    return { saved: n };
+  },
+});
