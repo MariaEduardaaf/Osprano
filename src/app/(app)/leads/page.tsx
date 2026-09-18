@@ -126,7 +126,7 @@ export default function LeadsPage() {
     try {
       let prefix = "";
       let usedOsm = source === "osm";
-      let res: { found: number; inserted: number };
+      let res: { found: number; inserted: number; droppedWithSite: number };
       if (usedOsm) {
         res = await searchOsm(params);
       } else {
@@ -145,7 +145,13 @@ export default function LeadsPage() {
       const foundText = usedOsm
         ? `Encontrados até ${res.found} no mapa`
         : `Encontrados ${res.found}`;
-      setMsg(`${prefix}${foundText} · adicionados ${res.inserted}. Pontuando em segundo plano…`);
+      // Só entra lead sem site de verdade (rede social conta como sem site): quem tinha
+      // site foi descartado antes de virar lead, sem gastar cota.
+      const droppedText =
+        res.droppedWithSite > 0 ? ` · ${res.droppedWithSite} descartados (já têm site)` : "";
+      setMsg(
+        `${prefix}${foundText} · adicionados ${res.inserted}${droppedText}. Pontuando em segundo plano…`,
+      );
     } catch (err) {
       setMsg(errorMessage(err, "Falha na busca"));
     } finally {

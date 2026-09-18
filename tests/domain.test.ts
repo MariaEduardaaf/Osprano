@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   classifyWebsite,
+  keepOnlyWithoutSite,
   computeScore,
   tierFromScore,
   isEmailable,
@@ -63,6 +64,48 @@ test("classifyWebsite: empty = no site, not social", () => {
   const r = classifyWebsite("");
   assert.equal(r.hasRealSite, false);
   assert.equal(r.socialOnly, false);
+});
+
+test("keepOnlyWithoutSite: drops a real site", () => {
+  const { kept, droppedWithSite } = keepOnlyWithoutSite([
+    { id: 1, website: "https://www.padaria-central.co.uk" },
+  ]);
+  assert.deepEqual(kept, []);
+  assert.equal(droppedWithSite, 1);
+});
+
+test("keepOnlyWithoutSite: keeps undefined website", () => {
+  const { kept, droppedWithSite } = keepOnlyWithoutSite([{ id: 1, website: undefined }]);
+  assert.equal(kept.length, 1);
+  assert.equal(droppedWithSite, 0);
+});
+
+test("keepOnlyWithoutSite: keeps instagram.com (social-only counts as no site)", () => {
+  const { kept, droppedWithSite } = keepOnlyWithoutSite([
+    { id: 1, website: "https://instagram.com/barbeariax" },
+  ]);
+  assert.equal(kept.length, 1);
+  assert.equal(droppedWithSite, 0);
+});
+
+test("keepOnlyWithoutSite: keeps linktr.ee (social-only counts as no site)", () => {
+  const { kept, droppedWithSite } = keepOnlyWithoutSite([
+    { id: 1, website: "https://linktr.ee/x" },
+  ]);
+  assert.equal(kept.length, 1);
+  assert.equal(droppedWithSite, 0);
+});
+
+test("keepOnlyWithoutSite: mixed batch keeps order of kept items", () => {
+  const items = [
+    { id: 1, website: "https://real-site.com" },
+    { id: 2, website: undefined },
+    { id: 3, website: "https://instagram.com/x" },
+    { id: 4, website: "https://another-real-site.co.uk" },
+  ];
+  const { kept, droppedWithSite } = keepOnlyWithoutSite(items);
+  assert.deepEqual(kept.map((i) => i.id), [2, 3]);
+  assert.equal(droppedWithSite, 2);
 });
 
 test("computeScore: no signals = 0", () => {

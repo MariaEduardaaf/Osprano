@@ -1,7 +1,7 @@
-import { internalMutation } from "./_generated/server";
+import { internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
-import { emailFields, normalizeInstagram, normalizeFacebook } from "./lib/domain";
+import { classifyWebsite, emailFields, normalizeInstagram, normalizeFacebook } from "./lib/domain";
 import { deleteLeadCascade } from "./model/leads";
 
 /**
@@ -109,6 +109,49 @@ export const setLeadSocial = internalMutation({
     if (facebook !== undefined) patch.facebook = normalizeFacebook(facebook) || undefined;
     await ctx.db.patch(leadId, patch);
     return { name: lead.name, ...patch };
+  },
+});
+
+/**
+ * Prévia (sem apagar nada) da limpeza pós-mudança de regra da descoberta: antes ela
+ * guardava todo negócio encontrado, agora só quem não tem site de verdade
+ * (classifyWebsite → hasRealSite; rede social continua contando como "sem site"). Lista
+ * quem ficaria pra trás numa busca antiga — só o que NUNCA foi enviado ao CRM
+ * (saved !== true), porque o que já está no CRM é decisão da dona, não sobra da
+ * descoberta. Rode isto ANTES de purgeUnsavedWithSite pra conferir. Só CLI.
+ */
+export const previewUnsavedWithSite = internalQuery({
+  args: { orgId: v.string() },
+  handler: async (ctx, { orgId }) => {
+    const leads = await ctx.db
+      .query("leads")
+      .withIndex("by_org", (q) => q.eq("orgId", orgId))
+      .collect();
+    const matches = leads.filter((l) => l.saved !== true && classifyWebsite(l.website).hasRealSite);
+    return { count: matches.length, names: matches.map((l) => l.name) };
+  },
+});
+
+/**
+ * Apaga (cascata via deleteLeadCascade, mesma de leads.remove/admin.deleteLead) os leads
+ * que a descoberta guardou ANTES da regra "só sem site" existir e que nunca foram
+ * enviados ao CRM. Mesmo critério do previewUnsavedWithSite — rode ele primeiro pra
+ * conferir. Não apaga lead com saved=true, mesmo com site: aí já é decisão da dona. Só CLI.
+ */
+export const purgeUnsavedWithSite = internalMutation({
+  args: { orgId: v.string() },
+  handler: async (ctx, { orgId }) => {
+    const leads = await ctx.db
+      .query("leads")
+      .withIndex("by_org", (q) => q.eq("orgId", orgId))
+      .collect();
+    const matches = leads.filter((l) => l.saved !== true && classifyWebsite(l.website).hasRealSite);
+    const names: string[] = [];
+    for (const lead of matches) {
+      await deleteLeadCascade(ctx, lead);
+      names.push(lead.name);
+    }
+    return { deleted: names.length, names };
   },
 });
 

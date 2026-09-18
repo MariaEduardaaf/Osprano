@@ -2,7 +2,7 @@ import { action, type ActionCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { requireOrgId } from "./model/tenant";
-import { isSearchableMarket, MARKETS, clampDiscoveryCount } from "./lib/domain";
+import { isSearchableMarket, MARKETS, clampDiscoveryCount, keepOnlyWithoutSite } from "./lib/domain";
 import { userError } from "./lib/errors";
 
 interface PlaceResult {
@@ -30,7 +30,11 @@ interface PlaceResult {
 type SearchArgs = { countryCode: string; category: string; city: string; max?: number };
 
 /** Núcleo da busca, sem auth: usado pela action pública e pela operação via CLI (admin). */
-export async function runPlacesSearch(ctx: ActionCtx, orgId: string, args: SearchArgs): Promise<{ found: number; inserted: number }> {
+export async function runPlacesSearch(
+  ctx: ActionCtx,
+  orgId: string,
+  args: SearchArgs,
+): Promise<{ found: number; inserted: number; droppedWithSite: number }> {
     const country = args.countryCode.toUpperCase();
     if (!isSearchableMarket(country)) {
       const name = MARKETS[country]?.name ?? country;
@@ -52,6 +56,7 @@ export async function runPlacesSearch(ctx: ActionCtx, orgId: string, args: Searc
 
     let places: PlaceResult[] = [];
     let inserted = 0;
+    let droppedWithSite = 0;
     try {
       const collected: PlaceResult[] = [];
       let pageToken: string | undefined;
@@ -99,7 +104,16 @@ export async function runPlacesSearch(ctx: ActionCtx, orgId: string, args: Searc
 
       places = collected.slice(0, want);
 
-      for (const p of places) {
+      // Cada resultado já custou a chamada da API (a cota do Places é por REQUISIÇÃO,
+      // não por resultado): descartar quem tem site de verdade não economiza a busca,
+      // só evita gravar o lead. Rede social (websiteUri de Instagram/Facebook…) NÃO é
+      // site de verdade: continua. Refund automático no final, pelo `want - inserted`.
+      const { kept, droppedWithSite: dropped } = keepOnlyWithoutSite(
+        places.map((p) => ({ place: p, website: p.websiteUri })),
+      );
+      droppedWithSite = dropped;
+
+      for (const { place: p } of kept) {
         if (p.businessStatus && p.businessStatus !== "OPERATIONAL") continue;
         const { leadId, created } = await ctx.runMutation(internal.leads.insertDiscovered, {
           orgId,
@@ -133,7 +147,7 @@ export async function runPlacesSearch(ctx: ActionCtx, orgId: string, args: Searc
       await ctx.runMutation(internal.workspaces.refund, { orgId, kind: "leads", count: leftover });
     }
 
-    return { found: places.length, inserted };
+    return { found: places.length, inserted, droppedWithSite };
 }
 
 export const search = action({
@@ -143,7 +157,7 @@ export const search = action({
     city: v.string(),
     max: v.optional(v.number()),
   },
-  handler: async (ctx, args): Promise<{ found: number; inserted: number }> => {
+  handler: async (ctx, args): Promise<{ found: number; inserted: number; droppedWithSite: number }> => {
     const orgId = await requireOrgId(ctx);
     return await runPlacesSearch(ctx, orgId, args);
   },
