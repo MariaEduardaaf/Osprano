@@ -36,11 +36,20 @@ recorrente** com hospedagem white-label na sua marca.
   do negócio (setup + mensal, na moeda do país) e um **Histórico** com notas e eventos.
 - **Outreach por IA** — email personalizado citando a dor + link do preview rastreado, com
   **caixa de saída** que acompanha o status (rascunho → enviado → abriu → respondeu).
-- **Preview de sites** — gera um site do negócio num link único rastreado; publique
-  white-label com URL própria.
+- **Modelos de site**: 4 modelos por segmento (Mesa, Estúdio, Ofício, Vitrine), 3 paletas
+  cada, com fotos e textos padrão em 10 idiomas; o preview rastreado `/p/<token>` e o site
+  publicado `/site/<slug>` renderizam o mesmo modelo com o mesmo conteúdo salvo. **Editor de
+  site** (`/crm/<leadId>/site`): escolhe modelo, paleta, textos, itens com preço, horário e
+  contato (telefone, WhatsApp, Instagram, e-mail), sobe fotos com redimensionamento no
+  navegador, acompanha a prévia ao vivo (desktop/celular) e publica white-label com URL
+  própria; salvar depois de publicado atualiza o site no ar na hora. Nada de fato inventado
+  sobre o negócio: texto padrão nunca afirma horário, preço ou histórico específico; seção com
+  dado só aparece quando ela preenche.
 - **Tema claro/escuro** em "vidro sobre névoa": cards translúcidos com blur sobre um fundo
   azul-acinzentado (névoa azul-marinho no escuro) e rail de 72px com ícone e nome. A paleta
   continua a "Product UI Styleguide" (azul vívido + cinzas neutros); a landing fica fora.
+
+![Editor de site: modelo, paleta e prévia ao vivo](docs/redesign/editor-1440.png)
 
 ---
 
@@ -132,7 +141,7 @@ pnpm build       # build de produção
 pnpm start       # servir o build
 pnpm typecheck   # tsc --noEmit
 pnpm lint        # eslint
-pnpm test        # testes de unidade do domínio (node --test, 208 testes)
+pnpm test        # testes de unidade do domínio (node --test, 283 testes)
 ```
 
 > Se `pnpm <script>` abortar com `ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY` (o pnpm 11
@@ -148,13 +157,17 @@ pnpm test        # testes de unidade do domínio (node --test, 208 testes)
 ```
 convex/              # schema, queries/mutations/actions, jobs, lógica de domínio (lib/)
 src/app/             # rotas (App Router): landing, (app)/dashboard|leads|crm|outreach|sites|settings
+src/app/(app)/crm/[leadId]/site/  # editor de site (página cheia, dentro do rail)
 src/components/      # UI: rail (sidebar), cards, landing, gráficos, tema, event-glyph (ícone por evento)
 src/components/crm/  # CRM: create-lead-modal, lead-detail, today-strip, next-action-form,
                      #      next-action-line, lead-info-fields, lost-reason-modal, lead-timeline
+src/components/site-templates/  # 4 modelos (mesa, estudio, oficio, vitrine), paletas, TemplateThumb
+src/components/site-editor/     # blocos do editor: modelo, textos, itens, horário, contato, fotos, prévia ao vivo
 src/lib/             # helpers (playbook de vendas, providers, use-now: relógio em estado)
-tests/               # testes de unidade do domínio (208)
+public/templates/    # fotos padrão dos 4 modelos + LICENSES.md
+tests/               # testes de unidade do domínio (283)
 docs/redesign/       # screenshots finais da área logada (1440px, claro e escuro)
-docs/superpowers/    # specs e planos do redesenho e do CRM (workflow superpowers)
+docs/superpowers/    # specs e planos do redesenho, do CRM e dos modelos de site (workflow superpowers)
 ```
 
 ---

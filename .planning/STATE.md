@@ -1,15 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: milestone
+milestone: v1.2
+milestone_name: Modelos de site
 status: milestone-complete
-stopped_at: Fases 5 e 6 mergeadas e UAT feito em browser real via CDP (2026-09-17, 22/22 após 1 fix); milestone v1.1 completo, falta só produção (contas e chaves da Duda)
-last_updated: "2026-09-16T00:00:00.000Z"
+stopped_at: Fases 7 e 8 mergeadas e UAT feito em navegador real por fase (2026-09-17/18, achados corrigidos no merge final `07965dc`); milestone v1.2 completo, falta só produção (contas e chaves da Duda) e a seção 10 nova do checklist
+last_updated: "2026-09-18T00:00:00.000Z"
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 19
-  completed_plans: 19
+  total_phases: 8
+  completed_phases: 8
+  total_plans: 22
+  completed_plans: 22
 ---
 
 # Project State
@@ -19,28 +19,32 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-11)
 
 **Core value:** O usuário prospecta e aborda negócios europeus sem risco legal — compliance garantido por código, contagem de plano/billing íntegra.
-**Current focus:** nenhum de código. As 6 fases (v1.0 + v1.1) estão completas e mergeadas; o que resta é operacional (produção) e a validação manual da Duda.
+**Current focus:** nenhum de código. As 8 fases (v1.0 + v1.1 + v1.2) estão completas e mergeadas; o que resta é operacional (produção) e a validação manual da Duda.
 
 ## Current Position
 
-Phase: 6 (CRM: fluxo do dia e informação do lead): COMPLETE
-Plan: 1 of 1 (superpowers, não GSD)
+Phase: 8 (Modelos de site): COMPLETE
+Plan: 3 of 3 (plano C inline, superpowers, não GSD)
 
-Milestone v1.1 fechado em 2026-09-16: Fase 5 (redesenho vidro sobre névoa,
-merge `0460e66`) e Fase 6 (CRM: próxima ação, faixa Hoje, parados, Perdido
-com motivo, contato/valores, Histórico; merge `828a11f`). 18 requisitos v1 +
-12 requisitos v1.1 fechados; suíte em 208 testes. As duas fases foram
-executadas com o workflow superpowers: spec e plano em `docs/superpowers/`,
-sem `.planning/phases/05-*` e `06-*`.
+Milestone v1.2 fechado em 2026-09-18: Fase 7 (descoberta via OpenStreetMap
+com fallback de espelho e "Ver o que ele tem", commits diretos sem
+spec/plano) e Fase 8 (modelos de site: 4 modelos, 3 paletas cada, editor
+completo com upload de fotos, correções do UAT final; merges `402b873`,
+`70ae0ba`, `6834847`, `6873874`, `07965dc`). 18 requisitos v1 + 12
+requisitos v1.1 + 9 requisitos v1.2 fechados; suíte em 283 testes. Fase 8
+foi executada com o workflow superpowers: spec e adendo em
+`docs/superpowers/`, planos A e B em arquivo, plano C inline (sem arquivo
+próprio); sem `.planning/phases/07-*` nem `08-*`.
 
 Próximo passo:
 1. `docs/CHECKLIST-MODO-REAL.md` seção 9 (Vercel + Convex prod), começando
-   pelo 3.0 (rotacionar a chave da Anthropic, impressa num terminal nesta
-   sessão).
-2. UAT: feito em 2026-09-17 num Chromium real via CDP (scripts no scratchpad da
-   sessão), 22 itens, 1 bug achado e corrigido (`89523a0`: Esc no modal Criar
-   lead fechava o drawer). Sobra pra Duda só o que exige olho: tema escuro ao
-   vivo, sensação do arrasto com 51 cards, "reduzir transparência" no macOS.
+   pelo 3.0 (rotacionar a chave da Anthropic, impressa num terminal numa
+   sessão anterior), mais a seção 10 nova ("Primeiros leads, passo a
+   passo"), que já cobre o fluxo com os modelos de site.
+2. UAT: navegador real por fase, achados corrigidos nos commits do merge
+   final (`1a84905`, `6d754ec`, `38138e3`, `8391343`). Sobra pra Duda o
+   roteiro manual de gosto: as 12 paletas ao vivo, fotos padrão, e o fluxo
+   de venda ponta a ponta com um lead real.
 O backlog v2 (SCAL-01..03, GDPR-01/02, BILL-04/05) segue em REQUIREMENTS.md.
 
 ## Performance Metrics
@@ -80,6 +84,7 @@ O backlog v2 (SCAL-01..03, GDPR-01/02, BILL-04/05) segue em REQUIREMENTS.md.
 
 - Phase 4 added: Modo opt-in (ligação-primeiro) para mercados opt-in (ES/IT/PT/DE/DK/CH) — aba Ligação primeiro, script de IA, consentimento destrava email (OPTIN-01..06)
 - Milestone v1.1 (2026-09-16), fora do GSD: Phase 5 Redesenho vidro sobre névoa (UX-01..05) e Phase 6 CRM fluxo do dia e informação do lead (CRM-01..07), ambas via superpowers (spec + plano em `docs/superpowers/`)
+- Milestone v1.2 (2026-09-18), fora do GSD: Phase 7 Descoberta via OpenStreetMap e "Ver o que ele tem" (DISC-01/02, commits diretos, sem spec/plano) e Phase 8 Modelos de site (SITE-01..07, workflow superpowers: spec + adendo, planos A/B em arquivo, C inline)
 
 ### Decisions
 
@@ -127,6 +132,13 @@ None yet.
 - [Phase 6]: uma próxima ação por lead no próprio documento (sem tabela `tasks`); notas são eventos (`events.type = "note"`), não tabela própria; "Hoje" e toda aritmética de data rodam no navegador (Convex é UTC, o dia civil é o do navegador)
 - [Phase 6]: `setStage` recusa `lost` no servidor; só `markLost` (com motivo) leva a Perdido, e sair de `lost` limpa o motivo. "Parado" conta de `stageUpdatedAt`, não do último evento
 - [Phase 6]: moeda derivada do país (GB→GBP, SE→SEK, NO→NOK, CH→CHF, DK→DKK, resto EUR), sem campo no schema
+- [Phase 7]: quota cobra só o lead realmente inserido, mesmo numa busca repetida no mesmo lugar; a busca no OSM traz um pool maior de candidatos pra sobrar lead novo
+- [Phase 7]: fallback de espelho do Overpass em erro 429/503/504, incluindo o espelho suíço (`overpass.osm.ch`, o `kumi.systems` não responde)
+- [Phase 8]: um conteúdo só por lead: o `content` do preview é a fonte de verdade; editar o lead depois (contato, telefone) não propaga para o site salvo
+- [Phase 8]: salvar depois de publicado altera o site no ar na hora, sem republicar (`publish` já é idempotente)
+- [Phase 8]: nada é apagado do storage antes do Salvar: o servidor apaga o que saiu do `content` antigo só depois de gravar o novo, senão trocar uma foto destruiria a anterior antes de confirmar
+- [Phase 8]: regra de honestidade: texto padrão de `templates.*` nunca afirma fato do negócio de terceiro (sem dígito, sem superlativo); seção com dado só aparece quando ela preenche
+- [Phase 8]: pós-UAT, `registerUpload` valida o `contentType` real do storage (não confia no que o cliente prometeu mandar); `getBySlug` não devolve mais o token rastreado da prévia
 
 ### Blockers/Concerns
 
@@ -137,9 +149,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-16
-Stopped at: Fases 5 e 6 mergeadas (`0460e66`, `828a11f`); branch `chore/producao` com docs, checklist de produção e planning atualizados para v1.1
-Resume file: docs/CHECKLIST-MODO-REAL.md (seção 3.0 e seção 9) e os roteiros manuais em docs/superpowers/plans/*.md (última tarefa de cada)
+Last session: 2026-09-18
+Stopped at: Fases 7 e 8 mergeadas (`1c775dc`, `4add1e3`, `402b873`, `70ae0ba`, `6834847`, `6873874`, `07965dc`); branch `main`, milestone v1.2 fechado
+Resume file: docs/CHECKLIST-MODO-REAL.md (seção 3.0, seção 9 e a seção 10 nova) e os roteiros manuais em docs/superpowers/plans/2026-09-17-modelos-de-site-A.md e 2026-09-18-modelos-de-site-B.md (última tarefa de cada)
 
 ## Pendências operacionais (não são código)
 
@@ -149,3 +161,4 @@ Resume file: docs/CHECKLIST-MODO-REAL.md (seção 3.0 e seção 9) e os roteiros
 - `pnpm test/typecheck/lint` abortam neste terminal (`ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY`). Usar `./node_modules/.bin/tsc --noEmit`, `./node_modules/.bin/eslint`, `node --experimental-strip-types --test tests/*.test.ts`, ou `pnpm install` num terminal com TTY.
 - 2026-09-16: a `ANTHROPIC_API_KEY` atual foi impressa num terminal durante a sessão. Rotacionar antes de qualquer deploy (checklist 3.0).
 - 2026-09-17: UAT executado em browser real (CDP), 22/22 PASS após o fix `89523a0`; roteiros de Task 29 e Tarefa 26 cobertos, exceto o que é sensação (arrasto, tema ao vivo, reduzir transparência).
+- 2026-09-18: milestone v1.2 fechado (Fases 7 e 8); UAT em navegador real por fase, achados corrigidos nos commits do merge final (`07965dc`). Pendência operacional continua a mesma de sempre: produção (seção 9) e rotação da chave Anthropic (3.0), ainda não feitas.

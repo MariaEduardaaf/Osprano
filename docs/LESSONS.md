@@ -72,7 +72,32 @@ cru só serve para país monolíngue. O teste distingue "cidade está no mapa" d
 "caiu no fallback" (`isKnownSwissCity`), senão uma cidade nova no select vira
 alemão silencioso. Bélgica e Canadá teriam o mesmo problema.
 
+## Sites de terceiros
+
+**Preview/site vai pro nome de um negócio que não pediu nada: nunca inventar fato dele** (2026-09-18)
+`sintoma:` texto padrão de um modelo de site afirma horário, preço ou "desde 1998" de um
+negócio real que a Duda nunca visitou.
+`causa:` texto genérico de marketing soa mais "pronto" quando afirma detalhe específico, mas o
+negócio é de terceiro sem consentimento; qualquer fato errado (horário, preço) vira
+reclamação, não elogio.
+`fix:` textos padrão de `templates.*` (`src/lib/preview-i18n.ts`) nunca têm dígito nem
+superlativo em nenhum dos 10 idiomas (testado); seções com dado (itens, horário, galeria,
+avaliação) só renderizam quando `view.*` está preenchido, nunca vêm do dicionário. Regra vale
+pra qualquer conteúdo padrão gerado para o negócio de outra pessoa, não só sites.
+
 ## CSS / Tailwind
+
+**Modelo renderizado menor que a janela (miniatura, prévia do editor) não pode confiar em `sm:`/`md:`/viewport** (2026-09-18)
+`sintoma:` a miniatura de 200px do modelo e a prévia "Celular" do editor mostravam o layout de
+desktop, mesmo com breakpoint definido para tela pequena.
+`causa:` `sm:`/`md:` do Tailwind e unidades `vw`/`vh`/`dvh` leem a JANELA, não o contêiner; um
+componente dentro de um `div` menor herda sempre a variante de desktop. `transform: scale()`
+reduz visualmente mas mantém a caixa de layout no tamanho original (clique fora do lugar,
+rolagem dupla).
+`fix:` os 4 modelos (`src/components/site-templates/`) usam `@container` no elemento raiz e
+variantes `@sm:`/`@md:`/`@lg:` (Tailwind v4 container queries), nunca `sm:`/unidade de
+viewport; a miniatura e a prévia do editor reduzem com CSS `zoom` (não `transform: scale`), que
+encolhe a caixa de layout junto com o conteúdo.
 
 **Tailwind v4 varre TODO arquivo fora do `.gitignore`, inclusive `docs/*.md`** (2026-09-16)
 `sintoma:` todas as rotas caem com 500 e o erro vem do Lightning CSS, citando
@@ -164,3 +189,29 @@ ou `jq`.
 sync do websocket do Convex nem sempre completa dentro do orçamento.
 `fix:` repetir com orçamento maior (e mais de uma tentativa), ou confirmar o
 dado direto no backend com `npx convex run` antes de suspeitar do código.
+
+**Convex `storage.generateUploadUrl()` aceita qualquer content-type no POST** (2026-09-18)
+`sintoma:` nada impede, em teoria, que um POST direto na URL de upload (fora do fluxo do
+navegador, que já redimensiona para JPEG) grave SVG/HTML no storage e a "imagem" suba assim
+mesmo.
+`causa:` o Convex não valida tipo no upload; só grava o `contentType` que o POST declarou.
+`fix:` validar no REGISTRO, não confiar no que o cliente prometeu: `registerUpload` lê
+`ctx.db.system.get("_storage", id).contentType` e recusa o que não for
+`image/jpeg|png|webp` (commit `1a84905`).
+
+**`useSearchParams` numa página client estática quebra o `next build` sem `<Suspense>`** (2026-09-18)
+`sintoma:` `next build` falha (só no build de produção, não no `next dev`) numa página que lê
+`useSearchParams` direto no corpo do componente.
+`fix:` isolar a leitura num componente pequeno (`OpenLeadFromQuery`) e envolver em
+`<Suspense fallback={null}>` na página que já é client component estático
+(`src/app/(app)/crm/page.tsx`).
+
+**Modo demo: abertura do preview pelo próprio dono conta como abertura do prospect** (2026-09-18)
+`sintoma:` testar "Abrir preview" logada no modo demo incrementa `openCount` e move o lead de
+estágio, como se fosse o prospect abrindo; parece que o guard de self-open (TRCK-01) quebrou.
+`causa:` `recordOpen` compara `identity.subject === preview.orgId`; no modo demo não há
+autenticação real (org fixa `"demo"`, sem `identity`), então a comparação nunca bate e todo
+open conta.
+`fix:` esperado, não bug. Pra testar o guard de verdade é preciso sessão autenticada real
+(fora do demo) ou abrir numa aba separada da sessão logada. Ao verificar tracking no modo
+demo, não confiar no `openCount`.

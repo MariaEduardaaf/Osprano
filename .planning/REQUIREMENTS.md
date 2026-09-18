@@ -71,6 +71,25 @@ Milestone v1.1 (2026-09-16): visual da área logada e CRM. Executado com o workf
 - [x] **CRM-06**: Notas são eventos (`addNote` → `events` com `type: "note"`); `leads.timeline` via índice `by_lead`; aba "Histórico" com campo de nota (Enter salva, Shift+Enter quebra) e linha do tempo com texto por tipo; `event-glyph.tsx` extraído do Dashboard com o caso `note`; `events.recent` exclui notas. (`convex/events.ts`, `convex/leads.ts`, `src/components/crm/lead-timeline.tsx`, `src/components/event-glyph.tsx`)
 - [x] **CRM-07**: 17 funções puras novas em `convex/lib/domain.ts` (moeda, dia civil local, próxima ação, parado, motivos, formatação relativa) com 17 testes em `tests/crm-domain.test.ts` (suíte 191 → 208, timestamps sempre pelo construtor local); seed do demo cobre atrasadas, de hoje, parados, perdidos com motivo, contato/valores e notas. (`tests/crm-domain.test.ts`, `convex/demo.ts`)
 
+## v1.2 Requirements
+
+Milestone v1.2 (2026-09-18): modelos de site por segmento e a base de descoberta que o precede. Fase 7 executada por commits diretos (sem spec/plano formal); Fase 8 com o workflow superpowers (spec + adendo e planos A/B em `docs/superpowers/`, plano C inline). Fases 7 e 8 do roadmap.
+
+### Descoberta via OpenStreetMap e "Ver o que ele tem" (Fase 7)
+
+- [x] **DISC-01**: Descoberta de leads também via OpenStreetMap/Overpass (fonte grátis, sem chave), com seletor de fonte na UI, fallback entre espelhos (incluindo o espelho suíço) em erro 429/503/504, atribuição ODbL no card e no CRM, e quota que cobra só o lead realmente inserido mesmo numa busca repetida no mesmo lugar.
+- [x] **DISC-02**: Botão "Ver o que ele tem" ao lado do preview em cada lead, linkando para o site atual, o Google Maps ou uma busca pelo negócio (substitui o link "Site atual"). (`src/components/what-they-have-button.tsx`, `src/lib/lead-links.ts`)
+
+### Modelos de site (Fase 8)
+
+- [x] **SITE-01**: Catálogo de 4 modelos por segmento (Mesa, Estúdio, Ofício, Vitrine) com sugestão automática pela categoria do lead (`suggestTemplate`); o preview rastreado `/p/<token>` e o site publicado `/site/<slug>` renderizam o mesmo modelo com o mesmo `content` salvo (`SiteContent` v2); formato antigo sem `version` continua abrindo, convertido na leitura. (`convex/lib/site.ts`, `src/components/site-templates/`)
+- [x] **SITE-02**: 12 paletas (3 por modelo) com contraste AA garantido por teste (`contrastRatio`); textos padrão de `templates.*` nos 10 idiomas nunca afirmam fato do negócio (sem dígito, sem horário/preço/ano/superlativo), regra de honestidade sobre o negócio de terceiro; seções com dado (itens, horário, galeria, avaliação) só renderizam quando `view.*` está preenchido. (`convex/lib/contrast.ts`, `src/lib/preview-i18n.ts`)
+- [x] **SITE-03**: CTA primário por ordem de preferência (WhatsApp → telefone → e-mail → nenhum); WhatsApp vazio por padrão, nunca inferido do telefone. (`convex/lib/site.ts`, função `primaryCta`)
+- [x] **SITE-04**: Upload de fotos (principal + galeria, até 6) para o storage do Convex, redimensionado no navegador (≤ 1600px, JPEG 0,82, respeita EXIF) com checagem de tipo/tamanho antes do envio; nada é apagado do storage antes do Salvar, o servidor apaga o que saiu do conteúdo antigo só depois de gravar o novo. (`src/lib/image-resize.ts`, `convex/previews.ts`, função `saveContent`, `convex/model/uploads.ts`)
+- [x] **SITE-05**: Editor completo em `/crm/<leadId>/site`: modelo, paleta, textos, itens (nome/preço/nota), horário, contato (endereço, telefone, WhatsApp, Instagram, e-mail) e fotos, com prévia ao vivo (desktop/celular via container queries + `zoom`) e rodapé com Salvar/Abrir preview/Publicar/Voltar; salvar depois de publicado atualiza o site no ar na hora. (`src/app/(app)/crm/[leadId]/site/page.tsx`, `src/components/site-editor/`)
+- [x] **SITE-06**: Aba Site do drawer vira resumo (modelo, Editar site, Abrir preview, Publicar); cards de lead e a página Sites mostram a miniatura do modelo (`TemplateThumb`) ao vivo, sem depender de screenshot. (`src/components/crm/lead-detail.tsx`, `src/app/(app)/sites/page.tsx`)
+- [x] **SITE-07**: Endurecimento pós-UAT: `registerUpload` recusa arquivo cujo `contentType` real no storage não seja JPEG/PNG/WebP (não confia no que o cliente prometeu enviar); `getBySlug` não devolve o token rastreado da prévia; rodapé de opt-out garantido no servidor em todo e-mail persistido ou copiado; erro do "Escrever com IA" visível com o composer fechado; eventos de consentimento com rótulo próprio no feed do Dashboard. (`convex/previews.ts`, `convex/outreach.ts`, `src/components/outreach-composer.tsx`, `src/app/(app)/dashboard/`)
+
 ## v2 Requirements
 
 Fase 2 — "antes de escalar". Rastreados, fora do roadmap atual.
@@ -137,13 +156,23 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CRM-05 | Phase 6 | Complete |
 | CRM-06 | Phase 6 | Complete |
 | CRM-07 | Phase 6 | Complete |
+| DISC-01 | Phase 7 | Complete |
+| DISC-02 | Phase 7 | Complete |
+| SITE-01 | Phase 8 | Complete |
+| SITE-02 | Phase 8 | Complete |
+| SITE-03 | Phase 8 | Complete |
+| SITE-04 | Phase 8 | Complete |
+| SITE-05 | Phase 8 | Complete |
+| SITE-06 | Phase 8 | Complete |
+| SITE-07 | Phase 8 | Complete |
 
 **Coverage:**
 - v1 requirements: 18 total (12 do milestone de produção + 6 do modo opt-in)
 - v1.1 requirements: 12 total (5 do redesenho + 7 do CRM)
-- Mapped to phases: 30 (see ROADMAP.md)
+- v1.2 requirements: 9 total (2 da descoberta via OpenStreetMap + 7 dos modelos de site)
+- Mapped to phases: 39 (see ROADMAP.md)
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-07-11*
-*Last updated: 2026-09-16: milestone v1.1 (Fases 5 e 6) concluído; 18/18 requisitos v1 e 12/12 v1.1 completos*
+*Last updated: 2026-09-18: milestone v1.2 (Fases 7 e 8) concluído; 18/18 requisitos v1, 12/12 v1.1 e 9/9 v1.2 completos*

@@ -186,6 +186,21 @@ Até aqui tudo roda na sua máquina (`pnpm dev` + deployment dev do Convex). Est
 
 > Custo: **Vercel Hobby** é grátis pra uso pessoal e não comercial (quando o app virar receita, o plano é o Pro, US$ 20/mês). **Convex prod** entra no mesmo free tier do projeto (1M function calls/mês somando dev e prod).
 
+## 10. Primeiros leads, passo a passo
+
+> Depois do smoke test (seção 8) ou já em produção (seção 9), o fluxo do dia a dia com o app como ele é hoje.
+
+1. [ ] **Leads** → buscar no **OpenStreetMap** (grátis, sem chave) ou no **Google** (quando a `GOOGLE_PLACES_API_KEY` existir, seção 4) → escolher um lead quente → **Enviar pro CRM**.
+2. [ ] No CRM, abrir o lead → aba **Site** → **Editar site** → escolher modelo e paleta, ajustar textos, itens, horário e contato, subir foto → **Salvar** → **Abrir preview** e conferir no celular.
+3. [ ] Abordagem, conforme o mercado:
+   - **Mercado opt-out** (🇬🇧 GB · 🇳🇱 NL · 🇮🇪 IE · 🇸🇪 SE · 🇳🇴 NO): o e-mail por IA sai direto, só para empresa incorporada ou caixa genérica (pessoa física continua fora, "a armadilha do autônomo" da seção 8.1).
+   - **Autônomo, ou mercado opt-in** (🇪🇸 ES · 🇮🇹 IT · 🇵🇹 PT · 🇩🇪 DE · 🇩🇰 DK · 🇨🇭 CH): ligar primeiro na aba **Ligação primeiro**, **registrar consentimento**, só depois o e-mail destrava.
+4. [ ] **Copiar** o e-mail (o rodapé de descadastro vai junto, obrigatório, não dá pra tirar) e enviar do seu próprio e-mail → **Marcar enviado**.
+5. [ ] Definir a **próxima ação** (data + nota): ela aparece na faixa **Hoje** quando vencer ou atrasar.
+6. [ ] Ao fechar: aba Site → **Publicar**. O link `/site/<slug>` vira o site do cliente; salvar de novo depois de publicado **altera o site no ar na hora**, sem republicar.
+
+> O link do preview só funciona para o prospect depois que o app está no ar (seção 9); em `localhost`, só você abre. No **modo demo**, sua própria abertura do preview conta como se fosse o prospect (não há sessão real pro guard comparar): não confie no contador de aberturas testando por aí.
+
 ---
 
 **Resumo de custo:** Anthropic ~US$ 5 (única cobrança real) · Google R$ 0 (cartão + teto travado) · Convex dev + prod / Clerk / PageSpeed R$ 0 · Vercel Hobby R$ 0 (uso pessoal) · Resend/Stripe/WhatsApp não usados.

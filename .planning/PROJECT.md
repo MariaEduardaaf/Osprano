@@ -10,6 +10,10 @@ SaaS de prospecção e venda de sites para freelancers e agências que atendem o
 
 O milestone v1.0 (Fases 1 a 4, os 18 requisitos abaixo em "Active") está fechado desde 2026-07-22. Em 2026-09-16 entrou o milestone **v1.1**, executado com o workflow superpowers (spec + plano em `docs/superpowers/`, não planos GSD): a **Fase 5** redesenha a área logada em "vidro sobre névoa" (cards translúcidos sobre névoa azul-acinzentada, rail de 72px com ícone e nome, tema escuro azul-marinho, landing intocada; screenshots em `docs/redesign/`) e a **Fase 6** dá ao CRM o fluxo do dia (próxima ação por lead, faixa Hoje, leads parados, Perdido com motivo obrigatório) e a informação do lead (contato, valores do negócio na moeda do país, Histórico com notas e eventos). Suíte em 208 testes; requisitos UX-01..05 e CRM-01..07 em REQUIREMENTS.md. O que falta não é código: rotacionar a chave da Anthropic e subir produção (`docs/CHECKLIST-MODO-REAL.md`, seções 3.0 e 9) e o UAT manual da Duda (última tarefa de cada plano em `docs/superpowers/plans/`).
 
+## Atualização 2026-09-18
+
+Milestone **v1.2** fechado: a **Fase 7** deu à descoberta uma segunda fonte sem custo (OpenStreetMap/Overpass, com fallback entre espelhos e atribuição ODbL) e o atalho "Ver o que ele tem" em cada lead; a **Fase 8** trocou o preview de template único por **4 modelos por segmento** (Mesa, Estúdio, Ofício, Vitrine) com 3 paletas cada, fotos e textos padrão em 10 idiomas (regra de honestidade: nenhum fato inventado sobre o negócio de terceiro), e um **editor completo** em `/crm/<leadId>/site` (modelo, paleta, textos, itens, horário, contato, upload de fotos) com prévia ao vivo. O preview rastreado `/p/<token>` e o site publicado `/site/<slug>` passam a renderizar o mesmo conteúdo salvo. O UAT em navegador real fechou quatro pontas: upload aceitando qualquer tipo de arquivo no servidor, token da prévia exposto no site público, rodapé de opt-out faltando num caminho de e-mail persistido, e erro do "Escrever com IA" escondido com o composer fechado. Suíte em 283 testes; requisitos DISC-01/02 e SITE-01..07 em REQUIREMENTS.md. Falta o mesmo de sempre: produção (`docs/CHECKLIST-MODO-REAL.md`, seções 3.0 e 9, mais a seção 10 nova) e o roteiro manual da Duda.
+
 ## Core Value
 
 O usuário prospecta e aborda negócios europeus **sem risco legal** — o compliance ("compliant by design") tem que ser garantido por código, não por promessa, e a contagem de plano/billing tem que ser íntegra.
@@ -90,4 +94,4 @@ Auditoria de 2026-07-11 (3 agentes) encontrou, com verificação manual dos crí
 | Supressão como tabela Convex própria checada em draft/send | Fonte de verdade local, independente do provedor de email | — Pending |
 
 ---
-*Last updated: 2026-09-16: milestone v1.1 (Fases 5 e 6) fechado; v1.0 fechado em 2026-07-22*
+*Last updated: 2026-09-18: milestone v1.2 (Fases 7 e 8) fechado; v1.1 fechado em 2026-09-16, v1.0 em 2026-07-22*

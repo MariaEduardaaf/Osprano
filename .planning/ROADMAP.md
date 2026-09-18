@@ -16,6 +16,8 @@ Este milestone leva o Osprano — SaaS de prospecção e venda de sites para o m
 - [x] **Phase 4: Modo opt-in (ligação-primeiro)** - Prospecção compliant em mercados opt-in (ES/IT/PT/DE/DK/CH): aba "Ligação primeiro", script de ligação por IA, consentimento destrava email — guardrail server-side (completed 2026-07-22)
 - [x] **Phase 5: Redesenho vidro sobre névoa** - Área logada em cards translúcidos sobre névoa azul-acinzentada, rail de 72px com ícone e nome, tema escuro azul-marinho; landing intocada (milestone v1.1, completed 2026-09-16)
 - [x] **Phase 6: CRM: fluxo do dia e informação do lead** - Próxima ação por lead, faixa Hoje, leads parados, Perdido com motivo, contato e valores, Histórico com notas (milestone v1.1, completed 2026-09-16)
+- [x] **Phase 7: Descoberta via OpenStreetMap e "Ver o que ele tem"** - Busca também no OpenStreetMap/Overpass (grátis, sem chave) com fallback de espelho e seletor de fonte; quota cobra só o lead realmente inserido mesmo em busca repetida; botão "Ver o que ele tem" ao lado do preview (milestone v1.2, completed 2026-09-17)
+- [x] **Phase 8: Modelos de site** - 4 modelos por segmento com 3 paletas cada, editor completo com upload de fotos e prévia ao vivo, preview e site publicado renderizando o modelo salvo, correções do UAT final (milestone v1.2, completed 2026-09-18)
 
 ## Phase Details
 
@@ -73,7 +75,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -83,6 +85,8 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 4. Modo opt-in (ligação-primeiro) | 6/6 | Complete    | 2026-07-22 |
 | 5. Redesenho vidro sobre névoa | 1/1 | Complete    | 2026-09-16 |
 | 6. CRM: fluxo do dia e informação do lead | 1/1 | Complete    | 2026-09-16 |
+| 7. Descoberta via OpenStreetMap e "Ver o que ele tem" | n/d (commits diretos) | Complete    | 2026-09-17 |
+| 8. Modelos de site | 3/3 | Complete    | 2026-09-18 |
 
 ### Phase 4: Modo opt-in (ligação-primeiro) para mercados onde cold email é ilegal
 
@@ -142,3 +146,46 @@ Plans:
 
 Plans:
 - [x] `docs/superpowers/specs/2026-09-16-crm-fluxo-e-informacao-design.md` + `docs/superpowers/plans/2026-09-16-crm-fluxo-e-informacao.md`: 26 tarefas em dois blocos (A: fluxo; B: informação); merge `828a11f`; Tarefa 26 (roteiro manual no modo demo) pendente com a Duda
+
+## Milestone v1.2: modelos de site (2026-09-18)
+
+A fase 7 foi executada fora do GSD e fora do superpowers, por commits diretos (sem spec nem
+plano); a fase 8 com o workflow **superpowers**: spec + adendo em `docs/superpowers/`, três
+planos sequenciais (A e B em arquivo, C inline, sem arquivo próprio). Não há
+`.planning/phases/07-*` nem `08-*`.
+
+### Phase 7: Descoberta via OpenStreetMap e "Ver o que ele tem"
+
+**Goal**: A descoberta de leads funciona também sem chave paga (OpenStreetMap/Overpass, com fallback entre espelhos e seletor de fonte na UI), a quota cobra só o que foi realmente inserido mesmo em buscas repetidas no mesmo lugar, e cada lead ganha um atalho para o que ele já tem hoje (site, Google Maps ou busca).
+**Depends on**: Phase 6
+**Requirements**: DISC-01, DISC-02
+**Success Criteria** (what must be TRUE):
+  1. Buscar leads sem `GOOGLE_PLACES_API_KEY` configurada funciona via OpenStreetMap (Overpass), com atribuição ODbL no card e no CRM
+  2. O Overpass indisponível (429/503/504) tenta de novo num espelho diferente (incluindo o espelho suíço, `overpass.osm.ch`) antes de falhar
+  3. Repetir a mesma busca não cobra quota por lead que já existia: só o lead realmente inserido é contado
+  4. Cada card de lead tem o botão "Ver o que ele tem", que abre o site atual, o Google Maps ou uma busca pelo negócio, conforme o que existe
+**Plans**: sem plano formal (commits diretos, sem spec/plano em `docs/superpowers/`)
+
+Plans:
+- [x] `a95e0e4`, `a89b3b6`, `49ef5d4`, `c9a9f04`, `aa29d2c`, `ea629c0`, `2c2455f`: descoberta via OSM com fallback de espelho, quota reconciliada e atribuição (DISC-01)
+- [x] `9b2cca8`, `29152fd`: botão "Ver o que ele tem" no lugar do link "Site atual" (DISC-02)
+
+### Phase 8: Modelos de site
+
+**Goal**: O preview rastreado e o site publicado deixam de ser um template único e passam a ser um dos 4 modelos por segmento (Mesa, Estúdio, Ofício, Vitrine), com 3 paletas cada, editáveis por ela (textos, itens, horário, contato, fotos) numa página própria com prévia ao vivo, e o fluxo de venda inteiro (aba Site, cards, página Sites) reflete o modelo escolhido, com as correções encontradas no UAT final.
+**Depends on**: Phase 7
+**Requirements**: SITE-01, SITE-02, SITE-03, SITE-04, SITE-05, SITE-06, SITE-07
+**Success Criteria** (what must be TRUE):
+  1. `/p/<token>` e `/site/<slug>` renderizam o mesmo modelo com o mesmo conteúdo salvo; preview/site antigo (sem `version`) continua abrindo, convertido na leitura
+  2. As 12 paletas (3 por modelo) têm contraste AA garantido por teste; nenhum texto padrão de `templates.*` afirma fato do negócio (data, preço, horário) em nenhum dos 10 idiomas
+  3. O editor (`/crm/<leadId>/site`) salva modelo, paleta, textos, itens, horário, contato (telefone, WhatsApp, Instagram, e-mail) e fotos (upload redimensionado no navegador, diff de exclusão só após salvar); a prévia ao vivo funciona em desktop e celular
+  4. A aba Site do drawer, os cards de lead e a página Sites mostram a miniatura do modelo (`TemplateThumb`) e levam ao editor
+  5. `registerUpload` recusa arquivo que não seja JPEG/PNG/WebP pelo `contentType` real do storage (não pelo que o cliente prometeu); `getBySlug` não devolve o token rastreado
+  6. O rodapé de opt-out é garantido no servidor em todo e-mail persistido ou copiado; o erro do "Escrever com IA" aparece mesmo com o composer fechado; eventos de consentimento têm rótulo próprio no feed do Dashboard
+**Plans**: 3/3 plans complete (superpowers: A, B, C)
+
+Plans:
+- [x] `docs/superpowers/specs/2026-09-17-modelos-de-site-design.md` + adendo 2026-09-18: decisões e a divisão nos 3 planos
+- [x] `docs/superpowers/plans/2026-09-17-modelos-de-site-A.md` (plano A): dados + 4 modelos + render público + retrocompatibilidade; merge `402b873`; seções novas (valores, como funciona, faixa de avaliação, mapa, footer completo) merge `70ae0ba`; screenshots dos 4 modelos em `docs/redesign/templates/`
+- [x] `docs/superpowers/plans/2026-09-18-modelos-de-site-B.md` (plano B): editor completo com upload de fotos; merge `6834847`; screenshots do editor em `docs/redesign/editor-*.png`
+- [x] Plano C (inline, sem arquivo próprio): resumo da aba Site, cards, página Sites, UAT em navegador real; merge `6873874`; correções pós-UAT (`1a84905`, `6d754ec`, `38138e3`, `8391343`), merge final `07965dc`
