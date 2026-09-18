@@ -1,26 +1,27 @@
 import {
+  BigFooter,
   CONTAINER,
-  Contact,
-  CtaLink,
-  Footer,
+  FOOTER_CTA,
+  Gallery,
   Hours,
   Items,
+  MapEmbed,
   Photo,
   PrimaryCta,
   Rating,
+  RatingBand,
   SecondaryCta,
   Section,
   SiteRoot,
+  Steps,
+  Values,
   Visit,
-  ctaLabel,
-  hasContact,
   hasHours,
   hasPlace,
   heroAlt,
   type TemplateProps,
 } from "./shared";
 import { TEMPLATES } from "./catalog";
-import { ctaOptions } from "@convex/lib/site";
 
 /**
  * Vitrine: loja, clínica, imobiliária, advogado e qualquer categoria
@@ -28,9 +29,14 @@ import { ctaOptions } from "@convex/lib/site";
  * de um bloco de texto com prova social OBJETIVA (só a nota e as avaliações do
  * lead; sem "anos" nem selo inventado), título de seção serifado com lista de
  * destaques com ícone, CTA repetido no cabeçalho, no hero e no rodapé.
+ * Ritmo (adendo 2026-09-18): hero · sobre · destaques* · valores · galeria* ·
+ * faixa de avaliação* · como funciona · localização e horário* (com mapa*) ·
+ * rodapé.
  */
 const serif = "[font-family:var(--font-fraunces)]";
-const h2 = `${serif} text-3xl font-medium tracking-tight @3xl:text-4xl`;
+const h2 = `${serif} text-4xl font-medium tracking-tight @3xl:text-5xl`;
+const h3 = `${serif} text-2xl font-medium`;
+const eyebrow = "text-xs font-semibold uppercase tracking-[0.2em] text-(--site-muted)";
 const CTA = TEMPLATES.vitrine.ctaKey;
 const solid =
   "inline-flex items-center gap-2 rounded-lg bg-(--site-accent) px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-opacity hover:opacity-90";
@@ -79,12 +85,9 @@ export function Hero({ view, tr, locale }: TemplateProps) {
 export function Vitrine(props: TemplateProps) {
   const { view, palette, tr, locale } = props;
   const photos = TEMPLATES.vitrine.photos;
-  const primary = ctaOptions(view)[0];
   return (
     <SiteRoot palette={palette} locale={locale}>
       <Hero {...props} />
-
-      <Items items={view.items} heading={tr.itemsHeading} headingClass={h2} variant="checks" />
 
       {/* Sobre: título serifado centrado, parágrafo e duas fotos (decoração fixa, alt vazio) */}
       <Section className="text-center">
@@ -96,32 +99,45 @@ export function Vitrine(props: TemplateProps) {
         </div>
       </Section>
 
+      <Items items={view.items} heading={tr.itemsHeading} headingClass={h2} variant="checks" />
+
+      {/* Valores: três cartões genéricos em `surface`, sobre acolhimento e atenção */}
+      <Values values={tr.values} heading={tr.whyHeading} headingClass={h2} titleClass={h3} variant="cards" />
+
+      <Gallery urls={view.galleryUrls} heading={tr.galleryHeading} headingClass={h2} />
+
+      <RatingBand view={view} locale={locale} tone="accent" numberClass={serif} />
+
+      <Steps
+        steps={tr.steps}
+        heading={tr.howHeading}
+        headingClass={h2}
+        titleClass={h3}
+        numberClass={`${serif} text-3xl text-(--site-accent)`}
+      />
+
+      {/* Localização e horário, com o mapa ao lado quando há endereço */}
       {(hasPlace(view) || hasHours(view)) && (
         <section className="bg-(--site-surface)">
-          <Section className="grid gap-12 @3xl:grid-cols-2">
-            <Visit view={view} heading={tr.visitHeading} headingClass={h2} />
-            <Hours hours={view.hours} heading={tr.hoursHeading} closed={tr.closed} locale={locale} headingClass={h2} />
+          <Section className="grid gap-12 @3xl:grid-cols-2 @3xl:items-start">
+            <div className="grid gap-12">
+              <Visit view={view} heading={tr.visitHeading} headingClass={h2} />
+              <Hours hours={view.hours} heading={tr.hoursHeading} closed={tr.closed} locale={locale} headingClass={eyebrow} />
+            </div>
+            <MapEmbed view={view} tr={tr} className="rounded-2xl @3xl:h-full @3xl:min-h-[440px]" />
           </Section>
         </section>
       )}
 
-      {hasContact(view, false) && (
-        <Section className="grid gap-10 @3xl:grid-cols-2 @3xl:items-start">
-          <Contact view={view} heading={tr.contactHeading} headingClass={h2} withPlace={false} />
-          {primary && (
-            <div className="rounded-2xl bg-(--site-accent) p-8 text-(--site-accent-fg)">
-              <p className={`${serif} text-2xl leading-snug`}>{view.tagline || tr.tagline}</p>
-              <CtaLink
-                cta={primary}
-                label={ctaLabel(primary, CTA, tr, locale)}
-                className="mt-6 inline-flex items-center gap-2 rounded-lg bg-(--site-bg) px-6 py-3 text-sm font-semibold text-(--site-text)"
-              />
-            </div>
-          )}
-        </Section>
-      )}
-
-      <Footer name={view.name} />
+      <BigFooter
+        view={view}
+        tr={tr}
+        locale={locale}
+        palette={palette}
+        ctaKey={CTA}
+        nameClass={`${serif} text-3xl font-semibold tracking-tight`}
+        ctaClass={`${FOOTER_CTA} rounded-lg`}
+      />
     </SiteRoot>
   );
 }

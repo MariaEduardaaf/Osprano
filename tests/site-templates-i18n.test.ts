@@ -5,14 +5,22 @@ import { TEMPLATE_IDS } from "../convex/lib/site.ts";
 
 const LOCALES = Object.keys(DICTS) as Locale[];
 
-/** Toda a copy de um modelo num idioma, com a função de cidade materializada. */
+/**
+ * Toda a copy de um modelo num idioma, com a função de cidade materializada e
+ * os blocos aninhados (valores e passos) achatados: o que o prospect lê.
+ */
 function templateCopy(d: TemplateDict): string[] {
-  return [...Object.values(d).filter((v): v is string => typeof v === "string"), d.inCity("Madrid")];
+  return [
+    ...Object.values(d).filter((v): v is string => typeof v === "string"),
+    ...[...d.values, ...d.steps].flatMap((b) => [b.title, b.body]),
+    d.inCity("Madrid"),
+  ];
 }
 
 test("templates-i18n: os 10 idiomas têm os 4 modelos com as mesmas chaves", () => {
   const keys = Object.keys(DICTS.en.templates.mesa).sort();
-  assert.ok(keys.length >= 16, `TemplateDict com poucas chaves: ${keys.join(", ")}`);
+  assert.ok(keys.length >= 21, `TemplateDict com poucas chaves: ${keys.join(", ")}`);
+  for (const k of ["whyHeading", "values", "howHeading", "steps", "mapTitle"]) assert.ok(keys.includes(k), k);
   for (const l of LOCALES) {
     assert.deepEqual(Object.keys(DICTS[l].templates).sort(), [...TEMPLATE_IDS].sort(), `${l}: modelos faltando`);
     for (const t of TEMPLATE_IDS) {
@@ -22,6 +30,36 @@ test("templates-i18n: os 10 idiomas têm os 4 modelos com as mesmas chaves", () 
       }
     }
   }
+});
+
+test("templates-i18n: valores e passos são três blocos {title, body} não vazios, próprios de cada modelo", () => {
+  for (const l of LOCALES) {
+    for (const t of TEMPLATE_IDS) {
+      const d = DICTS[l].templates[t];
+      for (const [name, list] of [
+        ["values", d.values],
+        ["steps", d.steps],
+      ] as const) {
+        assert.equal(list.length, 3, `${l}.${t}.${name}: ${list.length} blocos`);
+        for (const b of list) {
+          assert.deepEqual(Object.keys(b).sort(), ["body", "title"], `${l}.${t}.${name}: chaves ${Object.keys(b)}`);
+          assert.ok(b.title.trim().length > 0 && b.body.trim().length > 0, `${l}.${t}.${name} vazio`);
+        }
+        assert.equal(new Set(list.map((b) => b.title)).size, 3, `${l}.${t}.${name}: títulos repetidos`);
+      }
+    }
+    // Cada modelo tem o próprio tom (mesa acolhe, ofício esclarece): quatro textos, não um copiado.
+    for (const name of ["values", "steps"] as const) {
+      const bodies = TEMPLATE_IDS.map((t) => DICTS[l].templates[t][name].map((b) => b.body).join("|"));
+      assert.equal(new Set(bodies).size, 4, `${l}: ${name} iguais entre modelos`);
+    }
+    assert.equal(new Set(TEMPLATE_IDS.map((t) => DICTS[l].templates[t].whyHeading)).size, 4, `${l}: whyHeading repetido`);
+    // O ofício fala de "como trabalhamos"; os outros, de "como funciona".
+    assert.notEqual(DICTS[l].templates.oficio.howHeading, DICTS[l].templates.mesa.howHeading, `${l}: howHeading do ofício`);
+  }
+  assert.equal(DICTS.en.templates.mesa.mapTitle, "Map");
+  assert.equal(DICTS.pt.templates.mesa.mapTitle, "Mapa");
+  assert.equal(DICTS.en.templates.oficio.howHeading, "How we work");
 });
 
 test("templates-i18n: nenhum texto padrão contém dígito (sem horário, preço ou ano inventado)", () => {
@@ -37,9 +75,11 @@ test("templates-i18n: nenhum texto padrão contém dígito (sem horário, preço
   }
 });
 
-test("templates-i18n: nenhum texto padrão afirma superlativo, antiguidade ou cobertura de região", () => {
+test("templates-i18n: nenhum texto padrão afirma superlativo, antiguidade, cobertura de região ou fato do negócio", () => {
+  // Valores e passos (adendo) entram na mesma regra: são sobre postura, nunca
+  // sobre ingredientes, preço, horário, prémios ou equipa.
   const claim =
-    /\b(best|beste|bäst|bästa|bedste|melhor|mejor|migliore|meilleur|meilleure|since|desde|seit|sedan|siden|depuis|sinds|region|região|región|regione|regio|Umgebung)\b/i;
+    /\b(best|beste|bäst|bästa|bedste|melhor|mejor|migliore|meilleur|meilleure|since|desde|seit|sedan|siden|depuis|sinds|region|região|región|regione|regio|Umgebung|award|prémio|premio|premiado|preisgekrönt|ingredient|ingrediente|ingrediënt|ingrediens|Zutat|team|equipa|equipo|équipe|squadra|Team|price|preço|precio|prezzo|prix|Preis|prijs|pris)\b/i;
   for (const l of LOCALES) {
     for (const t of TEMPLATE_IDS) {
       for (const s of templateCopy(DICTS[l].templates[t])) {

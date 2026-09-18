@@ -459,3 +459,42 @@ padrão). `tests/site-indexability.test.ts` continua valendo (só `/site` indexa
 - `tsc`, `eslint`, testes e `next build` verdes.
 - Roteiro manual da Duda: só o que é gosto (as 12 paletas ao vivo, fotos
   padrão) e o fluxo de venda ponta a ponta com um lead real.
+
+---
+
+## Adendo 2026-09-18: mais seções, footer e contato
+
+Feedback da Duda depois do plano A: os modelos ficaram curtos; footer e área de
+contato fracos. Regra de honestidade continua: seção nova é **genérica** (sem fato
+do negócio) ou **só com dado**.
+
+Blocos novos em `shared.tsx`, usados pelos 4 modelos:
+- `Values`: 3 cartões genéricos por modelo (ex. mesa: "Ingredientes escolhidos com
+  cuidado" não pode; tem de ser sobre postura, não sobre o produto: "Atenção a
+  cada detalhe", "Um lugar para ficar à vontade", "Perto de si"). Textos em
+  `templates.<id>.values[3]` nos 10 idiomas; teste sem dígito/superlativo vale.
+- `Steps`: "Como funciona" em 3 passos genéricos (entrar em contato, combinar dia
+  e hora, aproveitar), texto por modelo em `templates.<id>.steps[3]`.
+- `RatingBand`: faixa grande com nota, estrelas e "N avaliações" (só com
+  `rating != null`), com o rótulo `reviews` já existente.
+- `MapEmbed`: `<iframe>` do Google Maps sem chave
+  (`https://www.google.com/maps?q=<endereço, cidade>&output=embed`), `loading="lazy"`,
+  `title` localizado, só quando há `address` (cidade sozinha não basta).
+- `BigFooter`: substitui o `Footer` mínimo. Colunas: marca (nome + slogan),
+  contato (telefone, WhatsApp, e-mail, Instagram, só os preenchidos), endereço
+  e horário (só com dado), e um CTA primário. Linha final com o nome.
+  Sem crédito da Osprano (white-label).
+
+Ritmo por modelo (seções com dado marcadas com *):
+- mesa: hero · sobre · valores · cardápio* · galeria* · faixa de avaliação* ·
+  como funciona · horário* · mapa* · footer
+- estudio: hero · sobre · serviços* · galeria* · valores · faixa de avaliação* ·
+  como funciona · faixa CTA · horário* · mapa* · footer
+- oficio: hero · valores · serviços* · como trabalhamos (steps) · galeria* ·
+  área atendida · faixa de avaliação* · mapa* · footer
+- vitrine: hero · sobre · destaques* · valores · galeria* · faixa de avaliação* ·
+  como funciona · localização e horário* (com mapa*) · footer
+
+Tamanho: cada seção com respiro maior (`py-16 @md:py-24`), tipografia de título
+um degrau maior. Guardas dos testes continuam (sem `sm:`/viewport, `alt=""` em
+foto padrão, horário/itens só de `view.*`).

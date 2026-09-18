@@ -9,6 +9,7 @@ import {
   defaultPalette,
   ctaOptions,
   primaryCta,
+  mapEmbedUrl,
   parseSiteContent,
   validateSiteContent,
   defaultContentForLead,
@@ -100,6 +101,21 @@ test("site: CTA segue a ordem whatsapp, telefone, e-mail e é null sem canal", (
   assert.equal(primaryCta({ phone: "+44 20 7946 0000" })?.kind, "phone");
   assert.equal(primaryCta({}), null);
   assert.equal(primaryCta({ whatsapp: "", phone: "  ", email: "" }), null);
+});
+
+test("site: mapEmbedUrl só existe com endereço e busca endereço mais cidade, codificados", () => {
+  // Sem chave de API: só a busca do Google Maps em modo embed. A cidade sozinha
+  // não vira mapa (seria um mapa da cidade inteira no lugar do negócio).
+  assert.equal(
+    mapEmbedUrl("Rua das Flores 12", "Lisboa"),
+    "https://www.google.com/maps?q=Rua%20das%20Flores%2012%2C%20Lisboa&output=embed",
+  );
+  assert.equal(mapEmbedUrl("Calle Mayor 8", null), "https://www.google.com/maps?q=Calle%20Mayor%208&output=embed");
+  assert.equal(mapEmbedUrl(" 1 High St ", " Leeds "), "https://www.google.com/maps?q=1%20High%20St%2C%20Leeds&output=embed");
+  assert.equal(mapEmbedUrl("Rue de l'Église 3 & 5", "Genève"), `https://www.google.com/maps?q=${encodeURIComponent("Rue de l'Église 3 & 5, Genève")}&output=embed`);
+  assert.equal(mapEmbedUrl(undefined, "Lisboa"), null);
+  assert.equal(mapEmbedUrl("", "Lisboa"), null);
+  assert.equal(mapEmbedUrl("   ", null), null);
 });
 
 test("site: o formato antigo (sem version) vira v2 com modelo sugerido e paleta padrão", () => {

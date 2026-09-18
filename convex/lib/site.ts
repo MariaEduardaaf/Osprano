@@ -197,6 +197,21 @@ export function primaryCta(c: Pick<SiteContent, "whatsapp" | "phone" | "email">)
   return ctaOptions(c)[0] ?? null;
 }
 
+/**
+ * URL do mapa embutido (adendo 2026-09-18): Google Maps sem chave de API, só a
+ * busca pelo endereço com a cidade. Só faz sentido com endereço; cidade sozinha
+ * não basta (o modelo não chama isto sem `address`). Devolve null sem endereço
+ * para o chamador não renderizar um mapa de cidade inteira como se fosse o
+ * negócio.
+ */
+export function mapEmbedUrl(address: string | undefined, city: string | null | undefined): string | null {
+  const a = address?.trim() ?? "";
+  if (!a) return null;
+  const c = city?.trim() ?? "";
+  const q = c ? `${a}, ${c}` : a;
+  return `https://www.google.com/maps?q=${encodeURIComponent(q)}&output=embed`;
+}
+
 /** Mínimo que a página consegue renderizar; o chamador troca o nome pelo do lead quando o tem. */
 export function minimalContent(): SiteContent {
   return {
