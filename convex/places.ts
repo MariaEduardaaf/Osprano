@@ -1,4 +1,4 @@
-import { action } from "./_generated/server";
+import { action, type ActionCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { requireOrgId } from "./model/tenant";
@@ -27,15 +27,10 @@ interface PlaceResult {
  * continua governada pelo isEmailable no insertDiscovered: leads de mercados
  * opt-in nascem emailable=false (ligação primeiro).
  */
-export const search = action({
-  args: {
-    countryCode: v.string(),
-    category: v.string(),
-    city: v.string(),
-    max: v.optional(v.number()),
-  },
-  handler: async (ctx, args): Promise<{ found: number; inserted: number }> => {
-    const orgId = await requireOrgId(ctx);
+type SearchArgs = { countryCode: string; category: string; city: string; max?: number };
+
+/** Núcleo da busca, sem auth: usado pela action pública e pela operação via CLI (admin). */
+export async function runPlacesSearch(ctx: ActionCtx, orgId: string, args: SearchArgs): Promise<{ found: number; inserted: number }> {
     const country = args.countryCode.toUpperCase();
     if (!isSearchableMarket(country)) {
       const name = MARKETS[country]?.name ?? country;
@@ -139,5 +134,17 @@ export const search = action({
     }
 
     return { found: places.length, inserted };
+}
+
+export const search = action({
+  args: {
+    countryCode: v.string(),
+    category: v.string(),
+    city: v.string(),
+    max: v.optional(v.number()),
+  },
+  handler: async (ctx, args): Promise<{ found: number; inserted: number }> => {
+    const orgId = await requireOrgId(ctx);
+    return await runPlacesSearch(ctx, orgId, args);
   },
 });
