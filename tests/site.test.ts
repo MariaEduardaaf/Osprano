@@ -290,6 +290,25 @@ test("site: defaultContentForLead só alimenta o que o lead tem e deixa os canai
   assert.equal("address" in bare, false);
 });
 
+test("site: defaultContentForLead pré-preenche instagram quando o lead já tem", () => {
+  const withInstagram = defaultContentForLead({
+    name: "Barbearia do Zé",
+    countryCode: "GB",
+    instagram: "barbeariadoze",
+  });
+  assert.equal(withInstagram.instagram, "barbeariadoze");
+
+  const withoutInstagram = defaultContentForLead({ name: "Barbearia do Zé", countryCode: "GB" });
+  assert.equal("instagram" in withoutInstagram, false);
+
+  const emptyInstagram = defaultContentForLead({
+    name: "Barbearia do Zé",
+    countryCode: "GB",
+    instagram: "",
+  });
+  assert.equal("instagram" in emptyInstagram, false);
+});
+
 // Ids de storage são strings opacas: os testes usam literais com o tipo do Convex.
 const sid = (s: string) => s as Id<"_storage">;
 

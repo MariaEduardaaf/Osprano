@@ -109,6 +109,8 @@ test("osmElementToLead: elemento completo", () => {
     phone: "+44 161 000 0000",
     website: "https://ze.example",
     email: "hi@ze.example",
+    instagram: undefined,
+    facebook: undefined,
   });
 });
 
@@ -154,6 +156,69 @@ test("osmElementToLead: tag direta vence contact:*", () => {
   assert.equal(lead.placeId, "osm:relation/9");
   assert.equal(lead.phone, "A");
   assert.equal(lead.website, "w1");
+});
+
+test("osmElementToLead: instagram e facebook normalizados a partir das tags", () => {
+  const lead = osmElementToLead(
+    {
+      type: "node",
+      id: 5,
+      tags: {
+        name: "Padaria Central",
+        instagram: "https://www.instagram.com/PadariaCentral/",
+        facebook: "padariacentral",
+      },
+    },
+    "Lisboa",
+  );
+  assert.ok(lead);
+  assert.equal(lead.instagram, "padariacentral");
+  assert.equal(lead.facebook, "https://www.facebook.com/padariacentral");
+});
+
+test("osmElementToLead: contact:instagram e contact:facebook como fallback", () => {
+  const lead = osmElementToLead(
+    {
+      type: "node",
+      id: 6,
+      tags: {
+        name: "Café X",
+        "contact:instagram": "@cafex",
+        "contact:facebook": "https://facebook.com/cafex",
+      },
+    },
+    "Porto",
+  );
+  assert.ok(lead);
+  assert.equal(lead.instagram, "cafex");
+  assert.equal(lead.facebook, "https://facebook.com/cafex");
+});
+
+test("osmElementToLead: tag direta de instagram/facebook vence contact:*", () => {
+  const lead = osmElementToLead(
+    {
+      type: "node",
+      id: 7,
+      tags: {
+        name: "Y",
+        instagram: "direto",
+        "contact:instagram": "fallback",
+        facebook: "direto",
+        "contact:facebook": "fallback",
+      },
+    },
+    "C",
+  );
+  assert.ok(lead);
+  assert.equal(lead.instagram, "direto");
+  assert.equal(lead.facebook, "https://www.facebook.com/direto");
+});
+
+test("osmElementToLead: sem tags de rede social → undefined", () => {
+  const lead = osmElementToLead({ type: "node", id: 8, tags: { name: "Z" } }, "C");
+  assert.ok(lead);
+  assert.equal(lead.instagram, undefined);
+  assert.equal(lead.facebook, undefined);
 });
 
 test("osmElementToLead: endereço parcial compõe só o que existe", () => {

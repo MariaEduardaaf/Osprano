@@ -83,6 +83,11 @@ export default defineSchema({
     phone: v.optional(v.string()),
     website: v.optional(v.string()),
     email: v.optional(v.string()),
+    // Redes sociais (spec redes-sociais-do-lead): quando não há site, é por
+    // Instagram/Facebook que a Duda vai contatar. Instagram: handle sem @,
+    // minúsculo. Facebook: URL normalizada (slug vira https://www.facebook.com/<slug>).
+    instagram: v.optional(v.string()),
+    facebook: v.optional(v.string()),
     rating: v.optional(v.number()),
     reviewsCount: v.optional(v.number()),
 
