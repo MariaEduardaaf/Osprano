@@ -6,17 +6,36 @@ import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import { api } from "@convex/_generated/api";
-import type { Doc } from "@convex/_generated/dataModel";
-import type { SiteContent } from "@convex/lib/site";
+import type { Doc, Id } from "@convex/_generated/dataModel";
+import { imageIds, type SiteContent } from "@convex/lib/site";
 import { buildSiteView } from "@/components/site-templates";
 import { EmptyState, PageHeader } from "@/components/ui";
 import { errorMessage } from "@/lib/errors";
 import { DICTS, localeForLead } from "@/lib/preview-i18n";
-import { imageUrlMap, isDirty, setText, viewImages, withTemplate } from "@/lib/site-editor";
+import {
+  addGalleryImage,
+  addItem,
+  imageUrlMap,
+  isDirty,
+  removeGalleryImage,
+  removeItem,
+  replaceGalleryImage,
+  setDay,
+  setHero,
+  setItem,
+  setText,
+  viewImages,
+  withTemplate,
+} from "@/lib/site-editor";
 import { TemplateBlock } from "./template-block";
 import { TextsBlock } from "./texts-block";
+import { ItemsBlock } from "./items-block";
+import { HoursBlock } from "./hours-block";
+import { ContactBlock } from "./contact-block";
+import { PhotosBlock } from "./photos-block";
 import { LivePreview } from "./live-preview";
 import { EditorFooter } from "./editor-footer";
+import { useUpload } from "./use-upload";
 
 type Preview = NonNullable<FunctionReturnType<typeof api.previews.getForLead>>;
 
@@ -64,12 +83,16 @@ function NotFound() {
 function EditorBody({ lead, preview, backHref }: { lead: Doc<"leads">; preview: Preview; backHref: string }) {
   const router = useRouter();
   const saveContent = useMutation(api.previews.saveContent);
+  const removeUpload = useMutation(api.previews.removeUpload);
+  const upload = useUpload(lead._id);
 
   // Estado local: o SiteContent inteiro (spec 3.1). "Alterado" = JSON canônico diferente do salvo.
   const [draft, setDraft] = useState<SiteContent>(preview.content);
   const [saved, setSaved] = useState<SiteContent>(preview.content);
-  // id → URL das fotos já salvas, resolvidas pela query (os uploads desta sessão entram na Task 11).
-  const [urls] = useState<Record<string, string>>(() => imageUrlMap(preview.content, preview.images));
+  // id → URL: object URLs dos uploads desta sessão + URLs do storage que a query resolveu para o salvo.
+  const [urls, setUrls] = useState<Record<string, string>>(() => imageUrlMap(preview.content, preview.images));
+  // Uploads feitos aqui e ainda não salvos: só estes podem ser descartados com `removeUpload`.
+  const [unsaved, setUnsaved] = useState<ReadonlySet<string>>(() => new Set());
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<"idle" | "saved">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -87,6 +110,18 @@ function EditorBody({ lead, preview, backHref }: { lead: Doc<"leads">; preview: 
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
 
+  // Object URLs são revogadas ao desmontar (spec 2.4); o ref guarda o mapa mais recente para o cleanup.
+  const urlsRef = useRef(urls);
+  useEffect(() => {
+    urlsRef.current = urls;
+  }, [urls]);
+  useEffect(
+    () => () => {
+      for (const u of Object.values(urlsRef.current)) if (u.startsWith("blob:")) URL.revokeObjectURL(u);
+    },
+    [],
+  );
+
   // "Salvo" por 2 s.
   useEffect(() => {
     if (status !== "saved") return;
@@ -94,12 +129,66 @@ function EditorBody({ lead, preview, backHref }: { lead: Doc<"leads">; preview: 
     return () => window.clearTimeout(t);
   }, [status]);
 
+  /** Descarta um upload que nunca foi salvo. Id já salvo fica: quem apaga é o servidor, depois do próximo Salvar. */
+  function discard(id: Id<"_storage">) {
+    if (!unsaved.has(id)) return;
+    setUnsaved((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+    const u = urls[id];
+    if (u?.startsWith("blob:")) URL.revokeObjectURL(u);
+    setUrls((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    // Melhor esforço: se o servidor recusar ("Imagem em uso" ou já apagada), o arquivo fica; sem coleta nesta rodada.
+    void removeUpload({ storageId: id }).catch(() => undefined);
+  }
+
+  function adopt(id: Id<"_storage">, url: string) {
+    setUrls((prev) => ({ ...prev, [id]: url }));
+    setUnsaved((prev) => new Set(prev).add(id));
+  }
+
+  async function onHeroFile(file: File, onProgress: (pct: number) => void) {
+    const previous = draft.heroImage;
+    const { id, url } = await upload(file, onProgress);
+    adopt(id, url);
+    setDraft((c) => setHero(c, id));
+    if (previous) discard(previous);
+  }
+
+  async function onGalleryFile(file: File, onProgress: (pct: number) => void, index?: number) {
+    const previous = index === undefined ? undefined : draft.gallery?.[index];
+    const { id, url } = await upload(file, onProgress);
+    adopt(id, url);
+    setDraft((c) => (index === undefined ? addGalleryImage(c, id) : replaceGalleryImage(c, index, id)));
+    if (previous) discard(previous);
+  }
+
+  function onUseDefault() {
+    const previous = draft.heroImage;
+    setDraft((c) => setHero(c, undefined));
+    if (previous) discard(previous);
+  }
+
+  function onRemoveGallery(index: number) {
+    const previous = draft.gallery?.[index];
+    setDraft((c) => removeGalleryImage(c, index));
+    if (previous) discard(previous);
+  }
+
   async function save() {
     setSaving(true);
     setError(null);
     try {
       await saveContent({ leadId: lead._id, content: draft });
       setSaved(draft);
+      const kept = new Set<string>(imageIds(draft));
+      setUnsaved((prev) => new Set(Array.from(prev).filter((id) => !kept.has(id))));
       setStatus("saved");
     } catch (e) {
       // Erro de validação do servidor no rodapé, estado local mantido (spec 4).
@@ -129,6 +218,22 @@ function EditorBody({ lead, preview, backHref }: { lead: Doc<"leads">; preview: 
             tr={tr}
             onName={(name) => setDraft((c) => ({ ...c, name }))}
             onText={(key, value) => setDraft((c) => setText(c, key, value))}
+          />
+          <ItemsBlock
+            draft={draft}
+            onAdd={() => setDraft((c) => addItem(c))}
+            onChange={(i, patch) => setDraft((c) => setItem(c, i, patch))}
+            onRemove={(i) => setDraft((c) => removeItem(c, i))}
+          />
+          <HoursBlock draft={draft} onDay={(day, range) => setDraft((c) => setDay(c, day, range))} />
+          <ContactBlock draft={draft} onText={(key, value) => setDraft((c) => setText(c, key, value))} />
+          <PhotosBlock
+            draft={draft}
+            urls={urls}
+            onHeroFile={onHeroFile}
+            onUseDefault={onUseDefault}
+            onGalleryFile={onGalleryFile}
+            onRemoveGallery={onRemoveGallery}
           />
         </div>
         <LivePreview
