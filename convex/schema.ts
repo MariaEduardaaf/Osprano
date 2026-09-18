@@ -176,7 +176,10 @@ export default defineSchema({
   outreach: defineTable({
     orgId: v.string(),
     leadId: v.id("leads"),
-    channel: v.union(v.literal("email"), v.literal("whatsapp")), // WhatsApp only post-opt-in
+    // WhatsApp só pós-opt-in; "dm" é Instagram/Facebook (outreach.markDm) — o CANAL exato
+    // (instagram vs facebook) fica só no evento `dm_sent`, não aqui: esta linha é o registro
+    // "existe uma abordagem de DM para este lead", não uma caixa de saída por canal social.
+    channel: v.union(v.literal("email"), v.literal("whatsapp"), v.literal("dm")),
     subject: v.optional(v.string()),
     body: v.optional(v.string()),
     status: v.union(
@@ -201,6 +204,7 @@ export default defineSchema({
     type: v.union(
       v.literal("preview_open"),
       v.literal("email_sent"),
+      v.literal("dm_sent"), // meta: { channel: "instagram" | "facebook" }
       v.literal("reply"),
       v.literal("stage_change"),
       v.literal("wa_opt_in"),
