@@ -26,6 +26,7 @@ import type * as lib_site from "../lib/site.js";
 import type * as lib_stripe from "../lib/stripe.js";
 import type * as model_previews from "../model/previews.js";
 import type * as model_tenant from "../model/tenant.js";
+import type * as model_uploads from "../model/uploads.js";
 import type * as model_workspace from "../model/workspace.js";
 import type * as osm from "../osm.js";
 import type * as outreach from "../outreach.js";
@@ -61,6 +62,7 @@ declare const fullApi: ApiFromModules<{
   "lib/stripe": typeof lib_stripe;
   "model/previews": typeof model_previews;
   "model/tenant": typeof model_tenant;
+  "model/uploads": typeof model_uploads;
   "model/workspace": typeof model_workspace;
   osm: typeof osm;
   outreach: typeof outreach;

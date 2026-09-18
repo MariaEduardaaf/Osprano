@@ -414,3 +414,24 @@ export function defaultContentForLead(lead: LeadLike): SiteContent {
     reviewsCount: lead.reviewsCount ?? null,
   };
 }
+
+/** Ids de storage referenciados pelo conteúdo (hero e galeria), sem repetição. */
+export function imageIds(c: Pick<SiteContent, "heroImage" | "gallery">): Id<"_storage">[] {
+  const out = new Set<Id<"_storage">>();
+  if (c.heroImage) out.add(c.heroImage);
+  for (const id of c.gallery ?? []) out.add(id);
+  return [...out];
+}
+
+/**
+ * Ids que estavam em `before` e não estão em `after`: o que `saveContent` apaga
+ * do storage DEPOIS de gravar o conteúdo novo (spec 2.4). Trocar de slot (hero
+ * vira galeria) não conta como saída.
+ */
+export function removedImageIds(
+  before: Pick<SiteContent, "heroImage" | "gallery">,
+  after: Pick<SiteContent, "heroImage" | "gallery">,
+): Id<"_storage">[] {
+  const keep = new Set(imageIds(after));
+  return imageIds(before).filter((id) => !keep.has(id));
+}

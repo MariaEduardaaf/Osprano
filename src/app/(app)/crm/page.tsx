@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Doc, Id } from "@convex/_generated/dataModel";
@@ -17,6 +17,7 @@ import { PageHeader } from "@/components/ui";
 import { WhatsAppFollowup } from "@/components/whatsapp-followup";
 import { CreateLeadModal } from "@/components/crm/create-lead-modal";
 import { LeadDetail } from "@/components/crm/lead-detail";
+import { OpenLeadFromQuery } from "@/components/crm/open-lead-from-query";
 import { LostReasonModal } from "@/components/crm/lost-reason-modal";
 import { TodayStrip, type TodayItem } from "@/components/crm/today-strip";
 import { CardActionLine } from "@/components/crm/next-action-line";
@@ -141,6 +142,10 @@ export default function CrmPage() {
 
   return (
     <>
+      {/* `?lead=<id>` (volta do editor do site) abre o drawer; Suspense obrigatório para o build estático */}
+      <Suspense fallback={null}>
+        <OpenLeadFromQuery onOpen={setOpenId} />
+      </Suspense>
       <PageHeader
         eyebrow="Pipeline"
         title="CRM"

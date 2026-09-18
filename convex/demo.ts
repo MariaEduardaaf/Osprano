@@ -1,4 +1,4 @@
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import type { MutationCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
@@ -513,5 +513,19 @@ export const rawPreview = query({
       .withIndex("by_lead", (q) => q.eq("leadId", leadId))
       .first();
     return preview ? { token: preview.token, content: preview.content ?? null } : null;
+  },
+});
+
+/**
+ * Só demo (spec 5): registra um storageId REAL como upload de OUTRO org, para
+ * provar pela CLI que `saveContent` recusa imagem alheia com "Imagem inválida".
+ * Interna: nunca entra na API do cliente. A linha e o arquivo ficam no demo
+ * (sem coleta de lixo nesta rodada, spec 2.4).
+ */
+export const foreignUpload = internalMutation({
+  args: { leadId: v.id("leads"), storageId: v.id("_storage") },
+  handler: async (ctx, { leadId, storageId }) => {
+    if (!isDemoEnabled()) throw userError("DEMO_MODE desligado");
+    return await ctx.db.insert("uploads", { orgId: "outro", leadId, storageId, at: Date.now() });
   },
 });
