@@ -234,7 +234,6 @@ function InfoTab({
             <span className="text-hot">Sem site</span>
           )}
         </Row>
-        <Row label="Email">{lead.email ?? "—"}</Row>
         <Row label="Avaliação">
           {lead.rating != null ? (
             <span className="inline-flex items-center gap-1">

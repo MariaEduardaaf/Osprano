@@ -229,6 +229,16 @@ function ComposerBody({
 
   return (
     <div className="mt-3 space-y-2 rounded-lg border border-border bg-surface-2 p-3">
+      {/* Destinatário, acima do assunto: ela precisa ver PARA QUEM antes de mexer no texto.
+          Vem do `lead` reativo (não do prop `hasEmail`) para nunca ficar desatualizado
+          quando o email é preenchido em Informações > Contato com o composer já aberto. */}
+      {lead?.email ? (
+        <p className="text-xs text-muted">
+          Para: <span className="font-medium text-foreground">{lead.email}</span>
+        </p>
+      ) : (
+        <p className="text-xs text-warm">Sem e-mail do lead: preencha em Informações &gt; Contato</p>
+      )}
       <input
         value={subject}
         onChange={(e) => setSubject(e.target.value)}
