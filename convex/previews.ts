@@ -18,6 +18,7 @@ function slugify(s: string): string {
     s
       .toLowerCase()
       .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // tira o acento decomposto ("Óptica" -> "optica", não "o-ptica")
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "")
       .slice(0, 40) || "site"

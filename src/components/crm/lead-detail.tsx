@@ -9,7 +9,6 @@ import {
   MdClose,
   MdOutlineCall,
   MdOpenInNew,
-  MdOutlineLanguage,
   MdOutlineGppGood,
   MdOutlineWarningAmber,
   MdStar,
@@ -25,6 +24,7 @@ import {
   lostReasonLabel,
   type Stage,
 } from "@convex/lib/domain";
+import { defaultPalette, suggestTemplate } from "@convex/lib/site";
 import { NextActionForm } from "@/components/crm/next-action-form";
 import { LeadInfoFields } from "@/components/crm/lead-info-fields";
 import { LostReasonModal } from "@/components/crm/lost-reason-modal";
@@ -35,6 +35,8 @@ import { WhatTheyHaveButton } from "@/components/what-they-have-button";
 import { PublishButton } from "@/components/publish-button";
 import { CallScriptPanel } from "@/components/call-script-panel";
 import { ContactOptInButton } from "@/components/contact-opt-in-button";
+import { TEMPLATES, paletteFor } from "@/components/site-templates";
+import { TemplateThumb } from "@/components/site-templates/template-thumb";
 import { OBJECTIONS, MEETING_PLAYBOOK, CLOSING_OBJECTIONS, type Objection } from "@/lib/playbook";
 import { errorMessage } from "@/lib/errors";
 
@@ -449,62 +451,74 @@ function ApproachTab({ lead }: { lead: Doc<"leads"> }) {
 
 /* ----------------------------------------------------------------------- Site */
 
-/** Link provisório para o editor (plano B); o plano C redesenha esta aba com o resumo do modelo (spec 3.2). */
 const editLinkCls =
   "inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-brand-fg shadow-[var(--shadow-sm)] transition-colors hover:bg-brand-hover";
 
+/**
+ * Resumo do modelo (spec 3.2): `TemplateThumb` 120 px + nome do modelo e da
+ * paleta, status (aberturas/publicação) e a linha de botões. Sem preview
+ * ainda, usa o modelo sugerido pela categoria (spec 4) e some com o status,
+ * que não existe até o primeiro "Preparar preview".
+ */
 function SiteTab({ lead }: { lead: Doc<"leads"> }) {
   const preview = useQuery(api.previews.getForLead, { leadId: lead._id });
 
   if (preview === undefined) return <p className="text-sm text-faint">Carregando…</p>;
 
-  if (!preview) {
-    return (
-      <div className="rounded-2xl border border-dashed border-border-strong bg-surface-2/60 px-6 py-12 text-center">
-        <MdOutlineLanguage size={30} className="mx-auto text-faint" />
-        <p className="mt-3 font-display text-lg font-semibold">Nenhum site gerado ainda</p>
-        <p className="mx-auto mt-1 max-w-sm text-sm text-muted">
-          Prepare um preview do site do negócio num link único e rastreado, pronto para mostrar na abordagem.
-        </p>
-        <div className="mt-5 flex flex-wrap justify-center gap-2">
-          <GeneratePreviewButton leadId={lead._id} />
-          <Link href={`/crm/${lead._id}/site`} className={editLinkCls}>
-            Editar site
-          </Link>
-          <WhatTheyHaveButton lead={lead} />
-        </div>
-      </div>
-    );
-  }
+  const template = preview ? preview.content.template : suggestTemplate(lead.category);
+  const paletteId = preview ? preview.content.palette : defaultPalette(template);
+  const palette = paletteFor(template, paletteId);
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-xl border border-border bg-surface-2 p-4">
-        <div className="flex items-center justify-between">
-          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand">
-            <span className="h-1.5 w-1.5 rounded-full bg-brand" />
-            {preview.published ? "Publicado" : "Preview gerado"}
-          </span>
-          <span className="font-mono text-[11px] tabular-nums text-muted">
-            aberto {preview.openCount}×
-          </span>
+    <div className="rounded-xl border border-border bg-surface-2 p-4">
+      <div className="flex gap-4">
+        {/* largura fixa no wrapper, não no componente: TemplateThumb já nasce `w-full`
+            (mede o próprio contêiner via ResizeObserver), então quem define 120px
+            precisa ser o pai, senão o `w-full` interno vence a cascata. */}
+        <div className="w-[120px] shrink-0">
+          <TemplateThumb
+            template={template}
+            palette={paletteId}
+            name={lead.name}
+            className="rounded-lg border border-border"
+          />
         </div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Link href={`/crm/${lead._id}/site`} className={editLinkCls}>
-            Editar site
-          </Link>
-          <a
-            href={`/p/${preview.token}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border-strong px-3 py-2 text-sm font-semibold hover:bg-surface-2"
-          >
-            Abrir preview <MdOpenInNew size={14} />
-          </a>
-          <PublishButton leadId={lead._id} slug={preview.slug} />
+        <div className="min-w-0 flex-1">
+          <p className="font-display text-base font-semibold leading-tight">{TEMPLATES[template].name}</p>
+          <p className="text-xs text-muted">{palette.name}</p>
+
+          {preview ? (
+            <div className="mt-2 space-y-1">
+              <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand">
+                <span className="h-1.5 w-1.5 rounded-full bg-brand" />
+                {preview.published ? "Publicado" : "Preview gerado"}
+              </span>
+              {preview.published && preview.slug && (
+                <a
+                  href={`/site/${preview.slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block truncate text-xs font-semibold text-brand hover:underline"
+                >
+                  /site/{preview.slug}
+                </a>
+              )}
+              <p className="font-mono text-[11px] tabular-nums text-muted">
+                Preview aberto {preview.openCount}×
+              </p>
+            </div>
+          ) : (
+            <p className="mt-2 text-xs text-muted">Nenhum preview gerado ainda</p>
+          )}
         </div>
       </div>
-      <div className="flex items-center justify-end gap-2 rounded-xl border border-border bg-surface-2/40 px-4 py-3">
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Link href={`/crm/${lead._id}/site`} className={editLinkCls}>
+          Editar site
+        </Link>
+        <GeneratePreviewButton leadId={lead._id} />
+        {preview && <PublishButton leadId={lead._id} slug={preview.slug} />}
         <WhatTheyHaveButton lead={lead} />
       </div>
     </div>

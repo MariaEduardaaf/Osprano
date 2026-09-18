@@ -110,6 +110,38 @@ function EditorBody({ lead, preview, backHref }: { lead: Doc<"leads">; preview: 
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
 
+  // Sair pelo rail (plano C): com mudança não salva, um clique em qualquer
+  // link interno do rail (ex.: CRM, Sites) pede a mesma confirmação do botão
+  // Voltar. Não mexe no rail: escuta o clique em fase de captura no document e
+  // sobe pelo alvo até achar um `<a>`. Deixa passar link de nova aba (ex.:
+  // "Abrir preview") e o que já está na página atual.
+  useEffect(() => {
+    if (!dirty) return;
+    function onClick(e: MouseEvent) {
+      if (e.defaultPrevented || e.button !== 0) return;
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      const anchor = target.closest("a");
+      if (!anchor || anchor.target === "_blank") return;
+      const href = anchor.getAttribute("href");
+      if (!href || href.startsWith("#")) return;
+      let url: URL;
+      try {
+        url = new URL(href, window.location.href);
+      } catch {
+        return;
+      }
+      if (url.origin !== window.location.origin) return;
+      if (url.pathname === window.location.pathname) return;
+      if (!window.confirm("Há alterações não salvas. Sair mesmo assim?")) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    }
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, [dirty]);
+
   // Object URLs são revogadas ao desmontar (spec 2.4); o ref guarda o mapa mais recente para o cleanup.
   const urlsRef = useRef(urls);
   useEffect(() => {
