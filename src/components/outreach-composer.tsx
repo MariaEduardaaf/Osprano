@@ -199,24 +199,31 @@ function ComposerBody({
 
   if (!open) {
     return (
-      <button
-        onClick={() =>
-          run("draft", async () => {
-            const r = await draft({ leadId });
-            setSubject(r.subject);
-            setBody(r.body);
-            // Os avisos vêm junto do texto e não podem ser descartados aqui: é o que sobrou
-            // do que o prompt não conseguiu impedir (ver a trava em convex/lib/outreachAi.ts).
-            setGeneratedWarnings(r.warnings);
-            setOpen(true);
-          })
-        }
-        disabled={busy === "draft"}
-        className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-brand-fg disabled:opacity-50"
-      >
-        <MdOutlineAutoAwesome size={14} />
-        {busy === "draft" ? "Escrevendo…" : "Escrever com IA"}
-      </button>
+      <div>
+        <button
+          onClick={() =>
+            run("draft", async () => {
+              const r = await draft({ leadId });
+              setSubject(r.subject);
+              setBody(r.body);
+              // Os avisos vêm junto do texto e não podem ser descartados aqui: é o que sobrou
+              // do que o prompt não conseguiu impedir (ver a trava em convex/lib/outreachAi.ts).
+              setGeneratedWarnings(r.warnings);
+              setOpen(true);
+            })
+          }
+          disabled={busy === "draft"}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-brand-fg disabled:opacity-50"
+        >
+          <MdOutlineAutoAwesome size={14} />
+          {busy === "draft" ? "Escrevendo…" : "Escrever com IA"}
+        </button>
+        {/* O composer só abre (`setOpen(true)`) quando `draft` dá certo — um erro aqui
+            (ex.: ANTHROPIC_API_KEY ausente) nunca chega a `open`, e `msg` teria que
+            renderizar dentro do bloco expandido, que não existe ainda. Sem isto o clique
+            falhava em silêncio: o botão só voltava a "Escrever com IA", sem explicar por quê. */}
+        {msg && <p className="mt-1.5 text-xs text-danger">{msg}</p>}
+      </div>
     );
   }
 
@@ -241,19 +248,28 @@ function ComposerBody({
         <button
           onClick={() =>
             run("copy", async () => {
-              await navigator.clipboard.writeText(`${subject}\n\n${body}`);
-              void updateDraft({ leadId, subject, body }).catch(() => {});
+              // `updateDraft` re-garante o rodapé de opt-out e devolve o par normalizado —
+              // copiar o `body` local (o que a IA gerou, sem o rodapé injetado no `draft`)
+              // era exatamente o defeito de compliance: aguarda o servidor ANTES de escrever
+              // no clipboard, e atualiza o textarea para mostrar o texto que foi de fato copiado.
+              const normalized = await updateDraft({ leadId, subject, body });
+              setSubject(normalized.subject);
+              setBody(normalized.body);
+              await navigator.clipboard.writeText(`${normalized.subject}\n\n${normalized.body}`);
               setMsg("Copiado — envie do seu email.");
             })
           }
-          className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-semibold hover:bg-surface"
+          disabled={busy === "copy"}
+          className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-semibold hover:bg-surface disabled:opacity-50"
         >
           <MdOutlineContentCopy size={14} />
           Copiar
         </button>
         <button
           onClick={() => run("mark", async () => {
-            await updateDraft({ leadId, subject, body });
+            const normalized = await updateDraft({ leadId, subject, body });
+            setSubject(normalized.subject);
+            setBody(normalized.body);
             await markSent({ leadId });
             setMsg("Marcado como enviado.");
           })}
@@ -282,7 +298,9 @@ function ComposerBody({
                 setMsg(`Envio cancelado — troque ${NAME_PLACEHOLDER} pelo seu nome.`);
                 return;
               }
-              await updateDraft({ leadId, subject, body });
+              const normalized = await updateDraft({ leadId, subject, body });
+              setSubject(normalized.subject);
+              setBody(normalized.body);
               await send({ leadId });
               setMsg("Enviado via Resend.");
             })}

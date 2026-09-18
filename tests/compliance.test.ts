@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { optOutFooter, senderIdentityFrom, unsubscribePageHtml } from "../convex/lib/compliance.ts";
+import { hasUnsubscribeLink } from "../convex/lib/env.ts";
 
 const URL = "https://x.convex.site/unsubscribe?token=abc";
 
@@ -100,4 +101,39 @@ test("senderIdentityFrom: bare email passes through", () => {
 
 test("senderIdentityFrom: trims surrounding whitespace", () => {
   assert.equal(senderIdentityFrom("  Team Osprano  <hi@osprano.com> "), "Team Osprano");
+});
+
+/* ------------------------------------------------------- idempotência do rodapé (bug UAT) */
+
+/**
+ * Espelha `withOptOutFooter` (convex/outreach.ts, impuro — importa `./_generated/server`,
+ * fora do que este arquivo pode importar): só anexa o rodapé se `hasUnsubscribeLink` (mesmo
+ * caminho+token usado em produção) ainda não achar o marcador no corpo. A composição real é
+ * coberta pelo check de CLI ao vivo (ver relatório da correção); aqui trava a PROPRIEDADE —
+ * as duas primitivas puras que a produção usa, compostas do mesmo jeito.
+ */
+function applyFooterIfMissing(body: string, token: string, lang: string, url: string, sender: string): string {
+  if (hasUnsubscribeLink(body, token)) return body;
+  return `${body}${optOutFooter(lang, url, sender)}`;
+}
+
+test("idempotência: aplicar o rodapé duas vezes (mesmo token) gera um só bloco", () => {
+  const token = "tok123";
+  const url = `https://x.convex.site/unsubscribe?token=${token}`;
+  const once = applyFooterIfMissing("Olá, tudo bem?", token, "English", url, "Ana");
+  const twice = applyFooterIfMissing(once, token, "English", url, "Ana");
+  assert.equal(twice, once);
+  assert.equal(once.match(/\n\n—\n/g)?.length, 1, once);
+});
+
+test("idempotência: editar o corpo ACIMA do rodapé mantém um só bloco", () => {
+  const token = "tok123";
+  const url = `https://x.convex.site/unsubscribe?token=${token}`;
+  const withFooter = applyFooterIfMissing("Olá, tudo bem?", token, "English", url, "Ana");
+  const footerStart = withFooter.indexOf("\n\n—\n");
+  // Simula a usuária editando só o texto acima do rodapé, mantendo o bloco intacto.
+  const edited = `Olá! Editei o corpo à mão.${withFooter.slice(footerStart)}`;
+  const result = applyFooterIfMissing(edited, token, "English", url, "Ana");
+  assert.equal(result, edited);
+  assert.equal(result.match(/\n\n—\n/g)?.length, 1, result);
 });
