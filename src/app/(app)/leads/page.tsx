@@ -72,7 +72,12 @@ export default function LeadsPage() {
     ? regimeLeads
     : regimeLeads.filter((l) => {
         if (l.countryCode !== country) return false;
-        if (city && l.city?.trim().toLowerCase() !== city.trim().toLowerCase()) return false;
+        if (city) {
+          // Solto nos dois sentidos: "London" casa "Greater London" e vice-versa.
+          const a = (l.city ?? "").trim().toLowerCase();
+          const b = city.trim().toLowerCase();
+          if (!a.includes(b) && !b.includes(a)) return false;
+        }
         if (category && !leadCategoryMatchesSearch(l.category, category)) return false;
         return true;
       });
