@@ -3,7 +3,14 @@ import { v } from "convex/values";
 import { requireOrgId } from "./model/tenant";
 import { reserveUsage } from "./model/workspace";
 import { ensurePreview, readContent, resolveImages } from "./model/previews";
-import { parseSiteContent } from "./lib/site";
+import { assertUploadsOwned, deleteUploads, uploadRow } from "./model/uploads";
+import {
+  imageIds,
+  parseSiteContent,
+  removedImageIds,
+  siteContentValidator,
+  validateSiteContent,
+} from "./lib/site";
 import { userError } from "./lib/errors";
 
 function slugify(s: string): string {
@@ -66,6 +73,85 @@ export const ensureForLead = internalMutation({
     const lead = await ctx.db.get(leadId);
     if (!lead) throw userError("Lead não encontrado");
     return (await ensurePreview(ctx, lead)).token;
+  },
+});
+
+/**
+ * Salva o conteúdo do site (spec 2.3/2.4). Authed. Ordem: ownership do lead,
+ * limites (`validateSiteContent`), cada imagem precisa estar em `uploads` do
+ * mesmo org, grava, e SÓ DEPOIS apaga do storage o que saiu do conteúdo antigo.
+ * Nada é apagado antes de gravar: trocar uma foto no editor não toca no site
+ * publicado até ela salvar. Devolve o token (o mesmo de `generate`).
+ */
+export const saveContent = mutation({
+  args: { leadId: v.id("leads"), content: siteContentValidator },
+  handler: async (ctx, { leadId, content }) => {
+    const orgId = await requireOrgId(ctx);
+    const lead = await ctx.db.get(leadId);
+    if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
+    validateSiteContent(content);
+    await assertUploadsOwned(ctx, orgId, imageIds(content));
+
+    const preview = await ensurePreview(ctx, lead);
+    const before = parseSiteContent(preview.content);
+    await ctx.db.patch(preview._id, { content });
+    await deleteUploads(ctx, orgId, removedImageIds(before, content));
+    return preview.token;
+  },
+});
+
+/**
+ * URL de upload do file storage (spec 2.4). Authed. Quem faz o POST é o
+ * navegador; o arquivo só passa a "ser da org" em `registerUpload`.
+ */
+export const generateUploadUrl = mutation({
+  args: {},
+  handler: async (ctx) => {
+    await requireOrgId(ctx);
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
+/**
+ * Registra um arquivo enviado como upload do lead (spec 2.4). `saveContent` só
+ * aceita storageId que passou por aqui. Idempotente para o mesmo org.
+ */
+export const registerUpload = mutation({
+  args: { leadId: v.id("leads"), storageId: v.id("_storage") },
+  handler: async (ctx, { leadId, storageId }) => {
+    const orgId = await requireOrgId(ctx);
+    const lead = await ctx.db.get(leadId);
+    if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
+    if (!(await ctx.db.system.get("_storage", storageId))) throw userError("Arquivo não encontrado");
+    const existing = await uploadRow(ctx, storageId);
+    if (existing) {
+      if (existing.orgId !== orgId) throw userError("Imagem inválida");
+      return existing._id;
+    }
+    return await ctx.db.insert("uploads", { orgId, leadId, storageId, at: Date.now() });
+  },
+});
+
+/**
+ * Descarta um upload que AINDA NÃO foi salvo (ela trocou de ideia antes do
+ * Salvar). Ownership pela tabela; recusa com "Imagem em uso" se o id está no
+ * conteúdo salvo do lead (aí quem apaga é `saveContent`, depois de gravar).
+ */
+export const removeUpload = mutation({
+  args: { storageId: v.id("_storage") },
+  handler: async (ctx, { storageId }) => {
+    const orgId = await requireOrgId(ctx);
+    const row = await uploadRow(ctx, storageId);
+    if (!row || row.orgId !== orgId) throw userError("Imagem não encontrada");
+    const preview = await ctx.db
+      .query("previews")
+      .withIndex("by_lead", (q) => q.eq("leadId", row.leadId))
+      .first();
+    if (preview && imageIds(parseSiteContent(preview.content)).includes(storageId)) {
+      throw userError("Imagem em uso");
+    }
+    await deleteUploads(ctx, orgId, [storageId]);
+    return null;
   },
 });
 
