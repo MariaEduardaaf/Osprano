@@ -54,6 +54,8 @@ function timelineText(type: string, meta: Meta): string {
     }
     case "email_sent":
       return "Email enviado";
+    case "dm_sent":
+      return meta?.channel === "facebook" ? "DM enviada (Facebook)" : "DM enviada (Instagram)";
     case "preview_open":
       return "Preview aberto";
     case "reply":

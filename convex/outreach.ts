@@ -6,7 +6,7 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { requireOrgId } from "./model/tenant";
 import { writeEmail, writeCallScript, langForLead } from "./lib/outreachAi";
 import type { OutreachWarning } from "./lib/outreachAi";
-import { normalizeEmail, canContactByEmail } from "./lib/domain";
+import { normalizeEmail, canContactByEmail, addDays } from "./lib/domain";
 import { optOutFooter, senderIdentityFrom, callerNameFrom } from "./lib/compliance";
 import {
   requireAppUrl,
@@ -347,6 +347,72 @@ export const markSent = mutation({
       await ctx.db.patch(leadId, { stage: "approached", stageUpdatedAt: now });
     }
     await ctx.db.insert("events", { orgId, type: "email_sent", leadId, at: now });
+  },
+});
+
+/**
+ * Marca contato por DM (Instagram/Facebook) — canal da maioria dos leads sem site: sem
+ * email, quem existe é o perfil social. Ao contrário de markSent/draft/send, NÃO passa por
+ * canContactByEmail nem pela lista de supressão: as duas são regras de EMAIL FRIO (cold
+ * email), e DM manual num perfil que ela já escolheu abrir não é a mesma coisa — não há
+ * gate de compliance aqui.
+ *
+ * Move `stage` de "base" para "approached" (outros estágios ficam intactos, mesma regra de
+ * `markSent`) e agenda a próxima ação em 3 dias SÓ quando o lead ainda não tem nenhuma —
+ * não pisa num follow-up que ela já tenha marcado à mão.
+ *
+ * A tabela `outreach` guarda uma linha (`channel: "dm"`, sem `subject`) com o texto
+ * enviado, para o histórico ter o corpo exato — mas SEM entrar na `outbox` (que filtra
+ * `channel === "email"` de propósito, ver `emailRowForLead`) nem no fluxo de resposta por
+ * email (`markReplied`/`suppress` continuam olhando só a linha de email). O canal exato
+ * (instagram/facebook) fica no evento `dm_sent`, não nesta linha.
+ */
+export const markDm = mutation({
+  args: {
+    leadId: v.id("leads"),
+    channel: v.union(v.literal("instagram"), v.literal("facebook")),
+    message: v.string(),
+  },
+  handler: async (ctx, { leadId, channel, message }): Promise<{ stage: Doc<"leads">["stage"] }> => {
+    const orgId = await requireOrgId(ctx);
+    const lead = await ctx.db.get(leadId);
+    if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
+    const body = message.trim();
+    if (!body) throw userError("Escreva a mensagem antes de marcar");
+
+    const now = Date.now();
+    const patch: Partial<Doc<"leads">> = {};
+    if (lead.stage === "base") {
+      patch.stage = "approached";
+      patch.stageUpdatedAt = now;
+    }
+    // Só agenda quando NÃO existe nenhuma próxima ação — nunca sobrescreve o que ela já marcou.
+    if (lead.nextActionAt == null) {
+      patch.nextActionAt = addDays(now, 3);
+      patch.nextActionNote = "Follow-up DM";
+    }
+    if (Object.keys(patch).length > 0) await ctx.db.patch(leadId, patch);
+
+    const dmRow = await ctx.db
+      .query("outreach")
+      .withIndex("by_lead", (q) => q.eq("leadId", leadId))
+      .filter((q) => q.eq(q.field("channel"), "dm"))
+      .first();
+    if (dmRow) {
+      await ctx.db.patch(dmRow._id, { body, status: "sent", sentAt: now });
+    } else {
+      await ctx.db.insert("outreach", {
+        orgId,
+        leadId,
+        channel: "dm",
+        body,
+        status: "sent",
+        sentAt: now,
+      });
+    }
+
+    await ctx.db.insert("events", { orgId, type: "dm_sent", leadId, at: now, meta: { channel } });
+    return { stage: patch.stage ?? lead.stage };
   },
 });
 

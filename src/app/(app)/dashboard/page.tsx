@@ -54,6 +54,8 @@ function eventLabel(
       return "abriu o preview";
     case "email_sent":
       return meta?.channel === "whatsapp" ? "recebeu WhatsApp" : "abordado por email";
+    case "dm_sent":
+      return meta?.channel === "facebook" ? "abordado por DM (Facebook)" : "abordado por DM (Instagram)";
     case "reply":
       return "respondeu";
     case "contact_opt_in": {

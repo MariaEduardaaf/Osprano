@@ -30,6 +30,7 @@ import { LeadInfoFields } from "@/components/crm/lead-info-fields";
 import { LostReasonModal } from "@/components/crm/lost-reason-modal";
 import { LeadTimeline } from "@/components/crm/lead-timeline";
 import { OutreachComposer } from "@/components/outreach-composer";
+import { DmComposer } from "@/components/crm/dm-composer";
 import { GeneratePreviewButton } from "@/components/generate-preview-button";
 import { WhatTheyHaveButton } from "@/components/what-they-have-button";
 import { SocialButtons } from "@/components/social-buttons";
@@ -345,12 +346,16 @@ function InfoTab({
 
 /* ------------------------------------------------------------------ Abordagem */
 
+type ApproachChannel = "email" | "dm";
+
 function ApproachTab({ lead }: { lead: Doc<"leads"> }) {
   const callFirst = OPT_IN_MARKETS.includes(lead.countryCode) || !canContactByEmail(lead);
   const markReplied = useMutation(api.outreach.markReplied);
   const suppress = useMutation(api.outreach.suppress);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  // Lead sem email já abre em DM (é o canal que sobrou); com email, o composer de sempre.
+  const [channel, setChannel] = useState<ApproachChannel>(lead.email ? "email" : "dm");
 
   async function run(kind: string, fn: () => Promise<void>) {
     setBusy(kind);
@@ -411,7 +416,25 @@ function ApproachTab({ lead }: { lead: Doc<"leads"> }) {
         </div>
       )}
 
-      <OutreachComposer leadId={lead._id} hasEmail={!!lead.email} />
+      <div className="inline-flex overflow-hidden rounded-lg border border-border">
+        <button
+          onClick={() => setChannel("email")}
+          className={`px-4 py-1.5 text-xs font-semibold transition-colors ${channel === "email" ? "bg-surface-2 text-foreground" : "text-muted hover:bg-surface-2"}`}
+        >
+          E-mail
+        </button>
+        <button
+          onClick={() => setChannel("dm")}
+          className={`border-l border-border px-4 py-1.5 text-xs font-semibold transition-colors ${channel === "dm" ? "bg-surface-2 text-foreground" : "text-muted hover:bg-surface-2"}`}
+        >
+          DM
+        </button>
+      </div>
+      {channel === "email" ? (
+        <OutreachComposer leadId={lead._id} hasEmail={!!lead.email} />
+      ) : (
+        <DmComposer lead={lead} />
+      )}
 
       <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
         <button
