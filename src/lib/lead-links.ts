@@ -52,7 +52,7 @@ export function whatTheyHaveLink(lead: LeadForLinks): WhatTheyHaveLink {
 }
 
 // ---------------------------------------------------------------------------
-// Instagram / Facebook — sem site publicado, é lá que ela vai mandar DM.
+// Instagram / Facebook: sem site publicado, é lá que ela vai mandar DM.
 // ---------------------------------------------------------------------------
 
 type LeadForSocial = Pick<Doc<"leads">, "instagram" | "facebook" | "name" | "city">;

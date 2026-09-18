@@ -396,7 +396,7 @@ export interface LeadLike {
  * ficam vazios: o e-mail do lead é canal de outreach, não necessariamente
  * público, e WhatsApp derivado do telefone afirmaria um atendimento que
  * ninguém verificou. `instagram` é a exceção: quando o lead já tem o handle
- * (achado no OSM ou digitado à mão), ele é público por natureza — pré-preenche.
+ * (achado no OSM ou digitado à mão), ele é público por natureza: pré-preenche.
  */
 export function defaultContentForLead(lead: LeadLike): SiteContent {
   const template = suggestTemplate(lead.category);

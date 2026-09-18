@@ -304,7 +304,7 @@ export const updateInfo = mutation({
     if (args.instagram !== undefined) {
       const instagram = normalizeInstagram(args.instagram);
       // Espaço ou barra sobrando (ex.: colou um link com path extra, ou dois
-      // handles separados por espaço) não é um handle válido — só o "@" ou a
+      // handles separados por espaço) não é um handle válido: só o "@" ou a
       // URL inteira normalizam de forma limpa.
       if (instagram && /[\s/]/.test(instagram)) throw userError("Instagram inválido");
       patch.instagram = instagram || undefined;
