@@ -2,6 +2,7 @@ import { internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
 import { emailFields, normalizeInstagram, normalizeFacebook } from "./lib/domain";
+import { deleteLeadCascade } from "./model/leads";
 
 /**
  * Manutenção: passa tudo que pertence a uma org para outra (ex.: dados
@@ -52,23 +53,14 @@ export const adoptOrg = internalMutation({
   },
 });
 
-/** Apaga um lead e tudo que pende dele (preview e fotos, uploads, eventos, outreach). Só CLI. */
+/** Apaga um lead e tudo que pende dele (preview e fotos, uploads, eventos, outreach). Só CLI.
+ *  Cascata compartilhada com `leads.remove` (o botão "Excluir" da UI) via `deleteLeadCascade`. */
 export const deleteLead = internalMutation({
   args: { leadId: v.id("leads") },
   handler: async (ctx, { leadId }) => {
     const lead = await ctx.db.get(leadId);
     if (!lead) return { deleted: false };
-    for (const p of await ctx.db.query("previews").withIndex("by_lead", (q) => q.eq("leadId", leadId)).collect())
-      await ctx.db.delete(p._id);
-    for (const u of await ctx.db.query("uploads").withIndex("by_lead", (q) => q.eq("leadId", leadId)).collect()) {
-      await ctx.storage.delete(u.storageId);
-      await ctx.db.delete(u._id);
-    }
-    for (const e of await ctx.db.query("events").withIndex("by_org", (q) => q.eq("orgId", lead.orgId)).collect())
-      if (e.leadId === leadId) await ctx.db.delete(e._id);
-    for (const o of await ctx.db.query("outreach").withIndex("by_org", (q) => q.eq("orgId", lead.orgId)).collect())
-      if (o.leadId === leadId) await ctx.db.delete(o._id);
-    await ctx.db.delete(leadId);
+    await deleteLeadCascade(ctx, lead);
     return { deleted: true, name: lead.name };
   },
 });
