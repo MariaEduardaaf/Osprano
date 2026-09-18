@@ -117,6 +117,21 @@ export function LeadInfoFields({ lead }: { lead: Doc<"leads"> }) {
             onSave={(v) => updateInfo({ id: lead._id, email: v })}
           />
         </div>
+        <InlineField
+          key={`instagram:${lead.instagram ?? ""}`}
+          label="Instagram"
+          value={lead.instagram ?? ""}
+          placeholder="@loja"
+          hint="sem @ está ok"
+          onSave={(v) => updateInfo({ id: lead._id, instagram: v })}
+        />
+        <InlineField
+          key={`facebook:${lead.facebook ?? ""}`}
+          label="Facebook"
+          value={lead.facebook ?? ""}
+          placeholder="facebook.com/loja"
+          onSave={(v) => updateInfo({ id: lead._id, facebook: v })}
+        />
       </div>
       <h3 className="mb-2 mt-4 font-mono text-[10px] font-semibold uppercase tracking-wider text-faint">Negócio</h3>
       <div className="grid grid-cols-2 gap-3">

@@ -214,6 +214,8 @@ export const search = action({
           phone: p.phone,
           website: p.website,
           email: p.email,
+          instagram: p.instagram,
+          facebook: p.facebook,
         });
         // Lead que já existia só foi atualizado: não conta nem gasta cota (a reserva é
         // devolvida pelo `want - inserted`), mas repontua do mesmo jeito.

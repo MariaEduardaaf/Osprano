@@ -50,3 +50,46 @@ export function whatTheyHaveLink(lead: LeadForLinks): WhatTheyHaveLink {
     label: "Buscar no Google",
   };
 }
+
+// ---------------------------------------------------------------------------
+// Instagram / Facebook: sem site publicado, é lá que ela vai mandar DM.
+// ---------------------------------------------------------------------------
+
+type LeadForSocial = Pick<Doc<"leads">, "instagram" | "facebook" | "name" | "city">;
+
+export type SocialLabel = "Instagram" | "Achar no Instagram" | "Facebook" | "Achar no Facebook";
+
+export interface SocialLink {
+  href: string;
+  label: SocialLabel;
+}
+
+export interface SocialLinks {
+  instagram: SocialLink;
+  facebook: SocialLink;
+}
+
+/**
+ * Perfil salvo no lead → link direto; sem perfil → busca pelo nome (+ cidade,
+ * no Facebook) para ela achar e colar de volta no lead. Nunca null: sempre há
+ * alguma ação (abrir perfil ou buscar).
+ */
+export function socialLinks(lead: LeadForSocial): SocialLinks {
+  const instagram = lead.instagram
+    ? { href: `https://www.instagram.com/${lead.instagram}/`, label: "Instagram" as const }
+    : {
+        href: `https://www.instagram.com/explore/search/keyword/?q=${encodeURIComponent(lead.name)}`,
+        label: "Achar no Instagram" as const,
+      };
+
+  const facebook = lead.facebook
+    ? { href: lead.facebook, label: "Facebook" as const }
+    : {
+        href: `https://www.facebook.com/search/pages/?q=${encodeURIComponent(
+          `${lead.name} ${lead.city ?? ""}`,
+        )}`,
+        label: "Achar no Facebook" as const,
+      };
+
+  return { instagram, facebook };
+}

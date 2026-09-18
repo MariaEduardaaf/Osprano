@@ -16,6 +16,8 @@ import {
   canContactByEmail,
   inferLegalForm,
   emailFields,
+  normalizeInstagram,
+  normalizeFacebook,
   type Signals,
   type ContactType,
 } from "./lib/domain";
@@ -266,6 +268,8 @@ export const updateInfo = mutation({
     contactName: v.optional(v.string()),
     contactRole: v.optional(v.string()),
     email: v.optional(v.string()),
+    instagram: v.optional(v.string()),
+    facebook: v.optional(v.string()),
     dealSetup: v.optional(v.union(v.number(), v.null())),
     dealMonthly: v.optional(v.union(v.number(), v.null())),
   },
@@ -281,6 +285,8 @@ export const updateInfo = mutation({
       email?: string;
       contactType?: ContactType;
       emailable?: boolean;
+      instagram?: string;
+      facebook?: string;
     } = {};
     if (args.contactName !== undefined) patch.contactName = args.contactName.trim() || undefined;
     if (args.contactRole !== undefined) patch.contactRole = args.contactRole.trim() || undefined;
@@ -294,6 +300,17 @@ export const updateInfo = mutation({
       patch.email = fields.email;
       patch.contactType = fields.contactType;
       patch.emailable = fields.emailable;
+    }
+    if (args.instagram !== undefined) {
+      const instagram = normalizeInstagram(args.instagram);
+      // Espaço ou barra sobrando (ex.: colou um link com path extra, ou dois
+      // handles separados por espaço) não é um handle válido: só o "@" ou a
+      // URL inteira normalizam de forma limpa.
+      if (instagram && /[\s/]/.test(instagram)) throw userError("Instagram inválido");
+      patch.instagram = instagram || undefined;
+    }
+    if (args.facebook !== undefined) {
+      patch.facebook = normalizeFacebook(args.facebook);
     }
     await ctx.db.patch(args.id, patch); // chave presente com undefined = remove o campo
   },
@@ -471,6 +488,8 @@ export const insertDiscovered = internalMutation({
     phone: v.optional(v.string()),
     website: v.optional(v.string()),
     email: v.optional(v.string()),
+    instagram: v.optional(v.string()),
+    facebook: v.optional(v.string()),
     rating: v.optional(v.number()),
     reviewsCount: v.optional(v.number()),
   },
@@ -497,6 +516,9 @@ export const insertDiscovered = internalMutation({
       .first();
 
     if (existing) {
+      // instagram/facebook, como email: não sobrescreve num refresh (mesmo placeId
+      // de novo). Se ela já preencheu à mão (updateInfo), uma nova busca na cidade
+      // não pode apagar o que ela editou.
       await ctx.db.patch(existing._id, {
         name: args.name,
         category: args.category,
@@ -530,6 +552,8 @@ export const insertDiscovered = internalMutation({
       phone: args.phone,
       website: args.website,
       email: args.email,
+      instagram: args.instagram,
+      facebook: args.facebook,
       rating: args.rating,
       reviewsCount: args.reviewsCount,
       score,

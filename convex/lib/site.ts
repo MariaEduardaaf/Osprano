@@ -387,14 +387,16 @@ export interface LeadLike {
   address?: string | null;
   rating?: number | null;
   reviewsCount?: number | null;
+  instagram?: string | null;
 }
 
 /**
  * Conteúdo inicial a partir do lead, usado UMA vez, na criação do preview
- * (spec Decisões: editar o lead depois não propaga). `whatsapp`, `instagram` e
- * `email` ficam vazios: o e-mail do lead é canal de outreach, não
- * necessariamente público, e WhatsApp derivado do telefone afirmaria um
- * atendimento que ninguém verificou.
+ * (spec Decisões: editar o lead depois não propaga). `whatsapp` e `email`
+ * ficam vazios: o e-mail do lead é canal de outreach, não necessariamente
+ * público, e WhatsApp derivado do telefone afirmaria um atendimento que
+ * ninguém verificou. `instagram` é a exceção: quando o lead já tem o handle
+ * (achado no OSM ou digitado à mão), ele é público por natureza: pré-preenche.
  */
 export function defaultContentForLead(lead: LeadLike): SiteContent {
   const template = suggestTemplate(lead.category);
@@ -409,6 +411,7 @@ export function defaultContentForLead(lead: LeadLike): SiteContent {
     countryCode: lead.countryCode,
     ...opt("phone", lead.phone || undefined),
     ...opt("address", lead.address || undefined),
+    ...opt("instagram", lead.instagram || undefined),
     category: lead.category ?? null,
     rating: lead.rating ?? null,
     reviewsCount: lead.reviewsCount ?? null,

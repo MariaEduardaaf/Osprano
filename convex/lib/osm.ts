@@ -8,6 +8,8 @@
  * site" (a pontuação depois confere).
  */
 
+import { normalizeInstagram, normalizeFacebook } from "./domain.ts";
+
 /** Um filtro de tag do Overpass: todas as chaves precisam casar (AND). */
 export type OsmTagFilter = Record<string, string>;
 
@@ -114,6 +116,8 @@ export interface OsmLead {
   phone?: string;
   website?: string;
   email?: string;
+  instagram?: string;
+  facebook?: string;
 }
 
 function clean(value?: string): string | undefined {
@@ -146,6 +150,8 @@ export function osmElementToLead(el: OsmElement, fallbackCity: string): OsmLead 
     phone: clean(tags.phone) ?? clean(tags["contact:phone"]),
     website: clean(tags.website) ?? clean(tags["contact:website"]),
     email: clean(tags.email) ?? clean(tags["contact:email"]),
+    instagram: normalizeInstagram(clean(tags.instagram) ?? clean(tags["contact:instagram"])),
+    facebook: normalizeFacebook(clean(tags.facebook) ?? clean(tags["contact:facebook"])),
   };
 }
 

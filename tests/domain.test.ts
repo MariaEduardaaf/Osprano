@@ -10,6 +10,8 @@ import {
   inferLegalForm,
   inferContactType,
   emailFields,
+  normalizeInstagram,
+  normalizeFacebook,
   clampDiscoveryCount,
   normalizeEmail,
   hasWaOptIn,
@@ -176,6 +178,63 @@ test("emailFields: lead incorporado no Reino Unido — role inbox abordável, na
   assert.equal(role.emailable, true);
   const named = emailFields({ countryCode: "GB", legalForm: "incorporated" }, "joao@negocio.co.uk");
   assert.equal(named.emailable, false);
+});
+
+// ---------------------------------------------------------------------------
+// normalizeInstagram / normalizeFacebook
+// ---------------------------------------------------------------------------
+
+test("normalizeInstagram: handle simples baixa a caixa", () => {
+  assert.equal(normalizeInstagram("PadariaCentral"), "padariacentral");
+});
+
+test("normalizeInstagram: tira @ inicial", () => {
+  assert.equal(normalizeInstagram("@padaria.central"), "padaria.central");
+});
+
+test("normalizeInstagram: tira o prefixo de URL, com ou sem www, e a barra final", () => {
+  assert.equal(normalizeInstagram("https://instagram.com/padaria/"), "padaria");
+  assert.equal(normalizeInstagram("https://www.instagram.com/padaria"), "padaria");
+  assert.equal(normalizeInstagram("http://www.instagram.com/padaria/"), "padaria");
+});
+
+test("normalizeInstagram: trim e vazio viram undefined", () => {
+  assert.equal(normalizeInstagram("  "), undefined);
+  assert.equal(normalizeInstagram(""), undefined);
+  assert.equal(normalizeInstagram(undefined), undefined);
+  assert.equal(normalizeInstagram("  @Padaria  "), "padaria");
+});
+
+test("normalizeFacebook: slug vira URL completa", () => {
+  assert.equal(normalizeFacebook("minha.padaria"), "https://www.facebook.com/minha.padaria");
+});
+
+test("normalizeFacebook: URL já pronta fica intacta", () => {
+  assert.equal(
+    normalizeFacebook("https://www.facebook.com/minha.padaria"),
+    "https://www.facebook.com/minha.padaria",
+  );
+});
+
+test("normalizeFacebook: URL sem esquema ganha https://", () => {
+  assert.equal(
+    normalizeFacebook("facebook.com/minha.padaria"),
+    "https://facebook.com/minha.padaria",
+  );
+  assert.equal(
+    normalizeFacebook("www.facebook.com/minha.padaria"),
+    "https://www.facebook.com/minha.padaria",
+  );
+});
+
+test("normalizeFacebook: tira @ inicial de um slug", () => {
+  assert.equal(normalizeFacebook("@minhapadaria"), "https://www.facebook.com/minhapadaria");
+});
+
+test("normalizeFacebook: trim e vazio viram undefined", () => {
+  assert.equal(normalizeFacebook("  "), undefined);
+  assert.equal(normalizeFacebook(""), undefined);
+  assert.equal(normalizeFacebook(undefined), undefined);
 });
 
 test("clampDiscoveryCount: default when undefined", () => {

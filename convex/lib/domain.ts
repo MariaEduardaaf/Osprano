@@ -462,6 +462,44 @@ export function emailFields(
 }
 
 // ---------------------------------------------------------------------------
+// Redes sociais do lead (spec redes-sociais-do-lead): normalização pura,
+// usada pelo mapper do OSM (convex/lib/osm.ts) e por `leads.updateInfo`.
+// ---------------------------------------------------------------------------
+
+const INSTAGRAM_URL_RE = /^https?:\/\/(www\.)?instagram\.com\//i;
+
+/**
+ * "https://instagram.com/@Loja/" ou "@Loja" → "loja": tira o prefixo de URL
+ * (com ou sem www), o @ e a barra final, e baixa a caixa. Vazio (ou só
+ * espaço) → undefined, "limpar o campo". NÃO valida formato: quem chama
+ * decide se espaço/barra sobrando no meio é erro (ver `updateInfo`).
+ */
+export function normalizeInstagram(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  if (!trimmed) return undefined;
+  const withoutUrl = trimmed.replace(INSTAGRAM_URL_RE, "");
+  const withoutAt = withoutUrl.replace(/^@/, "");
+  return withoutAt.replace(/\/+$/, "").toLowerCase();
+}
+
+/**
+ * Slug ("minha.padaria") ou URL do Facebook → sempre uma URL completa.
+ * Já é URL (tem `facebook.com`, com ou sem esquema): garante o `https://` e
+ * devolve como veio. Senão é um slug: monta `https://www.facebook.com/<slug>`.
+ * Vazio → undefined.
+ */
+export function normalizeFacebook(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  if (!trimmed) return undefined;
+  const withoutAt = trimmed.replace(/^@/, "");
+  if (/facebook\.com/i.test(withoutAt)) {
+    return /^https?:\/\//i.test(withoutAt) ? withoutAt : `https://${withoutAt}`;
+  }
+  const slug = withoutAt.replace(/^\/+|\/+$/g, "");
+  return `https://www.facebook.com/${slug}`;
+}
+
+// ---------------------------------------------------------------------------
 // Website classification — "has a real site?" / "social-only?" (free, no API)
 // ---------------------------------------------------------------------------
 
