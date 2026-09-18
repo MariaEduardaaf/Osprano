@@ -13,8 +13,11 @@ import {
   parseSiteContent,
   validateSiteContent,
   defaultContentForLead,
+  imageIds,
+  removedImageIds,
   type SiteContent,
 } from "../convex/lib/site.ts";
+import type { Id } from "../convex/_generated/dataModel";
 
 const base = (): SiteContent => ({
   version: 2,
@@ -285,4 +288,25 @@ test("site: defaultContentForLead só alimenta o que o lead tem e deixa os canai
   assert.equal(bare.rating, null);
   assert.equal("phone" in bare, false);
   assert.equal("address" in bare, false);
+});
+
+// Ids de storage são strings opacas: os testes usam literais com o tipo do Convex.
+const sid = (s: string) => s as Id<"_storage">;
+
+test("site: imageIds junta hero e galeria, sem repetir e sem nulos", () => {
+  assert.deepEqual(imageIds({}), []);
+  assert.deepEqual(imageIds({ heroImage: sid("a") }), ["a"]);
+  assert.deepEqual(imageIds({ gallery: [sid("b"), sid("c")] }), ["b", "c"]);
+  assert.deepEqual(imageIds({ heroImage: sid("a"), gallery: [sid("b"), sid("a")] }), ["a", "b"]);
+});
+
+test("site: removedImageIds é o que saiu do conteúdo; trocar de slot não conta", () => {
+  const before = { heroImage: sid("a"), gallery: [sid("b"), sid("c")] };
+  assert.deepEqual(removedImageIds(before, before), []);
+  assert.deepEqual(removedImageIds(before, { heroImage: sid("a"), gallery: [sid("c")] }), ["b"]);
+  assert.deepEqual(removedImageIds(before, {}), ["a", "b", "c"]);
+  // hero virou galeria e a galeria virou hero: nada saiu
+  assert.deepEqual(removedImageIds(before, { heroImage: sid("b"), gallery: [sid("a"), sid("c")] }), []);
+  // conteúdo antigo sem imagem: nada a apagar, mesmo que o novo tenha
+  assert.deepEqual(removedImageIds({}, { heroImage: sid("z") }), []);
 });
