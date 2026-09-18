@@ -1,7 +1,7 @@
 import { internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
-import { emailFields } from "./lib/domain";
+import { emailFields, normalizeInstagram, normalizeFacebook } from "./lib/domain";
 
 /**
  * Manutenção: passa tudo que pertence a uma org para outra (ex.: dados
@@ -103,5 +103,19 @@ export const markLost = internalMutation({
     });
     await ctx.db.insert("events", { orgId: lead.orgId, type: "stage_change", leadId, at: now, meta: { from: lead.stage, to: "lost", reason } });
     return { name: lead.name, from: lead.stage };
+  },
+});
+
+/** Instagram/Facebook do lead, normalizados como no updateInfo. Só CLI. */
+export const setLeadSocial = internalMutation({
+  args: { leadId: v.id("leads"), instagram: v.optional(v.string()), facebook: v.optional(v.string()) },
+  handler: async (ctx, { leadId, instagram, facebook }) => {
+    const lead = await ctx.db.get(leadId);
+    if (!lead) return null;
+    const patch: { instagram?: string; facebook?: string } = {};
+    if (instagram !== undefined) patch.instagram = normalizeInstagram(instagram) || undefined;
+    if (facebook !== undefined) patch.facebook = normalizeFacebook(facebook) || undefined;
+    await ctx.db.patch(leadId, patch);
+    return { name: lead.name, ...patch };
   },
 });
