@@ -22,7 +22,8 @@ export const recent = query({
           type: e.type,
           at: e.at,
           leadName: lead?.name ?? null,
-          meta: (e.meta ?? null) as { to?: string; channel?: string } | null,
+          // `source` cobre contact_opt_in/wa_opt_in (ver eventLabel em dashboard/page.tsx).
+          meta: (e.meta ?? null) as { to?: string; channel?: string; source?: string } | null,
         };
       }),
     );

@@ -35,7 +35,20 @@ const SIGNAL_LABEL: Record<string, string> = {
   sparseProfile: "Perfil fraco",
 };
 
-function eventLabel(type: string, meta: { to?: string; channel?: string } | null): string {
+/** Sufixo de origem do consentimento no feed do Dashboard. "other" fica SEM sufixo de propósito
+    (diferente do Histórico do lead, que usa "outro" — ver SOURCE_LABEL em
+    src/components/crm/lead-timeline.tsx): aqui o rótulo é mais curto e "other" não acrescenta
+    informação nenhuma ao "registrou consentimento". */
+const CONTACT_OPT_IN_SOURCE_LABEL: Record<string, string> = {
+  phone_call: "ligação",
+  in_person: "pessoalmente",
+  reply: "resposta",
+};
+
+function eventLabel(
+  type: string,
+  meta: { to?: string; channel?: string; source?: string } | null,
+): string {
   switch (type) {
     case "preview_open":
       return "abriu o preview";
@@ -43,6 +56,12 @@ function eventLabel(type: string, meta: { to?: string; channel?: string } | null
       return meta?.channel === "whatsapp" ? "recebeu WhatsApp" : "abordado por email";
     case "reply":
       return "respondeu";
+    case "contact_opt_in": {
+      const suffix = meta?.source ? CONTACT_OPT_IN_SOURCE_LABEL[meta.source] : undefined;
+      return suffix ? `registrou consentimento (${suffix})` : "registrou consentimento";
+    }
+    case "wa_opt_in":
+      return "opt-in de WhatsApp";
     case "stage_change":
       return meta?.to
         ? `movido para ${PIPELINE_STAGES.find((s) => s.id === meta.to)?.label ?? meta.to}`
