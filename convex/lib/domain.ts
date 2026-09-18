@@ -571,6 +571,28 @@ export function classifyWebsite(url?: string | null): WebsiteClass {
   return { hasRealSite: !isNotASite, socialOnly: isNotASite, host };
 }
 
+/**
+ * Filtro de descoberta: o produto só vende para quem NÃO tem site de verdade.
+ * Rede social/link-in-bio (classifyWebsite → socialOnly) conta como "sem site" e
+ * fica; um site de verdade (hasRealSite) é descartado ANTES de virar lead. Usado
+ * pelos dois núcleos de busca (convex/osm.ts, convex/places.ts) no mesmo ponto do
+ * pipeline: depois de buscar na fonte, antes de chamar insertDiscovered.
+ */
+export function keepOnlyWithoutSite<T extends { website?: string }>(
+  items: T[],
+): { kept: T[]; droppedWithSite: number } {
+  const kept: T[] = [];
+  let droppedWithSite = 0;
+  for (const item of items) {
+    if (classifyWebsite(item.website).hasRealSite) {
+      droppedWithSite += 1;
+    } else {
+      kept.push(item);
+    }
+  }
+  return { kept, droppedWithSite };
+}
+
 // ---------------------------------------------------------------------------
 // Digital Presence Score — weighted "pain" (0–100, higher = better lead)
 // ---------------------------------------------------------------------------

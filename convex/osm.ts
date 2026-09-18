@@ -2,7 +2,7 @@ import { action, type ActionCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { requireOrgId } from "./model/tenant";
-import { isSearchableMarket, MARKETS, clampDiscoveryCount } from "./lib/domain";
+import { isSearchableMarket, MARKETS, clampDiscoveryCount, keepOnlyWithoutSite } from "./lib/domain";
 import { userError } from "./lib/errors";
 import {
   osmTagsForCategory,
@@ -123,7 +123,11 @@ async function fetchOverpass(query: string): Promise<OsmElement[]> {
 type SearchArgs = { countryCode: string; category: string; city: string; max?: number };
 
 /** Núcleo da busca, sem auth: usado pela action pública e pela operação via CLI (admin). */
-export async function runOsmSearch(ctx: ActionCtx, orgId: string, args: SearchArgs): Promise<{ found: number; inserted: number }> {
+export async function runOsmSearch(
+  ctx: ActionCtx,
+  orgId: string,
+  args: SearchArgs,
+): Promise<{ found: number; inserted: number; droppedWithSite: number }> {
     const country = args.countryCode.toUpperCase();
     if (!isSearchableMarket(country)) {
       const name = MARKETS[country]?.name ?? country;
@@ -143,6 +147,7 @@ export async function runOsmSearch(ctx: ActionCtx, orgId: string, args: SearchAr
 
     let found = 0;
     let inserted = 0;
+    let droppedWithSite = 0;
     try {
       // 1) Cidade → área do Overpass (relation do Nominatim + 3600000000).
       const geoUrl = new URL("https://nominatim.openstreetmap.org/search");
@@ -185,15 +190,22 @@ export async function runOsmSearch(ctx: ActionCtx, orgId: string, args: SearchAr
       // existem na cidade: para categoria grande vira ~200 sempre. A UI diz "até X no mapa".
       found = candidates.length;
 
+      // A dona só vende para quem não tem site de verdade: descarta ANTES do dedupe/rank,
+      // então nem entra na conta de "buscar mais" nem gasta cota (refund automático no
+      // final, pelo `want - inserted` — o mesmo caminho de qualquer sobra não inserida).
+      // Rede social (Instagram/Facebook/Linktree…) NÃO é site de verdade: continua.
+      const { kept: withoutSite, droppedWithSite: dropped } = keepOnlyWithoutSite(candidates);
+      droppedWithSite = dropped;
+
       // 3) "Buscar mais": pula o que a org já tem, senão a mesma busca devolve os
       // mesmos leads (atualizados, não criados) enquanto o pool não muda.
       const existing = new Set<string>(
         await ctx.runQuery(internal.leads.existingPlaceIds, {
           orgId,
-          placeIds: candidates.map((c) => c.placeId),
+          placeIds: withoutSite.map((c) => c.placeId),
         }),
       );
-      const fresh = candidates.filter((c) => !existing.has(c.placeId));
+      const fresh = withoutSite.filter((c) => !existing.has(c.placeId));
 
       const picked = rankForOutreach(fresh).slice(0, want);
       for (const p of picked) {
@@ -230,7 +242,7 @@ export async function runOsmSearch(ctx: ActionCtx, orgId: string, args: SearchAr
       await ctx.runMutation(internal.workspaces.refund, { orgId, kind: "leads", count: leftover });
     }
 
-    return { found, inserted };
+    return { found, inserted, droppedWithSite };
 }
 
 export const search = action({
@@ -240,7 +252,7 @@ export const search = action({
     city: v.string(),
     max: v.optional(v.number()),
   },
-  handler: async (ctx, args): Promise<{ found: number; inserted: number }> => {
+  handler: async (ctx, args): Promise<{ found: number; inserted: number; droppedWithSite: number }> => {
     const orgId = await requireOrgId(ctx);
     return await runOsmSearch(ctx, orgId, args);
   },
