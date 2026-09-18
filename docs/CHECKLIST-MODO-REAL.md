@@ -186,6 +186,14 @@ Até aqui tudo roda na sua máquina (`pnpm dev` + deployment dev do Convex). Est
 
 > Custo: **Vercel Hobby** é grátis pra uso pessoal e não comercial (quando o app virar receita, o plano é o Pro, US$ 20/mês). **Convex prod** entra no mesmo free tier do projeto (1M function calls/mês somando dev e prod).
 
+## Estado em 2026-09-18 (feito nesta data)
+
+- Convex: projeto `osprano` no time `madualvesfr`. Dev na nuvem `ardent-jay-971` (o `localhost:3000` usa este); **produção `oceanic-porcupine-674`**, com `APP_URL=https://osprano.vercel.app` e `CLERK_JWT_ISSUER_DOMAIN` setados. Sem `DEMO_MODE`/`CONVEX_ENV` em prod.
+- Clerk: aplicação "Soprano" (instância de desenvolvimento, `pk_test`), template JWT `convex` criado, conta `madualvesfr@gmail.com`.
+- Vercel: projeto `osprano` na conta MariaEduardaaf, ligado ao GitHub `MariaEduardaaf/Osprano`; **https://osprano.vercel.app** no ar. Push na `main` redeploya o Next; `convex/` só sobe com `npx convex deploy`.
+- Dados: os 44 leads, sites e fotos do demo foram migrados para a conta real (mutation interna `admin:adoptOrg`) e copiados para produção. Dev e prod divergem a partir daqui: **trabalhe em produção** (é o link que o prospect abre).
+- Pendentes: `ANTHROPIC_API_KEY` (só se quiser o "Escrever com IA" dentro do app), `GOOGLE_PLACES_API_KEY` (quando o billing do Google ativar; setar com `--prod`), Resend (opcional).
+
 ## 10. Primeiros leads, passo a passo
 
 > Depois do smoke test (seção 8) ou já em produção (seção 9), o fluxo do dia a dia com o app como ele é hoje.

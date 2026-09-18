@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Modelos de site
 status: milestone-complete
-stopped_at: Fases 7 e 8 mergeadas e UAT feito em navegador real por fase (2026-09-17/18, achados corrigidos no merge final `07965dc`); milestone v1.2 completo, falta só produção (contas e chaves da Duda) e a seção 10 nova do checklist
+stopped_at: PRODUÇÃO NO AR em https://osprano.vercel.app (2026-09-18); antes: Fases 7 e 8 mergeadas e UAT feito em navegador real por fase (2026-09-17/18, achados corrigidos no merge final `07965dc`); milestone v1.2 completo, falta só produção (contas e chaves da Duda) e a seção 10 nova do checklist
 last_updated: "2026-09-18T00:00:00.000Z"
 progress:
   total_phases: 8
