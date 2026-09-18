@@ -729,6 +729,36 @@ export const CATEGORY_OPTIONS: { value: string; label: string }[] = [
   { value: "language school", label: "Escola de idiomas" },
 ];
 
+/** "barber_shop" (primaryType do Google Places) e "barber shop" (termo buscado) viram "barber shop". */
+export function normalizeCategoryText(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * A categoria do lead segue a busca do formulário (Leads: filtro por país/cidade/categoria)?
+ * Casamento solto por design: `lead.category` tanto pode ser o termo de busca cru (OSM, que
+ * grava `args.category` direto) quanto o `primaryType` do Google Places em snake_case, e a
+ * Places API nem sempre devolve o mesmo tipo que foi pedido (busca "pizza restaurant" pode
+ * voltar primaryType "restaurant"). Exigir igualdade exata esconderia leads reais da busca
+ * atual, então comparamos só a PRIMEIRA palavra do termo buscado contra a categoria
+ * normalizada do lead — cobre os casos comuns (barber_shop ⊇ barber, hair_salon ⊇ hair)
+ * sem exigir um dicionário de sinônimos.
+ */
+export function leadCategoryMatchesSearch(
+  leadCategory: string | undefined,
+  searchCategory: string,
+): boolean {
+  const search = normalizeCategoryText(searchCategory);
+  if (!search) return true; // sem categoria buscada = não filtra
+  if (!leadCategory) return false;
+  const firstWord = search.split(" ")[0];
+  return normalizeCategoryText(leadCategory).includes(firstWord);
+}
+
 /** Main cities per searchable market (launch + opt-in) for the discovery UI. */
 export const CITIES_BY_COUNTRY: Record<string, string[]> = {
   GB: [
