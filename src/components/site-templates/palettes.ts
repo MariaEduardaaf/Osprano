@@ -1,6 +1,7 @@
 // Import relativo com extensão de propósito: tests/palettes.test.ts carrega este
 // arquivo em `node --experimental-strip-types`, que não lê os `paths` do tsconfig.
 import { PALETTE_IDS, type PaletteId, type TemplateId } from "../../../convex/lib/site.ts";
+import { relativeLuminance } from "../../../convex/lib/contrast.ts";
 
 /**
  * Uma paleta = 6 cores (spec 1.2). Contraste mínimo 4,5:1 nos pares
@@ -164,4 +165,28 @@ export function paletteFor(template: TemplateId, id: string): Palette {
 export function palettesOf(template: TemplateId): Palette[] {
   const set = PALETTES[template] as Record<string, Palette>;
   return PALETTE_IDS[template].map((id) => set[id]);
+}
+
+/** Site de fundo escuro (noite, carvão, marinho): o rodapé não inverte, sobe para `surface`. */
+export function isDarkPalette(p: Palette): boolean {
+  return relativeLuminance(p.bg) < 0.5;
+}
+
+/** Mistura linear de dois hex em sRGB; `t` é o peso de `b`. Só para derivar o `muted` do rodapé. */
+function blendHex(a: string, b: string, t: number): string {
+  const ch = (h: string, i: number) => parseInt(h.slice(1 + i * 2, 3 + i * 2), 16);
+  const mix = (i: number) => Math.round(ch(a, i) * (1 - t) + ch(b, i) * t);
+  return `#${[0, 1, 2].map((i) => mix(i).toString(16).padStart(2, "0")).join("")}`;
+}
+
+/**
+ * Paleta do rodapé (adendo 2026-09-18): faixa escura e substancial no fim do
+ * site. Em site claro inverte bg/text (o mesmo par que o teste de contraste já
+ * garante) e deriva um `muted` claro; em site escuro só sobe para `surface`.
+ * `accent`/`accentFg` ficam: o botão do rodapé usa esse par, testado.
+ * tests/palettes.test.ts confere os pares text/bg e muted/bg das 12 derivadas.
+ */
+export function footerPalette(p: Palette): Palette {
+  if (isDarkPalette(p)) return { ...p, bg: p.surface, surface: p.bg };
+  return { ...p, bg: p.text, surface: p.text, text: p.bg, muted: blendHex(p.bg, p.text, 0.28) };
 }

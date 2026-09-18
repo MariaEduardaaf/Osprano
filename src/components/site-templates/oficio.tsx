@@ -1,37 +1,38 @@
 import { MdOutlinePlace } from "react-icons/md";
 import {
+  BigFooter,
   CONTAINER,
-  Contact,
-  CtaLink,
-  Footer,
+  FOOTER_CTA,
   Gallery,
-  Hours,
   Items,
+  MapEmbed,
   Photo,
   PrimaryCta,
   Rating,
+  RatingBand,
   SecondaryCta,
   Section,
   SiteRoot,
-  ctaLabel,
-  hasContact,
-  hasHours,
+  Steps,
+  Values,
   heroAlt,
   type TemplateProps,
 } from "./shared";
 import { TEMPLATES } from "./catalog";
-import { ctaOptions } from "@convex/lib/site";
 
 /**
  * Ofício: encanador, eletricista, chaveiro, mecânica, fotógrafo. Composição
  * inspirada em Kohr Construction: CTA de orçamento sempre visível no cabeçalho,
  * hero dividido (texto objetivo à esquerda, foto grande do trabalho à direita),
- * serviços com ícone, "como trabalhamos" com fotos de apoio, área atendida que
- * só nomeia a cidade, galeria "nosso trabalho" (só uploads dela), faixa de
- * orçamento. Serifada (Fraunces) nos títulos.
+ * serviços com ícone, "como trabalhamos" em passos com fotos de apoio, área
+ * atendida que só nomeia a cidade, galeria "nosso trabalho" (só uploads dela).
+ * Ritmo (adendo 2026-09-18): hero · valores · serviços* · como trabalhamos ·
+ * galeria* · área atendida · faixa de avaliação* · mapa* · rodapé. O contato e
+ * o pedido de orçamento moram no rodapé. Serifada (Fraunces) nos títulos.
  */
 const serif = "[font-family:var(--font-fraunces)]";
-const h2 = `${serif} text-3xl font-medium tracking-tight @3xl:text-4xl`;
+const h2 = `${serif} text-4xl font-medium tracking-tight @3xl:text-5xl`;
+const h3 = "text-xl font-semibold";
 const CTA = TEMPLATES.oficio.ctaKey;
 const solid =
   "inline-flex items-center gap-2 rounded-md bg-(--site-accent) px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-opacity hover:opacity-90";
@@ -78,32 +79,42 @@ export function Hero({ view, tr, locale }: TemplateProps) {
 export function Oficio(props: TemplateProps) {
   const { view, palette, tr, locale } = props;
   const photos = TEMPLATES.oficio.photos;
-  const primary = ctaOptions(view)[0];
   return (
     <SiteRoot palette={palette} locale={locale}>
       <Hero {...props} />
 
+      {/* Valores: clareza e confiança, com ícone, logo depois do hero */}
+      <div className="border-t border-(--site-line)">
+        <Values values={tr.values} heading={tr.whyHeading} headingClass={h2} titleClass={h3} variant="icons" />
+      </div>
+
       <Items items={view.items} heading={tr.itemsHeading} headingClass={h2} variant="checks" />
 
-      {/* Como trabalhamos: foto | texto | foto (decoração fixa, alt vazio) */}
+      {/* Como trabalhamos: o "sobre" abre os três passos; fotos de apoio (decoração fixa, alt vazio) fecham a faixa */}
       <section className="bg-(--site-surface)">
-        <Section className="grid items-center gap-8 @5xl:grid-cols-[1fr_1.2fr_1fr] @5xl:gap-12">
+        <Steps
+          steps={tr.steps}
+          heading={tr.howHeading}
+          headingClass={h2}
+          titleClass={h3}
+          numberClass={`${serif} text-3xl text-(--site-accent)`}
+          intro={view.about || tr.about}
+        />
+        <div className={`${CONTAINER} grid grid-cols-2 gap-4 pb-16 @md:pb-24`}>
           <Photo src={photos.g1} alt="" className="aspect-[4/3] w-full rounded-lg object-cover" />
-          <div className="text-center">
-            <h2 className={h2}>{tr.aboutHeading}</h2>
-            <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-(--site-muted)">{view.about || tr.about}</p>
-          </div>
-          <Photo src={photos.g2} alt="" className="hidden aspect-[4/3] w-full rounded-lg object-cover @5xl:block" />
-        </Section>
+          <Photo src={photos.g2} alt="" className="aspect-[4/3] w-full rounded-lg object-cover" />
+        </div>
       </section>
+
+      <Gallery urls={view.galleryUrls} heading={tr.galleryHeading} headingClass={h2} />
 
       {/* Área atendida: só com cidade, e só a cidade (nunca "atendemos a região") */}
       {view.city && (
         <Section className="flex flex-col gap-4 @3xl:flex-row @3xl:items-end @3xl:justify-between">
           <div>
             <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-(--site-muted)">{tr.areaHeading}</h2>
-            <p className={`${serif} mt-3 flex items-center gap-3 text-3xl @3xl:text-4xl`}>
-              <MdOutlinePlace size={30} className="shrink-0 text-(--site-accent)" aria-hidden />
+            <p className={`${serif} mt-3 flex items-center gap-3 text-4xl @3xl:text-5xl`}>
+              <MdOutlinePlace size={34} className="shrink-0 text-(--site-accent)" aria-hidden />
               {tr.inCity(view.city)}
             </p>
           </div>
@@ -111,27 +122,19 @@ export function Oficio(props: TemplateProps) {
         </Section>
       )}
 
-      <Gallery urls={view.galleryUrls} heading={tr.galleryHeading} headingClass={h2} />
+      <RatingBand view={view} locale={locale} tone="accent" numberClass={serif} />
 
-      {/* Pedir orçamento: só com canal preenchido */}
-      {primary && (
-        <section className="border-y border-(--site-line)">
-          <div className={`${CONTAINER} flex flex-col items-start gap-6 py-14 @3xl:flex-row @3xl:items-center @3xl:justify-between`}>
-            <h2 className={h2}>{tr.quoteHeading}</h2>
-            <CtaLink cta={primary} label={ctaLabel(primary, CTA, tr, locale)} className={solid} />
-          </div>
-        </section>
-      )}
+      <MapEmbed view={view} tr={tr} />
 
-      {/* Com cidade, o endereço já apareceu em "área atendida": o contato não repete */}
-      {(hasContact(view, !view.city) || hasHours(view)) && (
-        <Section className="grid gap-12 @3xl:grid-cols-2">
-          <Contact view={view} heading={tr.contactHeading} headingClass={h2} withPlace={!view.city} />
-          <Hours hours={view.hours} heading={tr.hoursHeading} closed={tr.closed} locale={locale} headingClass={h2} />
-        </Section>
-      )}
-
-      <Footer name={view.name} />
+      <BigFooter
+        view={view}
+        tr={tr}
+        locale={locale}
+        palette={palette}
+        ctaKey={CTA}
+        nameClass={`${serif} text-3xl font-semibold tracking-tight`}
+        ctaClass={`${FOOTER_CTA} rounded-md`}
+      />
     </SiteRoot>
   );
 }

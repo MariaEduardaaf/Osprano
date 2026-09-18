@@ -1,19 +1,22 @@
 import {
+  BigFooter,
   CONTAINER,
-  Contact,
   CtaLink,
-  Footer,
+  FOOTER_CTA,
   Gallery,
   Hours,
   Items,
+  MapEmbed,
   Photo,
   PrimaryCta,
   Rating,
+  RatingBand,
   SecondaryCta,
   Section,
   SiteRoot,
+  Steps,
+  Values,
   contactLabel,
-  hasContact,
   hasHours,
   heroAlt,
   type TemplateProps,
@@ -26,10 +29,13 @@ import { ctaOptions } from "@convex/lib/site";
  * Barber & Co: hero em foto cheia com véu escuro, nome em caixa alta bold
  * (Bricolage Grotesque), dois CTAs lado a lado (agendar + telefone), bloco de
  * posicionamento com foto ao lado, serviços em cartões, faixa de agendamento.
+ * Ritmo (adendo 2026-09-18): hero · sobre · serviços* · galeria* · valores ·
+ * faixa de avaliação* · como funciona · faixa CTA · horário* · mapa* · rodapé.
  * Sem CTA fixo ao rolar: `fixed`/`sticky` dependem da viewport (spec, Decisões).
  */
 const display = "[font-family:var(--font-bricolage)]";
-const h2 = `${display} text-3xl font-bold uppercase tracking-tight @3xl:text-4xl`;
+const h2 = `${display} text-4xl font-bold uppercase tracking-tight @3xl:text-5xl`;
+const h3 = `${display} text-xl font-bold uppercase tracking-wide`;
 const CTA = TEMPLATES.estudio.ctaKey;
 const solid =
   "inline-flex items-center gap-2 rounded-full bg-(--site-accent) px-6 py-3 text-sm font-bold uppercase tracking-wider text-(--site-accent-fg) transition-opacity hover:opacity-90";
@@ -97,11 +103,24 @@ export function Estudio(props: TemplateProps) {
 
       <Gallery urls={view.galleryUrls} heading={tr.galleryHeading} headingClass={h2} />
 
+      {/* Valores: três cartões genéricos em `surface`, sobre postura */}
+      <Values values={tr.values} heading={tr.whyHeading} headingClass={h2} titleClass={h3} variant="cards" />
+
+      <RatingBand view={view} locale={locale} tone="surface" numberClass={`${display} font-extrabold`} />
+
+      <Steps
+        steps={tr.steps}
+        heading={tr.howHeading}
+        headingClass={h2}
+        titleClass={h3}
+        numberClass={`${display} text-4xl font-extrabold text-(--site-accent)`}
+      />
+
       {/* Agendar: só com canal preenchido, senão a faixa não existe */}
       {primary && (
         <section className="bg-(--site-accent) text-(--site-accent-fg)">
-          <div className={`${CONTAINER} flex flex-col items-start gap-6 py-14 @3xl:flex-row @3xl:items-center @3xl:justify-between @3xl:py-16`}>
-            <h2 className={`${display} text-3xl font-bold uppercase tracking-tight @3xl:text-4xl`}>{tr.book}</h2>
+          <div className={`${CONTAINER} flex flex-col items-start gap-6 py-16 @3xl:flex-row @3xl:items-center @3xl:justify-between @3xl:py-20`}>
+            <h2 className={h2}>{tr.book}</h2>
             <CtaLink
               cta={primary}
               label={contactLabel(primary, view, tr, locale)}
@@ -111,15 +130,25 @@ export function Estudio(props: TemplateProps) {
         </section>
       )}
 
-      {(hasHours(view) || hasContact(view)) && (
-        <Section className="grid gap-12 @3xl:grid-cols-[1fr_1fr_1.2fr] @3xl:items-start">
+      {hasHours(view) && (
+        <Section className="grid gap-12 @3xl:grid-cols-[1fr_1.2fr] @3xl:items-start">
           <Hours hours={view.hours} heading={tr.hoursHeading} closed={tr.closed} locale={locale} headingClass={h2} />
-          <Contact view={view} heading={tr.contactHeading} headingClass={h2} />
-          <Photo src={photos.g2} alt="" className="hidden aspect-[4/3] w-full rounded-2xl object-cover @3xl:block" />
+          <Photo src={photos.g2} alt="" className="aspect-[4/3] w-full rounded-2xl object-cover" />
         </Section>
       )}
 
-      <Footer name={view.name} />
+      {/* Mapa de ponta a ponta, em cinza para não brigar com a paleta escura */}
+      <MapEmbed view={view} tr={tr} className="grayscale" />
+
+      <BigFooter
+        view={view}
+        tr={tr}
+        locale={locale}
+        palette={palette}
+        ctaKey={CTA}
+        nameClass={`${display} text-2xl font-bold uppercase tracking-[0.18em]`}
+        ctaClass={`${FOOTER_CTA} rounded-full font-bold uppercase tracking-wider`}
+      />
     </SiteRoot>
   );
 }

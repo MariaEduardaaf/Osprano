@@ -9,9 +9,17 @@ import {
   MdStarBorder,
 } from "react-icons/md";
 import { FaInstagram } from "react-icons/fa6";
-import { ctaOptions, type SiteContent, type SiteCta, type SiteHours, type SiteItem, type Weekday } from "@convex/lib/site";
-import { DICTS, type Locale, type TemplateDict } from "@/lib/preview-i18n";
-import type { Palette } from "./palettes";
+import {
+  ctaOptions,
+  mapEmbedUrl,
+  type SiteContent,
+  type SiteCta,
+  type SiteHours,
+  type SiteItem,
+  type Weekday,
+} from "@convex/lib/site";
+import { DICTS, type Locale, type TemplateBlurb, type TemplateDict } from "@/lib/preview-i18n";
+import { footerPalette, type Palette } from "./palettes";
 import type { CtaKey } from "./catalog";
 
 /**
@@ -72,8 +80,11 @@ export function SiteRoot({
   );
 }
 
+/** Respiro de página (adendo 2026-09-18): cada seção com padding vertical maior. */
+export const SECTION_PAD = "py-16 @md:py-24";
+
 export function Section({ className = "", children }: { className?: string; children: ReactNode }) {
-  return <section className={`${CONTAINER} py-14 @3xl:py-20 ${className}`}>{children}</section>;
+  return <section className={`${CONTAINER} ${SECTION_PAD} ${className}`}>{children}</section>;
 }
 
 /**
@@ -109,9 +120,6 @@ export const hasItems = (view: SiteView): boolean => (view.items?.length ?? 0) >
 export const hasHours = (view: SiteView): boolean => (view.hours?.length ?? 0) > 0;
 export const hasGallery = (view: SiteView): boolean => view.galleryUrls.length > 0;
 export const hasPlace = (view: SiteView): boolean => !!(view.address || view.city);
-/** Há algo para a seção de contato mostrar (canal ou Instagram; o endereço conta só onde não há bloco "onde estamos"). */
-export const hasContact = (view: SiteView, withPlace = true): boolean =>
-  ctaOptions(view).length > 0 || !!view.instagram || (withPlace && hasPlace(view));
 
 /** Rótulo do CTA (spec 1.6): `callNow` mora no topo do dicionário, os outros no modelo; e-mail é sempre `email`. */
 export function ctaLabel(cta: SiteCta, ctaKey: CtaKey, tr: TemplateDict, locale: Locale): string {
@@ -178,6 +186,22 @@ export function contactLabel(cta: SiteCta, view: SiteView, tr: TemplateDict, loc
   return view.email ?? tr.email;
 }
 
+/** "4.7" ou "4,7" conforme o idioma do prospect; uma casa decimal, como o Google mostra. */
+export function formatRating(rating: number, locale: Locale): string {
+  return new Intl.NumberFormat(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(rating);
+}
+
+function Stars({ rating, size }: { rating: number; size: number }) {
+  const full = Math.round(rating);
+  return (
+    <>
+      {Array.from({ length: 5 }, (_, i) =>
+        i < full ? <MdStar key={i} size={size} /> : <MdStarBorder key={i} size={size} />,
+      )}
+    </>
+  );
+}
+
 /** Nota e avaliações: só dado do lead, nunca do dicionário. */
 export function Rating({
   view,
@@ -191,21 +215,61 @@ export function Rating({
   onDark?: boolean; // dentro de um hero escuro com véu (estúdio): o secundário fica branco translúcido
 }) {
   if (view.rating == null) return null;
-  const full = Math.round(view.rating);
   return (
     <div className={`inline-flex flex-wrap items-center gap-2 text-sm ${className}`}>
       <span className="inline-flex text-(--site-accent)" aria-hidden>
-        {Array.from({ length: 5 }, (_, i) =>
-          i < full ? <MdStar key={i} size={16} /> : <MdStarBorder key={i} size={16} />,
-        )}
+        <Stars rating={view.rating} size={16} />
       </span>
-      <span className="font-semibold tabular-nums">{view.rating.toFixed(1)}</span>
+      <span className="font-semibold tabular-nums">{formatRating(view.rating, locale)}</span>
       {view.reviewsCount != null && (
         <span className={onDark ? "text-white/70" : "text-(--site-muted)"}>
           {view.reviewsCount} {DICTS[locale].reviews}
         </span>
       )}
     </div>
+  );
+}
+
+/**
+ * Faixa de avaliação (adendo 2026-09-18): a nota em tamanho grande, as estrelas e
+ * "N avaliações", só com `rating` do lead. `accent` inverte para a cor de
+ * destaque (par accent/accentFg, testado); `surface` fica entre duas linhas.
+ */
+export function RatingBand({
+  view,
+  locale,
+  tone = "surface",
+  numberClass = "",
+  className = "",
+}: {
+  view: SiteView;
+  locale: Locale;
+  tone?: "surface" | "accent";
+  numberClass?: string;
+  className?: string;
+}) {
+  if (view.rating == null) return null;
+  const onAccent = tone === "accent";
+  return (
+    <section
+      className={`${
+        onAccent ? "bg-(--site-accent) text-(--site-accent-fg)" : "border-y border-(--site-line) bg-(--site-surface)"
+      } ${className}`}
+    >
+      <div className={`${CONTAINER} flex flex-col items-center gap-5 py-16 text-center @md:py-20`}>
+        <span className={`text-7xl font-semibold leading-none tabular-nums @3xl:text-8xl ${numberClass}`}>
+          {formatRating(view.rating, locale)}
+        </span>
+        <span className={`inline-flex gap-1 ${onAccent ? "" : "text-(--site-accent)"}`} aria-hidden>
+          <Stars rating={view.rating} size={28} />
+        </span>
+        {view.reviewsCount != null && (
+          <span className={`text-sm uppercase tracking-[0.2em] ${onAccent ? "opacity-80" : "text-(--site-muted)"}`}>
+            {view.reviewsCount} {DICTS[locale].reviews}
+          </span>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -331,29 +395,21 @@ export function Visit({ view, heading, headingClass }: { view: SiteView; heading
   );
 }
 
+interface ContactRow {
+  key: string;
+  icon: ReactNode;
+  value: string;
+  href?: string;
+  external?: boolean;
+}
+
 /**
- * Contato: uma linha por canal preenchido (telefone, WhatsApp, e-mail, Instagram)
- * mais o endereço quando existe. Sem canal e sem endereço não renderiza (spec 4).
+ * Uma linha por canal preenchido (telefone, WhatsApp, e-mail, Instagram). O
+ * endereço não entra: o rodapé o mostra na própria coluna. Sem canal, vazio
+ * (spec 4: nenhum bloco de contato sem dado).
  */
-export function Contact({
-  view,
-  heading,
-  headingClass,
-  withPlace = true,
-}: {
-  view: SiteView;
-  heading: string;
-  headingClass: string;
-  withPlace?: boolean; // false quando o modelo já mostra o endereço num bloco "onde estamos"
-}) {
-  const rows: { key: string; icon: ReactNode; value: string; href?: string; external?: boolean }[] = [];
-  if (withPlace && (view.address || view.city)) {
-    rows.push({
-      key: "place",
-      icon: <MdOutlinePlace size={20} aria-hidden />,
-      value: [view.address, view.city].filter(Boolean).join(", "),
-    });
-  }
+function contactRows(view: SiteView): ContactRow[] {
+  const rows: ContactRow[] = [];
   if (view.phone) {
     rows.push({
       key: "phone",
@@ -383,29 +439,29 @@ export function Contact({
       external: true,
     });
   }
-  if (rows.length === 0) return null;
+  return rows;
+}
+
+function ContactList({ rows, iconClass }: { rows: ContactRow[]; iconClass: string }) {
   return (
-    <div>
-      <h2 className={headingClass}>{heading}</h2>
-      <ul className="mt-6 space-y-3">
-        {rows.map((r) => (
-          <li key={r.key} className="flex items-center gap-3 text-base">
-            <span className="text-(--site-accent)">{r.icon}</span>
-            {r.href ? (
-              <a
-                href={r.href}
-                className="underline decoration-(--site-line) underline-offset-4 hover:decoration-(--site-accent)"
-                {...(r.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-              >
-                {r.value}
-              </a>
-            ) : (
-              <span>{r.value}</span>
-            )}
-          </li>
-        ))}
-      </ul>
-    </div>
+    <ul className="mt-6 space-y-3">
+      {rows.map((r) => (
+        <li key={r.key} className="flex items-center gap-3 text-base">
+          <span className={iconClass}>{r.icon}</span>
+          {r.href ? (
+            <a
+              href={r.href}
+              className="underline decoration-(--site-line) underline-offset-4 hover:decoration-(--site-accent)"
+              {...(r.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+            >
+              {r.value}
+            </a>
+          ) : (
+            <span>{r.value}</span>
+          )}
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -424,10 +480,199 @@ export function Gallery({ urls, heading, headingClass }: { urls: string[]; headi
   );
 }
 
-export function Footer({ name }: { name: string }) {
+/**
+ * Valores (adendo 2026-09-18): três cartões GENÉRICOS do dicionário, sobre postura
+ * (atenção, acolhimento, clareza), nunca sobre o produto. `lines` é uma régua
+ * fina acima de cada coluna (mesa), `cards` usa `surface`, `icons` põe um
+ * ícone de destaque em cima (ofício).
+ */
+export function Values({
+  values,
+  heading,
+  headingClass,
+  titleClass = "text-xl font-semibold",
+  variant,
+  className = "",
+}: {
+  values: readonly TemplateBlurb[];
+  heading: string;
+  headingClass: string;
+  titleClass?: string;
+  variant: "lines" | "cards" | "icons";
+  className?: string;
+}) {
+  const item =
+    variant === "lines"
+      ? "border-t border-(--site-line) pt-6"
+      : variant === "cards"
+        ? "rounded-2xl bg-(--site-surface) p-7 @3xl:p-8"
+        : "";
   return (
-    <footer className="mt-auto border-t border-(--site-line) px-6 py-8 text-center text-[11px] uppercase tracking-[0.22em] text-(--site-muted)">
-      {name}
+    <Section className={className}>
+      <h2 className={headingClass}>{heading}</h2>
+      <ul className="mt-10 grid gap-8 @3xl:grid-cols-3 @3xl:gap-10">
+        {values.map((v) => (
+          <li key={v.title} className={item}>
+            {variant === "icons" && (
+              <MdCheckCircleOutline size={30} className="mb-4 text-(--site-accent)" aria-hidden />
+            )}
+            <h3 className={titleClass}>{v.title}</h3>
+            <p className="mt-3 leading-relaxed text-(--site-muted)">{v.body}</p>
+          </li>
+        ))}
+      </ul>
+    </Section>
+  );
+}
+
+/**
+ * Como funciona (adendo 2026-09-18): três passos genéricos numerados (contacto,
+ * combinar dia e hora, aproveitar). `intro` é o parágrafo "sobre" quando o
+ * modelo junta as duas coisas (ofício: "como trabalhamos"). O numeral visível é
+ * decoração: a `<ol>` já numera para o leitor de tela.
+ */
+export function Steps({
+  steps,
+  heading,
+  headingClass,
+  titleClass = "text-xl font-semibold",
+  numberClass = "text-sm font-semibold tabular-nums text-(--site-accent)",
+  intro,
+  className = "",
+}: {
+  steps: readonly TemplateBlurb[];
+  heading: string;
+  headingClass: string;
+  titleClass?: string;
+  numberClass?: string;
+  intro?: string;
+  className?: string;
+}) {
+  return (
+    <Section className={className}>
+      <h2 className={headingClass}>{heading}</h2>
+      {intro && <p className="mt-5 max-w-2xl text-lg leading-relaxed text-(--site-muted)">{intro}</p>}
+      <ol className="mt-10 grid gap-8 @3xl:grid-cols-3 @3xl:gap-10">
+        {steps.map((st, i) => (
+          <li key={st.title} className="border-t border-(--site-line) pt-6">
+            <span className={`block ${numberClass}`} aria-hidden>
+              {String(i + 1).padStart(2, "0")}
+            </span>
+            <h3 className={`mt-4 ${titleClass}`}>{st.title}</h3>
+            <p className="mt-3 leading-relaxed text-(--site-muted)">{st.body}</p>
+          </li>
+        ))}
+      </ol>
+    </Section>
+  );
+}
+
+/**
+ * Mapa (adendo 2026-09-18): Google Maps embutido sem chave, só com `address`
+ * (cidade sozinha viraria um mapa da cidade inteira). `loading="lazy"` porque
+ * fica no fim da página; `title` localizado para o leitor de tela.
+ */
+export function MapEmbed({ view, tr, className = "" }: { view: SiteView; tr: TemplateDict; className?: string }) {
+  const src = mapEmbedUrl(view.address, view.city);
+  if (!src) return null;
+  return (
+    <iframe
+      src={src}
+      title={tr.mapTitle}
+      loading="lazy"
+      referrerPolicy="no-referrer-when-downgrade"
+      className={`block h-[320px] w-full border-0 @3xl:h-[440px] ${className}`}
+    />
+  );
+}
+
+/**
+ * Botão do rodapé: o par text/bg da paleta do rodapé (sempre com contraste),
+ * NÃO o accent. Em `vitrine.areia` o accent é quase igual ao fundo invertido e
+ * o botão sumia; em `oficio.azul`/`verde` ficava baço. Os modelos acrescentam
+ * só a forma (raio, caixa alta).
+ */
+export const FOOTER_CTA =
+  "inline-flex items-center gap-2 bg-(--site-text) px-6 py-3 text-sm font-semibold text-(--site-bg) transition-opacity hover:opacity-90";
+
+/**
+ * Rodapé completo (adendo 2026-09-18), no lugar da linha mínima: marca (nome +
+ * slogan) e CTA primário, contato (só canais preenchidos), endereço e horário
+ * (só com dado), e a linha final com o nome. Sem crédito da Osprano
+ * (white-label). A paleta é a de `footerPalette`: invertida em site claro, em
+ * `surface` em site escuro, reaplicada como custom properties para os blocos
+ * partilhados (Hours, lista de contato) herdarem as cores certas. `ctaClass`
+ * deve pintar o botão com `--site-text`/`--site-bg` (ver FOOTER_CTA).
+ */
+export function BigFooter({
+  view,
+  tr,
+  locale,
+  palette,
+  ctaKey,
+  nameClass = "text-2xl font-semibold tracking-tight",
+  headingClass = "text-xs font-semibold uppercase tracking-[0.2em] text-(--site-muted)",
+  ctaClass = `${FOOTER_CTA} rounded-full`,
+}: {
+  view: SiteView;
+  tr: TemplateDict;
+  locale: Locale;
+  palette: Palette;
+  ctaKey: CtaKey;
+  nameClass?: string;
+  headingClass?: string;
+  ctaClass?: string;
+}) {
+  const rows = contactRows(view);
+  const place = hasPlace(view);
+  const hours = hasHours(view);
+  return (
+    <footer style={paletteStyle(footerPalette(palette))} className="mt-auto bg-(--site-bg) text-(--site-text)">
+      <div className={`${CONTAINER} grid gap-12 py-16 @3xl:grid-cols-2 @3xl:py-20 @5xl:grid-cols-[1.5fr_1fr_1fr]`}>
+        <div className="@3xl:col-span-2 @5xl:col-span-1">
+          <p className={nameClass}>{view.name}</p>
+          <p className="mt-3 max-w-sm leading-relaxed text-(--site-muted)">{view.tagline || tr.tagline}</p>
+          <PrimaryCta view={view} tr={tr} locale={locale} ctaKey={ctaKey} className={`mt-8 ${ctaClass}`} />
+        </div>
+        {rows.length > 0 && (
+          <div>
+            <h2 className={headingClass}>{tr.contactHeading}</h2>
+            <ContactList rows={rows} iconClass="text-(--site-muted)" />
+          </div>
+        )}
+        {(place || hours) && (
+          <div>
+            {place && (
+              <>
+                <h2 className={headingClass}>{tr.visitHeading}</h2>
+                <p className="mt-6 leading-relaxed">
+                  {view.address && <span className="block">{view.address}</span>}
+                  {view.city && <span className="block text-(--site-muted)">{view.city}</span>}
+                </p>
+              </>
+            )}
+            {hours && (
+              <div className={place ? "mt-8" : ""}>
+                <Hours
+                  hours={view.hours}
+                  heading={tr.hoursHeading}
+                  closed={tr.closed}
+                  locale={locale}
+                  headingClass={headingClass}
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      <div className="border-t border-(--site-line)">
+        <div
+          className={`${CONTAINER} flex flex-col gap-2 py-6 text-[11px] uppercase tracking-[0.22em] text-(--site-muted) @md:flex-row @md:items-center @md:justify-between`}
+        >
+          <span>{view.name}</span>
+          {view.city && <span>{view.city}</span>}
+        </div>
+      </div>
     </footer>
   );
 }

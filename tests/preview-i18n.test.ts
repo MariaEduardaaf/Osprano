@@ -73,14 +73,21 @@ function allCopy(locale: Locale): string[] {
   ];
   const nested = TEMPLATE_IDS.flatMap((t) => {
     const td = d.templates[t];
-    return [...Object.values(td).filter((v): v is string => typeof v === "string"), td.inCity("Madrid")];
+    return [
+      ...Object.values(td).filter((v): v is string => typeof v === "string"),
+      ...[...td.values, ...td.steps].flatMap((b) => [b.title, b.body]),
+      td.inCity("Madrid"),
+    ];
   });
   return [...top, ...nested];
 }
 
-/** Só slogan e "sobre": o texto corrido que se apresenta como fala do negócio. */
+/** Slogan, "sobre", valores e passos: o texto corrido que se apresenta como fala do negócio. */
 function proseCopy(locale: Locale): string[] {
-  return TEMPLATE_IDS.flatMap((t) => [DICTS[locale].templates[t].tagline, DICTS[locale].templates[t].about]);
+  return TEMPLATE_IDS.flatMap((t) => {
+    const td = DICTS[locale].templates[t];
+    return [td.tagline, td.about, ...[...td.values, ...td.steps].map((b) => b.body)];
+  });
 }
 
 test("preview-i18n: nenhum dicionário afirma horário de funcionamento", () => {
@@ -247,6 +254,27 @@ test("site-templates: container queries, sem unidade de viewport nem sticky/fixe
     assert.equal(code.match(/\b(sticky|fixed)\b/), null, `${f}.tsx usa sticky/fixed`);
     // Variante de VIEWPORT (sm:, md:, lg:) fora das de contêiner (@sm:, @md:, @lg:).
     assert.equal(code.match(/[\s"`][a-z]*(?<!@)\b(sm|md|lg|xl|2xl):[a-z]/), null, `${f}.tsx usa variante de viewport`);
+  }
+});
+
+test("site-templates: mapa só com endereço, lazy e com título localizado; valores e passos só do dicionário", () => {
+  const shared = source("shared");
+  // Cidade sozinha não vira mapa: seria a cidade inteira no lugar do negócio.
+  assert.match(shared, /mapEmbedUrl\(view\.address, view\.city\)/, "MapEmbed não parte do endereço");
+  assert.match(shared, /<iframe[\s\S]*?loading="lazy"[\s\S]*?\/>/, "iframe do mapa sem loading=lazy");
+  assert.match(shared, /<iframe[\s\S]*?title=\{tr\.mapTitle\}[\s\S]*?\/>/, "iframe do mapa sem title localizado");
+  for (const f of TEMPLATE_FILES) {
+    const code = source(f);
+    assert.match(code, /<BigFooter/, `${f}.tsx sem o rodapé completo`);
+    assert.equal(code.match(/<Footer\b/), null, `${f}.tsx ainda usa o Footer mínimo`);
+    for (const m of code.match(/values=\{[^}]*\}/g) ?? []) assert.equal(m, "values={tr.values}", `${f}.tsx: ${m}`);
+    for (const m of code.match(/steps=\{[^}]*\}/g) ?? []) assert.equal(m, "steps={tr.steps}", `${f}.tsx: ${m}`);
+    assert.match(code, /<RatingBand/, `${f}.tsx sem faixa de avaliação`);
+    assert.match(code, /<MapEmbed/, `${f}.tsx sem mapa`);
+  }
+  // White-label: o site do prospect nunca cita a Osprano.
+  for (const f of [...TEMPLATE_FILES, "shared"]) {
+    assert.equal(source(f).match(/osprano/i), null, `${f}.tsx cita a Osprano`);
   }
 });
 
