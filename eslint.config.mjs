@@ -14,6 +14,9 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Convex auto-generated code
     "convex/_generated/**",
+    // Skills de agentes (templates de terceiros, não são código do app)
+    ".agents/**",
+    ".claude/**",
   ]),
 ]);
 
