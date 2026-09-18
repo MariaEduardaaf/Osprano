@@ -34,6 +34,7 @@ import { DmComposer } from "@/components/crm/dm-composer";
 import { GeneratePreviewButton } from "@/components/generate-preview-button";
 import { WhatTheyHaveButton } from "@/components/what-they-have-button";
 import { SocialButtons } from "@/components/social-buttons";
+import { DeleteLeadButton } from "@/components/delete-lead-button";
 import { PublishButton } from "@/components/publish-button";
 import { CallScriptPanel } from "@/components/call-script-panel";
 import { ContactOptInButton } from "@/components/contact-opt-in-button";
@@ -121,9 +122,12 @@ export function LeadDetail({
               </span>
               <h2 className="font-display text-xl font-bold leading-tight">{lead.name}</h2>
             </div>
-            <button onClick={onClose} aria-label="Fechar" className="rounded-lg p-1.5 text-muted hover:bg-surface-2 hover:text-foreground">
-              <MdClose size={20} />
-            </button>
+            <div className="flex shrink-0 items-center gap-1">
+              <DeleteLeadButton lead={lead} onDeleted={onClose} />
+              <button onClick={onClose} aria-label="Fechar" className="rounded-lg p-1.5 text-muted hover:bg-surface-2 hover:text-foreground">
+                <MdClose size={20} />
+              </button>
+            </div>
           </div>
 
           {/* tabs */}

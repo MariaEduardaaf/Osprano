@@ -11,8 +11,9 @@ import {
   CATEGORY_OPTIONS,
   CITIES_BY_COUNTRY,
   canContactByEmail,
+  leadCategoryMatchesSearch,
 } from "@convex/lib/domain";
-import { MdOutlineSearch, MdOutlineSend, MdOutlineGavel } from "react-icons/md";
+import { MdOutlineSearch, MdOutlineSend, MdOutlineGavel, MdOutlineFilterAltOff } from "react-icons/md";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { LeadCard } from "@/components/lead-card";
 import { GeneratePreviewButton } from "@/components/generate-preview-button";
@@ -43,6 +44,9 @@ export default function LeadsPage() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<Id<"leads">>>(new Set());
+  // FILTRO-01: por padrão a lista segue a busca (país + cidade + categoria do formulário);
+  // "Mostrar todos" desliga esse filtro e volta a mostrar todo mundo do regime da aba.
+  const [showAll, setShowAll] = useState(false);
 
   const searchPlaces = useAction(api.places.search);
   const searchOsm = useAction(api.osm.search);
@@ -57,9 +61,26 @@ export default function LeadsPage() {
   const legalReviewMarket =
     MARKETS[country]?.legalReview === "pending" ? MARKETS[country] : null;
   // Filtro client-side por regime — sem query nova (leads.list já traz todos os leads da org).
-  const shownLeads = (leads ?? []).filter((l) =>
+  const regimeLeads = (leads ?? []).filter((l) =>
     tab === "call" ? OPT_IN_MARKETS.includes(l.countryCode) : !OPT_IN_MARKETS.includes(l.countryCode),
   );
+  // FILTRO-01: a lista segue o formulário de busca (país sempre; cidade e categoria só quando
+  // preenchidas) pra não misturar cidades/categorias antigas com a busca atual. Categoria casa
+  // solto (leadCategoryMatchesSearch): o Google Places às vezes devolve um primaryType diferente
+  // do termo buscado. "Mostrar todos" desliga este filtro, sem tocar no regime da aba.
+  const shownLeads = showAll
+    ? regimeLeads
+    : regimeLeads.filter((l) => {
+        if (l.countryCode !== country) return false;
+        if (city) {
+          // Solto nos dois sentidos: "London" casa "Greater London" e vice-versa.
+          const a = (l.city ?? "").trim().toLowerCase();
+          const b = city.trim().toLowerCase();
+          if (!a.includes(b) && !b.includes(a)) return false;
+        }
+        if (category && !leadCategoryMatchesSearch(l.category, category)) return false;
+        return true;
+      });
   const allSelected = shownLeads.length > 0 && shownLeads.every((l) => selected.has(l._id));
   // ODbL: a atribuição aparece sempre que há dado do OSM na tela, não só com a fonte selecionada.
   const showOsmAttribution = source === "osm" || shownLeads.some((l) => l.source === "osm");
@@ -242,6 +263,22 @@ export default function LeadsPage() {
           {busy ? "Buscando…" : "Buscar"}
         </button>
       </form>
+
+      <div className="mb-4 flex items-center justify-end">
+        <button
+          type="button"
+          onClick={() => setShowAll((v) => !v)}
+          aria-pressed={showAll}
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+            showAll
+              ? "bg-brand text-brand-fg shadow-[var(--shadow-sm)]"
+              : "border border-border text-muted hover:border-border-strong hover:text-foreground"
+          }`}
+        >
+          <MdOutlineFilterAltOff size={14} />
+          Mostrar todos
+        </button>
+      </div>
 
       {showOsmAttribution && <OsmAttribution className="-mt-4 mb-4" />}
 

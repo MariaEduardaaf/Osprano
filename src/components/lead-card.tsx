@@ -17,6 +17,7 @@ import { CallScriptPanel } from "./call-script-panel";
 import { ContactOptInButton } from "./contact-opt-in-button";
 import { WhatTheyHaveButton } from "./what-they-have-button";
 import { SocialButtons } from "./social-buttons";
+import { DeleteLeadButton } from "./delete-lead-button";
 
 type Lead = Doc<"leads">;
 
@@ -75,18 +76,21 @@ export function LeadCard({
         <h3 className="line-clamp-2 font-display text-base font-semibold leading-snug text-foreground">
           {lead.name}
         </h3>
-        {selectable && (
-          <span className="mt-0.5 shrink-0" aria-hidden>
-            {selected ? (
-              <MdCheckCircle size={22} className="text-brand" />
-            ) : (
-              <MdRadioButtonUnchecked
-                size={22}
-                className="text-faint/50 transition-colors group-hover:text-muted"
-              />
-            )}
-          </span>
-        )}
+        <div className="flex shrink-0 items-center gap-0.5">
+          <DeleteLeadButton lead={lead} />
+          {selectable && (
+            <span className="mt-0.5" aria-hidden>
+              {selected ? (
+                <MdCheckCircle size={22} className="text-brand" />
+              ) : (
+                <MdRadioButtonUnchecked
+                  size={22}
+                  className="text-faint/50 transition-colors group-hover:text-muted"
+                />
+              )}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* category + tier · score + rating */}

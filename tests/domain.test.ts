@@ -23,6 +23,8 @@ import {
   swissLanguage,
   isKnownSwissCity,
   SWISS_DEFAULT_LANGUAGE,
+  normalizeCategoryText,
+  leadCategoryMatchesSearch,
   type Signals,
   type SwissLang,
 } from "../convex/lib/domain.ts";
@@ -527,4 +529,38 @@ test("estado atual: nenhum mercado opt-in foi validado juridicamente ainda (espe
     [],
     `mercados já validados: ${validated.join(", ")} — atualize este teste de estado atual`,
   );
+});
+
+// ---------------------------------------------------------------------------
+// Filtro de Leads (FILTRO-01): categoria do lead vs. termo buscado no formulário
+// ---------------------------------------------------------------------------
+
+test("normalizeCategoryText: minúsculo, '_'/'-' viram espaço, espaços colapsam", () => {
+  assert.equal(normalizeCategoryText("barber_shop"), "barber shop");
+  assert.equal(normalizeCategoryText("Hair-Salon"), "hair salon");
+  assert.equal(normalizeCategoryText("  Pizza   Restaurant  "), "pizza restaurant");
+});
+
+test("leadCategoryMatchesSearch: snake_case do Google Places casa com o termo buscado", () => {
+  assert.equal(leadCategoryMatchesSearch("barber_shop", "barber shop"), true);
+  assert.equal(leadCategoryMatchesSearch("hair_salon", "hair salon"), true);
+  assert.equal(leadCategoryMatchesSearch("pizza_restaurant", "pizza restaurant"), true);
+});
+
+test("leadCategoryMatchesSearch: mesma categoria do OSM (já sem underscore) casa direto", () => {
+  assert.equal(leadCategoryMatchesSearch("barber shop", "barber shop"), true);
+});
+
+test("leadCategoryMatchesSearch: categoria totalmente diferente não casa", () => {
+  assert.equal(leadCategoryMatchesSearch("dentist", "barber shop"), false);
+  assert.equal(leadCategoryMatchesSearch("gym", "restaurant"), false);
+});
+
+test("leadCategoryMatchesSearch: sem categoria buscada, não filtra (tudo casa)", () => {
+  assert.equal(leadCategoryMatchesSearch("dentist", ""), true);
+  assert.equal(leadCategoryMatchesSearch(undefined, ""), true);
+});
+
+test("leadCategoryMatchesSearch: lead sem categoria não casa com busca com categoria", () => {
+  assert.equal(leadCategoryMatchesSearch(undefined, "barber shop"), false);
 });

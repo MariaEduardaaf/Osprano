@@ -7,6 +7,7 @@ import {
 import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import { requireOrgId } from "./model/tenant";
+import { deleteLeadCascade } from "./model/leads";
 import { userError } from "./lib/errors";
 import {
   classifyWebsite,
@@ -178,6 +179,21 @@ export const setStage = mutation({
       at: now,
       meta: { from: lead.stage, to: args.stage },
     });
+  },
+});
+
+/**
+ * Apaga o lead e tudo que pende dele (preview, fotos, histórico, outreach) via
+ * `deleteLeadCascade` — mesma cascata que `admin.deleteLead` usa pela CLI. Sem
+ * confirmação aqui: o botão "Excluir" da UI já confirma com a usuária antes de chamar.
+ */
+export const remove = mutation({
+  args: { id: v.id("leads") },
+  handler: async (ctx, args) => {
+    const orgId = await requireOrgId(ctx);
+    const lead = await ctx.db.get(args.id);
+    if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
+    await deleteLeadCascade(ctx, lead);
   },
 });
 

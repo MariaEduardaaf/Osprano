@@ -26,6 +26,7 @@ import type * as lib_osm from "../lib/osm.js";
 import type * as lib_outreachAi from "../lib/outreachAi.js";
 import type * as lib_site from "../lib/site.js";
 import type * as lib_stripe from "../lib/stripe.js";
+import type * as model_leads from "../model/leads.js";
 import type * as model_previews from "../model/previews.js";
 import type * as model_tenant from "../model/tenant.js";
 import type * as model_uploads from "../model/uploads.js";
@@ -64,6 +65,7 @@ declare const fullApi: ApiFromModules<{
   "lib/outreachAi": typeof lib_outreachAi;
   "lib/site": typeof lib_site;
   "lib/stripe": typeof lib_stripe;
+  "model/leads": typeof model_leads;
   "model/previews": typeof model_previews;
   "model/tenant": typeof model_tenant;
   "model/uploads": typeof model_uploads;
