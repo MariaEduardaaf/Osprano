@@ -1,10 +1,10 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.2
-milestone_name: Modelos de site
-status: milestone-complete
-stopped_at: PRODUÇÃO NO AR em https://osprano.vercel.app (2026-09-18); antes: Fases 7 e 8 mergeadas e UAT feito em navegador real por fase (2026-09-17/18, achados corrigidos no merge final `07965dc`); milestone v1.2 completo, falta só produção (contas e chaves da Duda) e a seção 10 nova do checklist
-last_updated: "2026-09-18T00:00:00.000Z"
+milestone: v1.3
+milestone_name: Automação da prospecção
+status: defining-requirements
+stopped_at: Milestone v1.3 iniciado (2026-09-26); definindo requisitos. v1.2 fechado e em produção desde 2026-09-18.
+last_updated: "2026-09-26T00:00:00.000Z"
 progress:
   total_phases: 8
   completed_phases: 8
@@ -16,35 +16,21 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-11)
+See: .planning/PROJECT.md (updated 2026-09-26)
 
 **Core value:** O usuário prospecta e aborda negócios europeus sem risco legal — compliance garantido por código, contagem de plano/billing íntegra.
-**Current focus:** nenhum de código. As 8 fases (v1.0 + v1.1 + v1.2) estão completas e mergeadas; o que resta é operacional (produção) e a validação manual da Duda.
+**Current focus:** v1.3 Automação da prospecção: verificação de site, pipeline automático pós-seleção, envio/follow-up automático onde permitido, fila de ligação e redes sociais.
 
 ## Current Position
 
-Phase: 8 (Modelos de site): COMPLETE
-Plan: 3 of 3 (plano C inline, superpowers, não GSD)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-09-26 — Milestone v1.3 started
 
-Milestone v1.2 fechado em 2026-09-18: Fase 7 (descoberta via OpenStreetMap
-com fallback de espelho e "Ver o que ele tem", commits diretos sem
-spec/plano) e Fase 8 (modelos de site: 4 modelos, 3 paletas cada, editor
-completo com upload de fotos, correções do UAT final; merges `402b873`,
-`70ae0ba`, `6834847`, `6873874`, `07965dc`). 18 requisitos v1 + 12
-requisitos v1.1 + 9 requisitos v1.2 fechados; suíte em 283 testes. Fase 8
-foi executada com o workflow superpowers: spec e adendo em
-`docs/superpowers/`, planos A e B em arquivo, plano C inline (sem arquivo
-próprio); sem `.planning/phases/07-*` nem `08-*`.
-
-Próximo passo:
-1. `docs/CHECKLIST-MODO-REAL.md` seção 9 (Vercel + Convex prod), começando
-   pelo 3.0 (rotacionar a chave da Anthropic, impressa num terminal numa
-   sessão anterior), mais a seção 10 nova ("Primeiros leads, passo a
-   passo"), que já cobre o fluxo com os modelos de site.
-2. UAT: navegador real por fase, achados corrigidos nos commits do merge
-   final (`1a84905`, `6d754ec`, `38138e3`, `8391343`). Sobra pra Duda o
-   roteiro manual de gosto: as 12 paletas ao vivo, fotos padrão, e o fluxo
-   de venda ponta a ponta com um lead real.
+Contexto de produção em 2026-09-26: Google Places ligada em prod (projeto GCP
+`soprano-503222`, faturamento "Pagamento do Firebase", cota SearchText 30/dia,
+`GOOGLE_PLACES_API_KEY` no Convex prod). `ANTHROPIC_API_KEY` ainda ausente em prod.
 O backlog v2 (SCAL-01..03, GDPR-01/02, BILL-04/05) segue em REQUIREMENTS.md.
 
 ## Performance Metrics

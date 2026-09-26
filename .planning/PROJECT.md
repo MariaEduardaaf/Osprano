@@ -14,6 +14,30 @@ O milestone v1.0 (Fases 1 a 4, os 18 requisitos abaixo em "Active") está fechad
 
 Milestone **v1.2** fechado: a **Fase 7** deu à descoberta uma segunda fonte sem custo (OpenStreetMap/Overpass, com fallback entre espelhos e atribuição ODbL) e o atalho "Ver o que ele tem" em cada lead; a **Fase 8** trocou o preview de template único por **4 modelos por segmento** (Mesa, Estúdio, Ofício, Vitrine) com 3 paletas cada, fotos e textos padrão em 10 idiomas (regra de honestidade: nenhum fato inventado sobre o negócio de terceiro), e um **editor completo** em `/crm/<leadId>/site` (modelo, paleta, textos, itens, horário, contato, upload de fotos) com prévia ao vivo. O preview rastreado `/p/<token>` e o site publicado `/site/<slug>` passam a renderizar o mesmo conteúdo salvo. O UAT em navegador real fechou quatro pontas: upload aceitando qualquer tipo de arquivo no servidor, token da prévia exposto no site público, rodapé de opt-out faltando num caminho de e-mail persistido, e erro do "Escrever com IA" escondido com o composer fechado. Suíte em 283 testes; requisitos DISC-01/02 e SITE-01..07 em REQUIREMENTS.md. Falta o mesmo de sempre: produção (`docs/CHECKLIST-MODO-REAL.md`, seções 3.0 e 9, mais a seção 10 nova) e o roteiro manual da Duda.
 
+## Current Milestone: v1.3 Automação da prospecção
+
+**Goal:** Depois que a Duda escolhe os leads, o Osprano faz o resto sozinho: confere que o negócio não tem site, gera o preview, escreve a mensagem, escolhe o canal permitido pelo país, envia e faz follow-up automático onde o e-mail é legal, e deixa pendente (com roteiro e redes sociais) onde o contato tem que ser por ligação.
+
+**Por que (fala dela, 2026-09-26):** "ele não presta muito bem, os clientes que ele mostra já têm website, ele não manda mensagem automaticamente, não faz as coisas funcionarem automáticas". A causa do primeiro ponto: o OpenStreetMap quase nunca tem o campo de site; a Google Places foi ligada em prod em 2026-09-26 (cota 30 buscas/dia), mas nada confere na web o que escapa das duas fontes.
+
+**Fluxo que ela descreveu:**
+1. Ela escolhe os leads (a descoberta continua manual, nada de pegar lead sozinho).
+2. O app prepara a mensagem e decide o canal certo de cada lead.
+3. País que permite e-mail (opt-out: GB/NL/IE/SE/NO) e lead que passa nas travas existentes (`canContactByEmail`, supressão, empresa constituída): envia sozinho, na hora, sem aprovação dela.
+4. País que exige ligação (opt-in: ES/IT/PT/DE/DK/CH): fica pendente com telefone e roteiro até ela marcar "liguei" e o resultado (vai fechar / não vai / pediu por e-mail, que registra consentimento e destrava o envio).
+5. O app procura as redes sociais do negócio e mostra os links, pra ela decidir por onde entrar em contato. O envio em rede social é manual (Instagram/Facebook proíbem automação).
+6. Follow-up automático por e-mail onde for permitido, quando o lead não responde.
+
+**Target features:**
+- Verificação de "tem site?" na web antes de o lead virar prospect
+- Pipeline automático pós-seleção: preview + mensagem por IA + escolha de canal
+- Envio automático imediato nos mercados opt-out, com teto e todas as travas de compliance
+- Fila "Ligação pendente" com resultado da ligação nos mercados opt-in
+- Descoberta de redes sociais do negócio (links + mensagem pronta pra copiar)
+- Follow-up automático por e-mail onde permitido
+
+**Pré-requisito operacional:** `ANTHROPIC_API_KEY` em prod (hoje ausente; ela escrevia os e-mails comigo). Sem ela a mensagem automática não existe.
+
 ## Core Value
 
 O usuário prospecta e aborda negócios europeus **sem risco legal** — o compliance ("compliant by design") tem que ser garantido por código, não por promessa, e a contagem de plano/billing tem que ser íntegra.
@@ -94,4 +118,4 @@ Auditoria de 2026-07-11 (3 agentes) encontrou, com verificação manual dos crí
 | Supressão como tabela Convex própria checada em draft/send | Fonte de verdade local, independente do provedor de email | — Pending |
 
 ---
-*Last updated: 2026-09-18: milestone v1.2 (Fases 7 e 8) fechado; v1.1 fechado em 2026-09-16, v1.0 em 2026-07-22*
+*Last updated: 2026-09-26: milestone v1.3 (Automação da prospecção) iniciado; antes, 2026-09-18: milestone v1.2 (Fases 7 e 8) fechado; v1.1 fechado em 2026-09-16, v1.0 em 2026-07-22*
