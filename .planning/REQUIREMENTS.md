@@ -90,6 +90,50 @@ Milestone v1.2 (2026-09-18): modelos de site por segmento e a base de descoberta
 - [x] **SITE-06**: Aba Site do drawer vira resumo (modelo, Editar site, Abrir preview, Publicar); cards de lead e a página Sites mostram a miniatura do modelo (`TemplateThumb`) ao vivo, sem depender de screenshot. (`src/components/crm/lead-detail.tsx`, `src/app/(app)/sites/page.tsx`)
 - [x] **SITE-07**: Endurecimento pós-UAT: `registerUpload` recusa arquivo cujo `contentType` real no storage não seja JPEG/PNG/WebP (não confia no que o cliente prometeu enviar); `getBySlug` não devolve o token rastreado da prévia; rodapé de opt-out garantido no servidor em todo e-mail persistido ou copiado; erro do "Escrever com IA" visível com o composer fechado; eventos de consentimento com rótulo próprio no feed do Dashboard. (`convex/previews.ts`, `convex/outreach.ts`, `src/components/outreach-composer.tsx`, `src/app/(app)/dashboard/`)
 
+## v1.3 Requirements
+
+Milestone v1.3 "Automação da prospecção" (2026-09-26). Escopo aprovado pela Duda no chat a partir do fluxo que ela descreveu (ver PROJECT.md, "Current Milestone"); pesquisa em `.planning/research/` (SUMMARY.md). Decisões aprovadas: Serper.dev como busca web; Noruega vira ligação primeiro; webhooks de devolução/denúncia agora, "respondeu" segue manual e o follow-up é um só; fila de ligação como filtro "Ligar" no CRM; provedor de envio automático decidido na pesquisa da fase de envio (a AUP da Resend proíbe cold outreach). Pré-requisito operacional: `ANTHROPIC_API_KEY` em prod antes da fase do pipeline.
+
+### Base de compliance e segurança do envio
+
+- [ ] **BASE-01**: Todo e-mail, manual ou automático, passa por uma única função server-side de compliance (`canContactByEmail`, supressão, rodapé de opt-out, `List-Unsubscribe`), conferida no momento do envio, nunca a partir de estado cacheado.
+- [ ] **BASE-02**: O mesmo e-mail nunca é enviado duas vezes, mesmo com retry ou execução concorrente (trava atômica antes da chamada ao provedor).
+- [ ] **BASE-03**: A Noruega passa a ser mercado de ligação primeiro (fora de `LAUNCH_MARKETS`, `legalReview: "pending"`) até validação jurídica.
+- [ ] **BASE-04**: A conta tem tetos diários de envios, chamadas à IA e buscas de verificação; ao atingir um teto, a automação pausa e a usuária é avisada na tela.
+
+### Verificação de site e redes sociais
+
+- [ ] **VERIF-01**: Cada lead selecionado para automação é conferido na web (Serper.dev); se tiver site de verdade, sai do fluxo marcado como "já tem site", com o link encontrado como prova.
+- [ ] **VERIF-02**: A mesma conferência encontra Instagram e Facebook do negócio e a usuária vê os links no lead.
+- [ ] **VERIF-03**: A usuária tem uma mensagem pronta para copiar e enviar manualmente pela rede social do negócio.
+- [ ] **VERIF-04**: A régua de "tem site" é a mesma do resto do produto (`classifyWebsite`: rede social e agregadores contam como sem site); o servidor não busca URL de terceiro sem validar o host.
+
+### Pipeline automático
+
+- [ ] **PIPE-01**: A usuária seleciona um ou vários leads e aciona "Automatizar"; o app confere o site, gera o preview, escreve a mensagem e escolhe o canal sem outro clique.
+- [ ] **PIPE-02**: Cada lead em automação mostra a etapa atual e, se falhar, o erro e a opção de tentar de novo.
+- [ ] **PIPE-03**: O canal é escolhido pela regra do país: e-mail onde `canContactByEmail` permite; ligação em mercado opt-in com telefone; rede social quando for o único contato; "sem contato" quando não houver nenhum.
+- [ ] **PIPE-04**: Mensagem com aviso da IA (dado não confirmado sobre o negócio) nunca sai sozinha: vai para uma fila de revisão da usuária.
+
+### Envio automático
+
+- [ ] **AUTO-01**: Em GB/NL/IE/SE, lead com canal e-mail que passa em todas as travas recebe o e-mail automaticamente, na hora, sem aprovação.
+- [ ] **AUTO-02**: O envio automático respeita um teto diário; o que excede sai no dia seguinte.
+- [ ] **AUTO-03**: A usuária liga e desliga todo o envio automático com um controle único.
+- [ ] **AUTO-04**: O envio automático sai por um provedor cuja política permite cold outreach B2B (escolhido na pesquisa da fase), não pela Resend.
+- [ ] **AUTO-05**: E-mail devolvido ou denunciado como spam marca o lead e suprime o endereço automaticamente (webhooks de entrega, sem mudança de DNS; puxa parte de GDPR-02).
+
+### Fila de ligação
+
+- [ ] **CALL-01**: Leads de mercados de ligação primeiro aparecem num filtro "Ligar" no CRM, com telefone, roteiro e redes sociais.
+- [ ] **CALL-02**: A usuária registra o resultado da ligação: vai fechar (avança o lead), não vai (pede motivo), pediu por e-mail (registra consentimento e libera o envio), não atendeu (reagenda).
+- [ ] **CALL-03**: Em lead da Alemanha, o card pede o motivo concreto da ligação (consentimento presumido, UWG §7) antes de liberar o roteiro.
+
+### Follow-up automático
+
+- [ ] **FUP-01**: Lead que recebeu e-mail e não foi marcado "respondeu" recebe um único follow-up automático após 4 dias, só onde e-mail é permitido.
+- [ ] **FUP-02**: O follow-up é cancelado se o lead respondeu, devolveu, denunciou, se descadastrou, mudou de etapa ou foi perdido; todas as travas são conferidas de novo na hora do envio.
+
 ## v2 Requirements
 
 Fase 2 — "antes de escalar". Rastreados, fora do roadmap atual.
@@ -103,7 +147,13 @@ Fase 2 — "antes de escalar". Rastreados, fora do roadmap atual.
 ### Dados & GDPR
 
 - **GDPR-01**: Cron de purge/refresh 30 dias (ToS Google Places) + mutation de deleção de lead (Art. 17)
-- **GDPR-02**: Webhooks Resend de bounce/inbound → `bounced` real e `replied` automático + supressão automática
+- **GDPR-02**: Webhooks Resend de bounce/inbound → `bounced` real e `replied` automático + supressão automática (a parte de devolução/denúncia entra na v1.3 como AUTO-05; `replied` automático via inbound/MX segue aqui)
+
+### Automação (depois da v1.3)
+
+- **AUTO-06**: Detecção automática de resposta (inbound com MX no domínio da usuária) marcando `replied` sozinho
+- **FUP-03**: Sequência com mais de um follow-up
+- **PIPE-05**: Descoberta de leads agendada, sem a usuária escolher
 
 ### Billing
 
@@ -119,6 +169,10 @@ Fase 2 — "antes de escalar". Rastreados, fora do roadmap atual.
 | Domínio próprio white-label (Agency) | Fase 3 — promessa de produto, não bloqueador |
 | Plugar ou remover Foursquare da UI | Fase 3 — hoje é código órfão; BILL-01 corrige o bug de quota nele mesmo assim |
 | Cold WhatsApp / novos canais | Ilegal na UE; contradiz o posicionamento do produto |
+| Envio automático em Instagram/Facebook/LinkedIn | ToS das plataformas proíbe automação; envio em rede social é manual (v1.3) |
+| Raspagem de Google Maps ou de redes sociais | Viola ToS do Google e da Meta; descoberta de redes sociais é via busca web (v1.3) |
+| Discador automático / IA respondendo o prospect | Fora do posicionamento; a conversa depois da resposta é da usuária |
+| Warmup multi-caixa estilo Instantly | Infra desproporcional para volume solo |
 
 ## Traceability
 
@@ -165,14 +219,37 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SITE-05 | Phase 8 | Complete |
 | SITE-06 | Phase 8 | Complete |
 | SITE-07 | Phase 8 | Complete |
+| BASE-01 | TBD | Pending |
+| BASE-02 | TBD | Pending |
+| BASE-03 | TBD | Pending |
+| BASE-04 | TBD | Pending |
+| VERIF-01 | TBD | Pending |
+| VERIF-02 | TBD | Pending |
+| VERIF-03 | TBD | Pending |
+| VERIF-04 | TBD | Pending |
+| PIPE-01 | TBD | Pending |
+| PIPE-02 | TBD | Pending |
+| PIPE-03 | TBD | Pending |
+| PIPE-04 | TBD | Pending |
+| AUTO-01 | TBD | Pending |
+| AUTO-02 | TBD | Pending |
+| AUTO-03 | TBD | Pending |
+| AUTO-04 | TBD | Pending |
+| AUTO-05 | TBD | Pending |
+| CALL-01 | TBD | Pending |
+| CALL-02 | TBD | Pending |
+| CALL-03 | TBD | Pending |
+| FUP-01 | TBD | Pending |
+| FUP-02 | TBD | Pending |
 
 **Coverage:**
 - v1 requirements: 18 total (12 do milestone de produção + 6 do modo opt-in)
 - v1.1 requirements: 12 total (5 do redesenho + 7 do CRM)
 - v1.2 requirements: 9 total (2 da descoberta via OpenStreetMap + 7 dos modelos de site)
+- v1.3 requirements: 22 total (4 base + 4 verificação + 4 pipeline + 5 envio + 3 ligação + 2 follow-up), fases a definir no roadmap
 - Mapped to phases: 39 (see ROADMAP.md)
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-07-11*
-*Last updated: 2026-09-18: milestone v1.2 (Fases 7 e 8) concluído; 18/18 requisitos v1, 12/12 v1.1 e 9/9 v1.2 completos*
+*Last updated: 2026-09-26: requisitos do milestone v1.3 definidos; antes, 2026-09-18: milestone v1.2 (Fases 7 e 8) concluído; 18/18 requisitos v1, 12/12 v1.1 e 9/9 v1.2 completos*
