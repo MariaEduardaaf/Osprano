@@ -18,6 +18,12 @@ Este milestone leva o Osprano — SaaS de prospecção e venda de sites para o m
 - [x] **Phase 6: CRM: fluxo do dia e informação do lead** - Próxima ação por lead, faixa Hoje, leads parados, Perdido com motivo, contato e valores, Histórico com notas (milestone v1.1, completed 2026-09-16)
 - [x] **Phase 7: Descoberta via OpenStreetMap e "Ver o que ele tem"** - Busca também no OpenStreetMap/Overpass (grátis, sem chave) com fallback de espelho e seletor de fonte; quota cobra só o lead realmente inserido mesmo em busca repetida; botão "Ver o que ele tem" ao lado do preview (milestone v1.2, completed 2026-09-17)
 - [x] **Phase 8: Modelos de site** - 4 modelos por segmento com 3 paletas cada, editor completo com upload de fotos e prévia ao vivo, preview e site publicado renderizando o modelo salvo, correções do UAT final (milestone v1.2, completed 2026-09-18)
+- [ ] **Phase 9: Base de compliance compartilhada** - Função única de envio, trava atômica anti-duplicidade, Noruega em validação jurídica, tetos diários (milestone v1.3)
+- [ ] **Phase 10: Verificação de site e redes sociais** - Confere na web se o lead já tem site de verdade e descobre Instagram/Facebook do negócio (milestone v1.3)
+- [ ] **Phase 11: Fila "Ligar" no CRM** - Leads de mercado opt-in num filtro próprio, com roteiro, redes sociais e registro do resultado da ligação (milestone v1.3)
+- [ ] **Phase 12: Pipeline automático em modo rascunho** - Depois da seleção, o app confere site, gera preview, escreve mensagem e escolhe canal sozinho, sem enviar de verdade ainda (milestone v1.3)
+- [ ] **Phase 13: Envio automático + teto diário** - Nos mercados opt-out, o e-mail sai sozinho respeitando teto diário e todas as travas de compliance (milestone v1.3)
+- [ ] **Phase 14: Follow-up automático** - Um follow-up automático por e-mail onde for permitido, cancelado se qualquer trava disparar (milestone v1.3)
 
 ## Phase Details
 
@@ -75,7 +81,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 13 → 14
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -87,6 +93,12 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 6. CRM: fluxo do dia e informação do lead | 1/1 | Complete    | 2026-09-16 |
 | 7. Descoberta via OpenStreetMap e "Ver o que ele tem" | n/d (commits diretos) | Complete    | 2026-09-17 |
 | 8. Modelos de site | 3/3 | Complete    | 2026-09-18 |
+| 9. Base de compliance compartilhada | 0/TBD | Not started | - |
+| 10. Verificação de site e redes sociais | 0/TBD | Not started | - |
+| 11. Fila "Ligar" no CRM | 0/TBD | Not started | - |
+| 12. Pipeline automático em modo rascunho | 0/TBD | Not started | - |
+| 13. Envio automático + teto diário | 0/TBD | Not started | - |
+| 14. Follow-up automático | 0/TBD | Not started | - |
 
 ### Phase 4: Modo opt-in (ligação-primeiro) para mercados onde cold email é ilegal
 
@@ -189,3 +201,86 @@ Plans:
 - [x] `docs/superpowers/plans/2026-09-17-modelos-de-site-A.md` (plano A): dados + 4 modelos + render público + retrocompatibilidade; merge `402b873`; seções novas (valores, como funciona, faixa de avaliação, mapa, footer completo) merge `70ae0ba`; screenshots dos 4 modelos em `docs/redesign/templates/`
 - [x] `docs/superpowers/plans/2026-09-18-modelos-de-site-B.md` (plano B): editor completo com upload de fotos; merge `6834847`; screenshots do editor em `docs/redesign/editor-*.png`
 - [x] Plano C (inline, sem arquivo próprio): resumo da aba Site, cards, página Sites, UAT em navegador real; merge `6873874`; correções pós-UAT (`1a84905`, `6d754ec`, `38138e3`, `8391343`), merge final `07965dc`
+
+## Milestone v1.3: Automação da prospecção (2026-09-26)
+
+Escopo definido em `.planning/REQUIREMENTS.md` ("v1.3 Requirements") a partir do fluxo que a Duda descreveu no chat (ver `.planning/PROJECT.md`, "Current Milestone"), com pesquisa dedicada em `.planning/research/SUMMARY.md`. A ordem das Fases 9 a 14 segue risco crescente, não valor percebido: primeiro a fundação de compliance compartilhada (refactor puro, sem mudança de comportamento visível), depois as duas features de baixo risco e alto valor que reaproveitam peças já auditadas (verificação de site, fila de ligação), depois o pipeline em modo rascunho (sem enviar nada de verdade), e só por último as duas peças irreversíveis por natureza, envio automático e follow-up automático, porque um e-mail automático já enviado não pode ser desfeito. Três decisões de produto registradas na pesquisa bloqueiam o planejamento detalhado de fases específicas: a Fase 10 precisa de uma conta e chave Serper.dev da usuária, a Fase 12 precisa da `ANTHROPIC_API_KEY` em produção, e a Fase 13 precisa da decisão do provedor de envio automático (a política de uso aceitável da Resend proíbe cold outreach). Planejamento via GSD (`/gsd:plan-phase`), não superpowers.
+
+### Phase 9: Base de compliance compartilhada
+
+**Goal**: Existe uma única função server-side de compliance para envio de email (`canContactByEmail`, supressão, rodapé de opt-out, header `List-Unsubscribe`), uma trava atômica contra envio duplicado, a Noruega tratada como mercado de ligação primeiro até validação jurídica, e tetos diários de envio, IA e busca de verificação visíveis na tela.
+**Depends on**: Phase 8
+**Requirements**: BASE-01, BASE-02, BASE-03, BASE-04
+**Success Criteria** (what must be TRUE):
+  1. Uma única função server-side de compliance (`canContactByEmail`, supressão, rodapé de opt-out, header `List-Unsubscribe`) é chamada tanto pelo envio manual quanto por qualquer novo caminho automático, sempre no momento do envio, nunca a partir de um campo cacheado
+  2. Duas tentativas de enviar o mesmo email (retry ou execução concorrente) resultam num único envio de verdade: a segunda tentativa é recusada por uma trava atômica antes da chamada ao provedor
+  3. A Noruega aparece com o aviso "validação jurídica pendente" e sai da lista de mercados de envio imediato sem aprovação, ao lado dos demais mercados de ligação primeiro
+  4. A tela mostra os tetos diários de envio automático, chamadas de IA e buscas de verificação, e o quanto já foi consumido hoje pelo workspace; ultrapassar um teto pausa aquele tipo de automação com aviso visível
+**Plans**: TBD
+**Research flag**: Não precisa de `/gsd:research-phase`, é refactor puro sobre código já mapeado (extração de `sendEmailForLead`, padrão de trava atômica e schema aditivo já documentados na pesquisa).
+
+### Phase 10: Verificação de site e redes sociais
+
+**Goal**: Antes de virar prospect de automação, cada lead selecionado é conferido de verdade na web: se já tiver site, sai do fluxo com o link como prova; se tiver Instagram ou Facebook, a usuária vê os links e uma mensagem pronta para copiar.
+**Depends on**: Phase 9
+**Requirements**: VERIF-01, VERIF-02, VERIF-03, VERIF-04
+**Success Criteria** (what must be TRUE):
+  1. Ao selecionar um lead para automação, o app confere na web (Serper.dev) se ele tem site de verdade; se tiver, o lead sai do fluxo marcado "já tem site" com o link encontrado como prova
+  2. A mesma checagem encontra Instagram e/ou Facebook do negócio quando existem, e a usuária vê os links no lead
+  3. A usuária tem uma mensagem pronta para copiar e enviar manualmente pela rede social do negócio
+  4. A régua de "tem site" é a mesma do resto do produto (`classifyWebsite`: rede social e agregador contam como sem site) e o servidor nunca busca uma URL de terceiro sem validar o host antes
+**Plans**: TBD
+**Research flag**: Sim, rodar `/gsd:research-phase` antes de planejar (mecanismo de busca web é serviço externo novo e a superfície de SSRF é nova no codebase; decidir Serper.dev vs. cota do Places com números reais de volume).
+**Bloqueio**: precisa de conta e chave da Serper.dev da usuária antes de codar.
+
+### Phase 11: Fila "Ligar" no CRM
+
+**Goal**: Leads de mercado de ligação primeiro aparecem num filtro próprio no CRM, com telefone, roteiro e redes sociais à mão, e o resultado de cada ligação decide o próximo passo do lead.
+**Depends on**: Phase 9
+**Requirements**: CALL-01, CALL-02, CALL-03
+**Success Criteria** (what must be TRUE):
+  1. Leads de mercados de ligação primeiro aparecem no filtro "Ligar" no CRM, com telefone, roteiro e links de redes sociais visíveis
+  2. A usuária registra o resultado da ligação: vai fechar avança o lead, não vai pede motivo, pediu por e-mail registra consentimento e libera o envio, não atendeu reagenda
+  3. Em lead da Alemanha, o card pede o motivo concreto da ligação (consentimento presumido, UWG §7) antes de liberar o roteiro
+**Plans**: TBD
+**Research flag**: Não precisa de `/gsd:research-phase`, reaproveita `markLost` e `recordContactOptIn` já existentes e auditados; baixa complexidade nova.
+
+### Phase 12: Pipeline automático em modo rascunho, sem envio
+
+**Goal**: Depois que a usuária seleciona um ou vários leads e aciona "Automatizar", o app confere o site, gera o preview, escreve a mensagem e escolhe o canal sozinho, mas ainda não envia nada de verdade; o pipeline sai comprovado estável antes de a última trava (envio automático) ser destravada.
+**Depends on**: Phase 10, Phase 11
+**Requirements**: PIPE-01, PIPE-02, PIPE-03, PIPE-04
+**Success Criteria** (what must be TRUE):
+  1. A usuária seleciona um ou vários leads e aciona "Automatizar"; sem outro clique, o app confere o site, gera o preview, escreve a mensagem e escolhe o canal
+  2. Cada lead em automação mostra a etapa atual e, se falhar, o erro e a opção de tentar de novo
+  3. O canal escolhido segue a regra do país: e-mail onde `canContactByEmail` permite, ligação em mercado opt-in com telefone, rede social quando for o único contato, "sem contato" quando não há nenhum
+  4. Mensagem com aviso da IA (dado não confirmado sobre o negócio) nunca sai sozinha, mesmo em mercado opt-out: vai para uma fila de revisão da usuária
+**Plans**: TBD
+**Research flag**: Não precisa de `/gsd:research-phase`, a orquestração usa só `scheduler.runAfter` e `cronJobs` nativos do Convex, já documentados com exemplo de código.
+**Bloqueio**: precisa de `ANTHROPIC_API_KEY` configurada em produção antes de codar a geração de mensagem (hoje ausente).
+
+### Phase 13: Envio automático imediato (mercados opt-out) + teto diário
+
+**Goal**: Nos mercados opt-out (GB/NL/IE/SE), o e-mail gerado pelo pipeline sai sozinho na hora, sem aprovação da usuária, respeitando um teto diário, um provedor apto a cold outreach B2B e um controle único para ligar/desligar tudo.
+**Depends on**: Phase 9, Phase 12
+**Requirements**: AUTO-01, AUTO-02, AUTO-03, AUTO-04, AUTO-05
+**Success Criteria** (what must be TRUE):
+  1. Em GB/NL/IE/SE, lead com canal e-mail que passa em todas as travas recebe o e-mail automaticamente, na hora, sem aprovação da usuária
+  2. O envio automático respeita um teto diário por workspace; o que passa do teto sai só no dia seguinte
+  3. A usuária liga e desliga todo o envio automático com um único controle na tela
+  4. O envio sai por um provedor cuja política aceita cold outreach B2B (decidido na pesquisa desta fase), não pela Resend
+  5. Um e-mail devolvido ou denunciado como spam marca o lead e suprime o endereço automaticamente, via webhook de entrega do provedor, sem exigir mudança de DNS
+**Plans**: TBD
+**Research flag**: Sim, rodar `/gsd:research-phase` antes de planejar (decisão do provedor de envio é gap explícito da pesquisa anterior, além de SPF/DKIM/DMARC do domínio de envio e auditoria retroativa da heurística `isEmailable` antes de tirar humano do loop).
+**Bloqueio**: precisa da decisão do provedor de envio automático (a Resend proíbe cold outreach na própria AUP); não começar a codar antes dessa decisão.
+
+### Phase 14: Follow-up automático por email
+
+**Goal**: Lead que recebeu e-mail automático e não respondeu recebe um único follow-up automático após 4 dias, cancelado na hora se qualquer trava de compliance disparar entre o envio original e o follow-up.
+**Depends on**: Phase 13
+**Requirements**: FUP-01, FUP-02
+**Success Criteria** (what must be TRUE):
+  1. Lead que recebeu e-mail automático e não foi marcado "respondeu" recebe um único follow-up automático após 4 dias, só em mercado onde e-mail é permitido
+  2. O follow-up é cancelado se o lead respondeu, devolveu, denunciou, se descadastrou, mudou de etapa ou foi perdido; todas as travas são conferidas de novo no momento do envio, nunca a partir de um campo cacheado
+**Plans**: TBD
+**Research flag**: Sim, rodar `/gsd:research-phase` antes de planejar (escopo do webhook de bounce/denúncia do provedor de envio escolhido na Fase 13, e o formato de verificação de assinatura, que difere do padrão Stripe já usado).

@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Automação da prospecção
-status: defining-requirements
-stopped_at: Milestone v1.3 iniciado (2026-09-26); definindo requisitos. v1.2 fechado e em produção desde 2026-09-18.
+status: ready-to-plan
+stopped_at: Roadmap do milestone v1.3 criado (Fases 9-14); pronto para /gsd:plan-phase 9. v1.2 fechado e em produção desde 2026-09-18.
 last_updated: "2026-09-26T00:00:00.000Z"
 progress:
-  total_phases: 8
+  total_phases: 14
   completed_phases: 8
   total_plans: 22
   completed_plans: 22
@@ -23,15 +23,18 @@ See: .planning/PROJECT.md (updated 2026-09-26)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 9 (Base de compliance compartilhada): not started
 Plan: —
-Status: Defining requirements
-Last activity: 2026-09-26 — Milestone v1.3 started
+Status: Ready to plan
+Last activity: 2026-09-26: Roadmap do milestone v1.3 criado (Fases 9-14), REQUIREMENTS.md e STATE.md atualizados
 
 Contexto de produção em 2026-09-26: Google Places ligada em prod (projeto GCP
 `soprano-503222`, faturamento "Pagamento do Firebase", cota SearchText 30/dia,
-`GOOGLE_PLACES_API_KEY` no Convex prod). `ANTHROPIC_API_KEY` ainda ausente em prod.
-O backlog v2 (SCAL-01..03, GDPR-01/02, BILL-04/05) segue em REQUIREMENTS.md.
+`GOOGLE_PLACES_API_KEY` no Convex prod). `ANTHROPIC_API_KEY` ainda ausente em prod
+(bloqueia a Fase 12). Fase 10 precisa de conta/chave Serper.dev da usuária; Fase 13
+precisa da decisão do provedor de envio automático (Resend proíbe cold outreach na
+própria AUP). O backlog v2 (SCAL-01..03, GDPR-01/02, BILL-04/05, AUTO-06, FUP-03,
+PIPE-05) segue em REQUIREMENTS.md.
 
 ## Performance Metrics
 
@@ -71,6 +74,7 @@ O backlog v2 (SCAL-01..03, GDPR-01/02, BILL-04/05) segue em REQUIREMENTS.md.
 - Phase 4 added: Modo opt-in (ligação-primeiro) para mercados opt-in (ES/IT/PT/DE/DK/CH) — aba Ligação primeiro, script de IA, consentimento destrava email (OPTIN-01..06)
 - Milestone v1.1 (2026-09-16), fora do GSD: Phase 5 Redesenho vidro sobre névoa (UX-01..05) e Phase 6 CRM fluxo do dia e informação do lead (CRM-01..07), ambas via superpowers (spec + plano em `docs/superpowers/`)
 - Milestone v1.2 (2026-09-18), fora do GSD: Phase 7 Descoberta via OpenStreetMap e "Ver o que ele tem" (DISC-01/02, commits diretos, sem spec/plano) e Phase 8 Modelos de site (SITE-01..07, workflow superpowers: spec + adendo, planos A/B em arquivo, C inline)
+- Milestone v1.3 (2026-09-26), roadmap criado via GSD a partir da pesquisa em `.planning/research/SUMMARY.md`: Phase 9 Base de compliance compartilhada (BASE-01..04), Phase 10 Verificação de site e redes sociais (VERIF-01..04), Phase 11 Fila "Ligar" no CRM (CALL-01..03), Phase 12 Pipeline automático em modo rascunho (PIPE-01..04), Phase 13 Envio automático + teto diário (AUTO-01..05), Phase 14 Follow-up automático (FUP-01..02). Ordem por risco crescente, não por valor percebido (ver ROADMAP.md).
 
 ### Decisions
 
@@ -95,6 +99,10 @@ Recent decisions affecting current work:
 - [Phase 3]: 03-03: updateDraft não chama withOptOutFooter — rodapé é responsabilidade exclusiva de upsertDraft/send, evita duplicar lógica de compliance
 - [Phase 03]: 03-04: hidratação do composer via key-remount (não useRef+useEffect) — react-hooks/set-state-in-effect e react-hooks/refs são 'error' no React Compiler deste projeto
 - [Phase 03]: 03-04: markReplied (Respondeu) nunca altera stage do lead — só o status do outreach
+- [Pesquisa v1.3]: Serper.dev aprovado como serviço de busca web (verificação de site + redes sociais); cota do Google Places como fallback só se o volume verificado for pequeno
+- [Pesquisa v1.3]: Noruega tratada como mercado de ligação primeiro (`legalReview: "pending"`) até validação jurídica, não mais equivalente a GB/NL/IE/SE
+- [Pesquisa v1.3]: provedor de envio automático (Resend proíbe cold outreach na AUP) fica para decisão dedicada antes do planejamento da Fase 13, comparando ESP cold-email-friendly vs. caixa própria (Gmail/Workspace)
+- [Pesquisa v1.3]: webhooks de entrega do Resend (bounce/complaint) tratados como pré-requisito técnico da Fase 14, não como "nice to have"; Resend Inbound (MX) fica para decisão separada de DNS
 
 ### Pending Todos
 
@@ -125,6 +133,10 @@ None yet.
 - [Phase 8]: nada é apagado do storage antes do Salvar: o servidor apaga o que saiu do `content` antigo só depois de gravar o novo, senão trocar uma foto destruiria a anterior antes de confirmar
 - [Phase 8]: regra de honestidade: texto padrão de `templates.*` nunca afirma fato do negócio de terceiro (sem dígito, sem superlativo); seção com dado só aparece quando ela preenche
 - [Phase 8]: pós-UAT, `registerUpload` valida o `contentType` real do storage (não confia no que o cliente prometeu mandar); `getBySlug` não devolve mais o token rastreado da prévia
+- [Pesquisa v1.3]: nenhuma dependência npm nova é necessária para as Fases 9/11/12 (scheduler.runAfter, cronJobs e crypto.subtle nativos do Convex cobrem orquestração, teto diário e verificação de assinatura de webhook)
+- [Pesquisa v1.3]: envio automático precisa de trava atômica (mutation "reivindica" o envio antes do fetch ao provedor); o botão manual é protegido só pelo humano clicar uma vez, o pipeline não tem essa proteção de graça
+- [Pesquisa v1.3]: `warnings` de alucinação da IA (`no-verified-signal`/`locality-claim`) já existem no código e precisam bloquear o envio automático sem exceção, caindo em fila de revisão (Fase 12/PIPE-04)
+- [Pesquisa v1.3]: `@convex-dev/workpool`/`rate-limiter`/`action-retrier` descartados de propósito: pacotes pré-1.0 que resolvem escala que este produto não tem
 
 ### Blockers/Concerns
 
@@ -132,19 +144,24 @@ None yet.
 
 - RESOLVIDO (fases 2-3 executadas em ordem): Phase 2 e Phase 3 tocam a mesma mutation `send` em `convex/outreach.ts` (Phase 2 injeta rodapé de opt-out; Phase 3 troca a fonte do subject/body para o composer e adiciona marcação manual de "respondeu"). Executar Phase 2 antes de Phase 3 evita retrabalho — já refletido na ordem do roadmap.
 - RESOLVIDO (executadas em ordem): Phase 1 (BILL-03) e Phase 2 (COMP-02) tocam ambas `convex/http.ts` (webhook Stripe e endpoint de unsubscribe). Não é dependência técnica dura, mas a ordem sequencial evita conflitos.
+- ABERTO: Fase 10 não pode ser planejada em detalhe até a usuária criar conta e chave da Serper.dev.
+- ABERTO: Fase 12 não pode enviar mensagem de verdade (nem ser totalmente testada em produção) sem `ANTHROPIC_API_KEY` configurada em prod.
+- ABERTO: Fase 13 não pode começar a ser planejada até decidir o provedor de envio automático (Resend proíbe cold outreach na própria AUP); pesquisa dedicada recomendada antes do `/gsd:plan-phase 13`.
+- ABERTO: Fase 14 depende da decisão de escopo do webhook de bounce/denúncia (Decisão da Duda item 3 da pesquisa), que também é pré-requisito técnico da própria Fase 14.
 
 ## Session Continuity
 
-Last session: 2026-09-18
-Stopped at: Fases 7 e 8 mergeadas (`1c775dc`, `4add1e3`, `402b873`, `70ae0ba`, `6834847`, `6873874`, `07965dc`); branch `main`, milestone v1.2 fechado
-Resume file: docs/CHECKLIST-MODO-REAL.md (seção 3.0, seção 9 e a seção 10 nova) e os roteiros manuais em docs/superpowers/plans/2026-09-17-modelos-de-site-A.md e 2026-09-18-modelos-de-site-B.md (última tarefa de cada)
+Last session: 2026-09-26
+Stopped at: Roadmap do milestone v1.3 criado (Fases 9-14 em `.planning/ROADMAP.md`), traceability de `.planning/REQUIREMENTS.md` atualizada (22/22 requisitos mapeados), STATE.md atualizado; branch `main`, nada commitado ainda (aguardando aprovação da Duda)
+Resume file: próximo passo é `/gsd:plan-phase 9`; docs/CHECKLIST-MODO-REAL.md (seção 3.0, seção 9 e seção 10) seguem pendentes como pendência operacional separada
 
 ## Pendências operacionais (não são código)
 
 - RESOLVIDO 2026-07-22: o `CONVEX_DEPLOYMENT` apontava para o projeto `sitescout` (nome antigo do repo), que não existe mais na conta — daí "You don't have access to the selected project" em todo comando Convex. Reconfigurado para o projeto `osprano` com deployment LOCAL (`npx convex dev --once --configure new --project osprano --dev-deployment local`). Codegen roda, schema da Fase 4 no banco, guardrails validados em runtime (ver 04-VERIFICATION.md §Verificação de runtime).
 - Deployment atual é LOCAL (grátis, offline). Para uso real com Clerk/Resend, trocar para nuvem — passo 1 do `docs/CHECKLIST-MODO-REAL.md`.
-- Falta ainda: `GOOGLE_PLACES_API_KEY` (busca real), `ANTHROPIC_API_KEY` (script/email por IA), `RESEND_API_KEY` (envio).
+- Falta ainda: `GOOGLE_PLACES_API_KEY` (busca real, já em prod desde 2026-09-26), `ANTHROPIC_API_KEY` (script/email por IA, bloqueia a Fase 12), `RESEND_API_KEY` (envio; provedor a decidir antes da Fase 13).
 - `pnpm test/typecheck/lint` abortam neste terminal (`ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY`). Usar `./node_modules/.bin/tsc --noEmit`, `./node_modules/.bin/eslint`, `node --experimental-strip-types --test tests/*.test.ts`, ou `pnpm install` num terminal com TTY.
 - 2026-09-16: a `ANTHROPIC_API_KEY` atual foi impressa num terminal durante a sessão. Rotacionar antes de qualquer deploy (checklist 3.0).
 - 2026-09-17: UAT executado em browser real (CDP), 22/22 PASS após o fix `89523a0`; roteiros de Task 29 e Tarefa 26 cobertos, exceto o que é sensação (arrasto, tema ao vivo, reduzir transparência).
 - 2026-09-18: milestone v1.2 fechado (Fases 7 e 8); UAT em navegador real por fase, achados corrigidos nos commits do merge final (`07965dc`). Pendência operacional continua a mesma de sempre: produção (seção 9) e rotação da chave Anthropic (3.0), ainda não feitas.
+- 2026-09-26: milestone v1.3 iniciado; roadmap criado (Fases 9-14). Três decisões de produto/infra ainda em aberto com a Duda antes do planejamento detalhado de fases específicas: conta Serper.dev (Fase 10), `ANTHROPIC_API_KEY` em prod (Fase 12), provedor de envio automático (Fase 13).
