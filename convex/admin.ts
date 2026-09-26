@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
 import { classifyWebsite, emailFields, normalizeInstagram, normalizeFacebook } from "./lib/domain";
 import { deleteLeadCascade } from "./model/leads";
+import { buildImportedLead, importDedupeKey } from "./lib/importLead";
 
 /**
  * Manutenção: passa tudo que pertence a uma org para outra (ex.: dados
@@ -167,5 +168,67 @@ export const saveLeads = internalMutation({
       n += 1;
     }
     return { saved: n };
+  },
+});
+
+/**
+ * Importa leads pesquisados fora do app (prospecção manual) direto no CRM da org.
+ * Pula quem já existe (mesmo e-mail, ou mesmo nome + cidade). Cada lead pode
+ * levar uma nota (ex.: o e-mail pronto) e a próxima ação. Só CLI:
+ * `npx convex run --prod admin:importLeads "$(cat leads.json)"`.
+ */
+export const importLeads = internalMutation({
+  args: {
+    orgId: v.string(),
+    leads: v.array(
+      v.object({
+        name: v.string(),
+        countryCode: v.string(),
+        category: v.optional(v.string()),
+        city: v.optional(v.string()),
+        phone: v.optional(v.string()),
+        email: v.optional(v.string()),
+        instagram: v.optional(v.string()),
+        facebook: v.optional(v.string()),
+        incorporated: v.boolean(),
+        businessEmail: v.optional(v.boolean()),
+        stage: v.union(v.literal("base"), v.literal("approached")),
+        note: v.optional(v.string()),
+        nextActionAt: v.optional(v.number()),
+        nextActionNote: v.optional(v.string()),
+      }),
+    ),
+  },
+  handler: async (ctx, { orgId, leads }) => {
+    const existing = await ctx.db.query("leads").withIndex("by_org", (q) => q.eq("orgId", orgId)).collect();
+    const seen = new Set<string>();
+    for (const l of existing) {
+      seen.add(importDedupeKey(l));
+      seen.add(importDedupeKey({ name: l.name, city: l.city }));
+    }
+    const now = Date.now();
+    const inserted: string[] = [];
+    const skipped: string[] = [];
+    for (const input of leads) {
+      const keys = [importDedupeKey(input), importDedupeKey({ name: input.name, city: input.city })];
+      if (keys.some((k) => seen.has(k))) {
+        skipped.push(input.name);
+        continue;
+      }
+      keys.forEach((k) => seen.add(k));
+      const leadId = await ctx.db.insert("leads", {
+        orgId,
+        ...buildImportedLead(input),
+        stageUpdatedAt: now,
+        scoredAt: now,
+        fetchedAt: now,
+        nextActionAt: input.nextActionAt,
+        nextActionNote: input.nextActionNote?.trim() || undefined,
+      });
+      const text = input.note?.trim();
+      if (text) await ctx.db.insert("events", { orgId, type: "note", leadId, at: now, meta: { text } });
+      inserted.push(input.name);
+    }
+    return { inserted: inserted.length, skipped };
   },
 });
