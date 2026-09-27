@@ -99,6 +99,45 @@ export const markLost = internalMutation({
   },
 });
 
+/**
+ * Move pra Abordado os leads que receberam e-mail fora do app (prospecção manual), achados
+ * pelo e-mail, com o follow-up como próxima ação e uma nota no Histórico. Só CLI.
+ */
+export const markApproached = internalMutation({
+  args: {
+    orgId: v.string(),
+    emails: v.array(v.string()),
+    nextActionAt: v.optional(v.number()),
+    nextActionNote: v.optional(v.string()),
+    note: v.optional(v.string()),
+  },
+  handler: async (ctx, { orgId, emails, nextActionAt, nextActionNote, note }) => {
+    const leads = await ctx.db.query("leads").withIndex("by_org", (q) => q.eq("orgId", orgId)).collect();
+    const now = Date.now();
+    const moved: string[] = [];
+    const notFound: string[] = [];
+    for (const raw of emails) {
+      const email = raw.trim().toLowerCase();
+      const lead = leads.find((l) => l.email?.trim().toLowerCase() === email);
+      if (!lead) {
+        notFound.push(email);
+        continue;
+      }
+      await ctx.db.patch(lead._id, {
+        stage: "approached",
+        stageUpdatedAt: now,
+        nextActionAt,
+        nextActionNote: nextActionNote?.trim() || undefined,
+      });
+      await ctx.db.insert("events", { orgId, type: "stage_change", leadId: lead._id, at: now, meta: { from: lead.stage, to: "approached" } });
+      const text = note?.trim();
+      if (text) await ctx.db.insert("events", { orgId, type: "note", leadId: lead._id, at: now, meta: { text } });
+      moved.push(lead.name);
+    }
+    return { moved, notFound };
+  },
+});
+
 /** Instagram/Facebook do lead, normalizados como no updateInfo. Só CLI. */
 export const setLeadSocial = internalMutation({
   args: { leadId: v.id("leads"), instagram: v.optional(v.string()), facebook: v.optional(v.string()) },
