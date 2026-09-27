@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Doc } from "@convex/_generated/dataModel";
-import { MdCheck, MdOutlineEventAvailable } from "react-icons/md";
+import { PiCheck, PiCalendarCheck } from "react-icons/pi";
 import { nextActionOf, dateInputToTimestamp, toDateInputValue } from "@convex/lib/domain";
 import { ActionStatusText } from "./next-action-line";
 import { useNow } from "@/lib/use-now";
@@ -94,7 +94,7 @@ export function NextActionForm({ lead, autoFocus = false }: { lead: Doc<"leads">
           disabled={busy !== null}
           className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-brand-fg shadow-[var(--shadow-sm)] hover:bg-brand-hover disabled:opacity-60"
         >
-          <MdOutlineEventAvailable size={16} />
+          <PiCalendarCheck size={16} />
           {busy === "save" ? "Salvando…" : "Salvar"}
         </button>
         {action && (
@@ -103,7 +103,7 @@ export function NextActionForm({ lead, autoFocus = false }: { lead: Doc<"leads">
             disabled={busy !== null}
             className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-semibold text-muted hover:bg-surface-solid disabled:opacity-60"
           >
-            <MdCheck size={16} />
+            <PiCheck size={16} />
             Concluir
           </button>
         )}

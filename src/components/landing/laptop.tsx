@@ -2,16 +2,16 @@
 
 import { useEffect, useRef, type CSSProperties } from "react";
 import {
-  MdOutlineDashboard,
-  MdOutlineTravelExplore,
-  MdOutlineViewKanban,
-  MdOutlineForwardToInbox,
-  MdOutlineLanguage,
-  MdOutlineSearch,
-  MdOutlineGppGood,
-  MdOutlineVisibility,
-  MdCheck,
-} from "react-icons/md";
+  PiSquaresFour,
+  PiBinoculars,
+  PiKanban,
+  PiEnvelopeSimple,
+  PiGlobe,
+  PiMagnifyingGlass,
+  PiShieldCheck,
+  PiEye,
+  PiCheck,
+} from "react-icons/pi";
 
 /**
  * Laptop com as telas do produto rodando dentro — réplica fiel do app
@@ -22,10 +22,10 @@ import {
  */
 
 const SCREENS = [
-  { id: "dashboard", label: "Dashboard", icon: MdOutlineDashboard },
-  { id: "leads", label: "Leads", icon: MdOutlineTravelExplore },
-  { id: "crm", label: "CRM", icon: MdOutlineViewKanban },
-  { id: "outreach", label: "Outreach", icon: MdOutlineForwardToInbox },
+  { id: "dashboard", label: "Dashboard", icon: PiSquaresFour },
+  { id: "leads", label: "Leads", icon: PiBinoculars },
+  { id: "crm", label: "CRM", icon: PiKanban },
+  { id: "outreach", label: "Outreach", icon: PiEnvelopeSimple },
 ] as const;
 
 const d = (ms: number) => ({ "--d": `${ms}ms` }) as CSSProperties;
@@ -75,7 +75,7 @@ function Shell({
             </span>
           ))}
           <span className="flex items-center gap-1.5 rounded-md border-l-2 border-transparent px-1.5 py-[5px] text-[8px] font-semibold text-muted">
-            <MdOutlineLanguage size={10} className="text-faint" />
+            <PiGlobe size={10} className="text-faint" />
             Meus Projetos
           </span>
         </nav>
@@ -106,7 +106,7 @@ function Shell({
           </div>
           <div className="flex items-center gap-1.5">
             <span className="flex items-center gap-1 rounded-full border border-border bg-surface px-2 py-0.5 text-[7px] text-faint">
-              <MdOutlineSearch size={8} />
+              <PiMagnifyingGlass size={8} />
               buscar…
             </span>
             <span className="rounded-full bg-surface-2 px-2 py-0.5 font-mono text-[6px] font-semibold text-muted">
@@ -124,10 +124,10 @@ function Shell({
 
 function ScreenDashboard() {
   const kpis = [
-    { l: "LEADS", v: "48", s: "na base", icon: MdOutlineTravelExplore },
-    { l: "SEM SITE / SOCIAL", v: "22", s: "maior intenção", icon: MdOutlineLanguage },
-    { l: "ABORDÁVEIS", v: "28", s: "opt-out + incorporados", icon: MdOutlineForwardToInbox },
-    { l: "CONVERTIDOS", v: "4", s: "fechados", icon: MdCheck },
+    { l: "LEADS", v: "48", s: "na base", icon: PiBinoculars },
+    { l: "SEM SITE / SOCIAL", v: "22", s: "maior intenção", icon: PiGlobe },
+    { l: "ABORDÁVEIS", v: "28", s: "opt-out + incorporados", icon: PiEnvelopeSimple },
+    { l: "CONVERTIDOS", v: "4", s: "fechados", icon: PiCheck },
   ];
   const taxas = [
     { l: "conversão", v: "8%", c: "var(--brand)" },
@@ -214,7 +214,7 @@ function ScreenDashboard() {
             </div>
             {/* atividade ao vivo */}
             <div className="demo-toast absolute bottom-2 right-2 flex items-center gap-1 rounded-md border border-border bg-elevated px-1.5 py-1 shadow-[var(--shadow-md)]">
-              <MdOutlineVisibility size={8} className="text-brand" />
+              <PiEye size={8} className="text-brand" />
               <span className="text-[6.5px]">
                 <b>The Oak &amp; Barrel</b> abriu o preview · agora
               </span>
@@ -383,7 +383,7 @@ function ScreenOutreach() {
               IA citou a dor: <i>&ldquo;your site shows as not secure on mobile&rdquo;</i> + link do preview
             </span>
             <span className="ml-auto flex shrink-0 items-center gap-1 rounded-md border border-border px-2 py-[3px] text-[6.5px] font-semibold">
-              <MdOutlineGppGood size={8} className="text-brand" /> opt-out incluído
+              <PiShieldCheck size={8} className="text-brand" /> opt-out incluído
             </span>
             <span className="shrink-0 rounded-md bg-brand px-2.5 py-[3px] text-[7px] font-bold text-brand-fg">
               Enviar

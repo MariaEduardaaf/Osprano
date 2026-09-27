@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef } from "react";
-import { MdArrowForward } from "react-icons/md";
+import { PiArrowRight } from "react-icons/pi";
 
 const LINKS = [
   { href: "#como", label: "Como funciona" },
@@ -117,7 +117,7 @@ export function LandingHeader({ ctaHref, ctaLabel }: { ctaHref: string; ctaLabel
           className="group inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-fg shadow-[var(--shadow-sm)] transition-[transform,box-shadow,background-color] duration-300 hover:-translate-y-0.5 hover:bg-brand-hover hover:shadow-[var(--shadow-md)]"
         >
           {ctaLabel}
-          <MdArrowForward
+          <PiArrowRight
             size={16}
             className="-ml-4 w-0 opacity-0 transition-[margin,width,opacity] duration-300 group-hover:-ml-0.5 group-hover:w-4 group-hover:opacity-100"
           />

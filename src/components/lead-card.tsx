@@ -1,15 +1,15 @@
 import type { ReactNode } from "react";
 import {
-  MdOutlineCheckCircle,
-  MdOutlineBlock,
-  MdCheckCircle,
-  MdRadioButtonUnchecked,
-  MdOutlineCall,
-  MdOutlinePlace,
-  MdOutlineHome,
-  MdOutlineLightbulb,
-  MdStar,
-} from "react-icons/md";
+  PiCheckCircle,
+  PiProhibit,
+  PiCheckCircleFill,
+  PiCircle,
+  PiPhone,
+  PiMapPin,
+  PiHouse,
+  PiLightbulb,
+  PiStarFill,
+} from "react-icons/pi";
 import type { Doc } from "@convex/_generated/dataModel";
 import { MARKETS, canContactByEmail } from "@convex/lib/domain";
 import { Badge } from "./ui";
@@ -81,10 +81,10 @@ export function LeadCard({
           {selectable && (
             <span className="mt-0.5" aria-hidden>
               {selected ? (
-                <MdCheckCircle size={22} className="text-brand" />
+                <PiCheckCircleFill size={20} className="text-brand" />
               ) : (
-                <MdRadioButtonUnchecked
-                  size={22}
+                <PiCircle
+                  size={20}
                   className="text-faint/50 transition-colors group-hover:text-muted"
                 />
               )}
@@ -121,7 +121,7 @@ export function LeadCard({
           </div>
           {lead.rating != null && (
             <div className="mt-1 flex items-center justify-end gap-1 text-[11px] text-muted">
-              <MdStar size={13} className="text-warm" />
+              <PiStarFill size={14} className="text-warm" />
               <span className="tabular-nums">
                 {lead.rating}
                 {lead.reviewsCount != null ? ` · ${lead.reviewsCount}` : ""}
@@ -133,8 +133,8 @@ export function LeadCard({
 
       {/* info rows */}
       <div className="mt-5 space-y-2.5">
-        {lead.phone && <InfoRow icon={<MdOutlineCall size={16} />}>{lead.phone}</InfoRow>}
-        <InfoRow icon={<MdOutlinePlace size={16} />}>
+        {lead.phone && <InfoRow icon={<PiPhone size={16} />}>{lead.phone}</InfoRow>}
+        <InfoRow icon={<PiMapPin size={16} />}>
           <span className="inline-flex items-center gap-2">
             <span className="truncate">
               {lead.city ? `${lead.city}, ${country}` : country}
@@ -152,12 +152,12 @@ export function LeadCard({
         </InfoRow>
         {noSite && (
           <div className="flex items-center gap-2.5 text-xs italic text-warm">
-            <MdOutlineLightbulb size={16} className="shrink-0" />
+            <PiLightbulb size={16} className="shrink-0" />
             Sem site — venda do zero
           </div>
         )}
         {lead.address && (
-          <InfoRow icon={<MdOutlineHome size={16} />}>
+          <InfoRow icon={<PiHouse size={16} />}>
             <span className="text-xs text-muted">{lead.address}</span>
           </InfoRow>
         )}
@@ -167,23 +167,23 @@ export function LeadCard({
       <div className="mt-5 border-t border-border pt-4">
         {callMode && !lead.contactOptInAt ? (
           <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted">
-            <MdOutlineCall size={14} />
+            <PiPhone size={14} />
             Ligação primeiro · email após consentimento
           </span>
         ) : callMode && lead.contactOptInAt ? (
           <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-brand">
-            <MdOutlineCheckCircle size={14} />
+            <PiCheckCircle size={14} />
             Consentimento registrado em{" "}
             {new Date(lead.contactOptInAt).toLocaleDateString("pt-BR")}
           </span>
         ) : canContactByEmail(lead) ? (
           <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-brand">
-            <MdOutlineCheckCircle size={14} />
+            <PiCheckCircle size={14} />
             {lead.emailable ? "Abordável por email" : "Abordável — consentimento registrado"}
           </span>
         ) : (
           <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-faint">
-            <MdOutlineBlock size={14} />
+            <PiProhibit size={14} />
             Fora do escopo compliant
           </span>
         )}
@@ -198,7 +198,7 @@ export function LeadCard({
                 href={`tel:${lead.phone.replace(/[^+0-9]/g, "")}`}
                 className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-brand-fg shadow-[var(--shadow-sm)] transition-colors hover:bg-brand-hover"
               >
-                <MdOutlineCall size={16} />
+                <PiPhone size={16} />
                 Ligar
               </a>
             )}

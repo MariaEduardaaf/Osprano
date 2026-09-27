@@ -1,11 +1,12 @@
 import type { ReactNode } from "react";
 import {
-  MdOutlineVisibility,
-  MdOutlineSend,
-  MdOutlineChat,
-  MdOutlineSwapHoriz,
-  MdOutlineStickyNote2,
-} from "react-icons/md";
+  PiEye,
+  PiPaperPlaneTilt,
+  PiChatCircle,
+  PiArrowsLeftRight,
+  PiNote,
+} from "react-icons/pi";
+import { SiWhatsapp } from "react-icons/si";
 
 /**
  * Cor e ícone por tipo de evento, compartilhados pelo feed do Dashboard e pelo Histórico do lead.
@@ -20,10 +21,10 @@ export function eventDot(type: string): string {
 }
 
 export function eventIcon(type: string, meta: { channel?: string } | null): ReactNode {
-  if (type === "note") return <MdOutlineStickyNote2 size={15} />;
-  if (type === "preview_open") return <MdOutlineVisibility size={15} />;
-  if (type === "email_sent") return meta?.channel === "whatsapp" ? <MdOutlineChat size={15} /> : <MdOutlineSend size={15} />;
-  if (type === "dm_sent") return <MdOutlineChat size={15} />;
-  if (type === "reply") return <MdOutlineChat size={15} />;
-  return <MdOutlineSwapHoriz size={15} />;
+  if (type === "note") return <PiNote size={16} />;
+  if (type === "preview_open") return <PiEye size={16} />;
+  if (type === "email_sent") return meta?.channel === "whatsapp" ? <SiWhatsapp size={16} /> : <PiPaperPlaneTilt size={16} />;
+  if (type === "dm_sent") return <PiChatCircle size={16} />;
+  if (type === "reply") return <PiChatCircle size={16} />;
+  return <PiArrowsLeftRight size={16} />;
 }

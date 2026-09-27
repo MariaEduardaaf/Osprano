@@ -1,6 +1,6 @@
 "use client";
 
-import { MdArrowBack, MdOpenInNew } from "react-icons/md";
+import { PiArrowLeft, PiArrowSquareOut } from "react-icons/pi";
 import type { Id } from "@convex/_generated/dataModel";
 import { PublishButton } from "@/components/publish-button";
 
@@ -40,7 +40,7 @@ export function EditorFooter({
         onClick={onBack}
         className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-semibold hover:bg-surface-2"
       >
-        <MdArrowBack size={16} />
+        <PiArrowLeft size={16} />
         Voltar
       </button>
 
@@ -62,7 +62,7 @@ export function EditorFooter({
         rel="noopener noreferrer"
         className="inline-flex items-center gap-1.5 rounded-lg border border-border-strong px-3 py-2 text-sm font-semibold hover:bg-surface-2"
       >
-        Abrir preview <MdOpenInNew size={14} />
+        Abrir preview <PiArrowSquareOut size={14} />
       </a>
       <PublishButton leadId={leadId} slug={slug} />
       <button

@@ -5,14 +5,14 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Doc, Id } from "@convex/_generated/dataModel";
 import {
-  MdOutlineCall,
-  MdDragIndicator,
-  MdSearch,
-  MdClose,
-  MdAdd,
-  MdExpandMore,
-  MdExpandLess,
-} from "react-icons/md";
+  PiPhone,
+  PiDotsSixVertical,
+  PiMagnifyingGlass,
+  PiX,
+  PiPlus,
+  PiCaretDown,
+  PiCaretUp,
+} from "react-icons/pi";
 import { PageHeader } from "@/components/ui";
 import { WhatsAppFollowup } from "@/components/whatsapp-followup";
 import { CreateLeadModal } from "@/components/crm/create-lead-modal";
@@ -171,7 +171,7 @@ export default function CrmPage() {
               onClick={() => setCreateOpen(true)}
               className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-fg shadow-[var(--shadow-sm)] transition-colors hover:bg-brand-hover"
             >
-              <MdAdd size={18} />
+              <PiPlus size={20} />
               Criar lead
             </button>
           </div>
@@ -182,7 +182,7 @@ export default function CrmPage() {
 
       {/* search */}
       <div className="glass relative mb-4 max-w-xl rounded-xl focus-within:border-border-strong">
-        <MdSearch size={18} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-faint" />
+        <PiMagnifyingGlass size={20} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-faint" />
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -195,7 +195,7 @@ export default function CrmPage() {
             aria-label="Limpar busca"
             className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-faint hover:bg-surface-2 hover:text-foreground"
           >
-            <MdClose size={16} />
+            <PiX size={16} />
           </button>
         )}
       </div>
@@ -274,7 +274,7 @@ export default function CrmPage() {
                       aria-label={lostOpen ? "Recolher Perdido" : "Expandir Perdido"}
                       className="rounded-md p-0.5 text-muted hover:bg-surface-2 hover:text-foreground"
                     >
-                      {lostOpen ? <MdExpandLess size={16} /> : <MdExpandMore size={16} />}
+                      {lostOpen ? <PiCaretUp size={16} /> : <PiCaretDown size={16} />}
                     </button>
                   )}
                 </span>
@@ -342,7 +342,7 @@ export default function CrmPage() {
                               <span className="font-display font-bold tabular-nums">{lead.score ?? "—"}</span>
                               {tier.label}
                             </span>
-                            <MdDragIndicator
+                            <PiDotsSixVertical
                               size={16}
                               className="mt-0.5 shrink-0 text-faint/60 opacity-0 transition-opacity group-hover:opacity-100"
                             />
@@ -376,7 +376,7 @@ export default function CrmPage() {
                                 onClick={(e) => e.stopPropagation()}
                                 className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-[11px] font-semibold hover:bg-surface-2"
                               >
-                                <MdOutlineCall size={13} />
+                                <PiPhone size={14} />
                                 Ligar
                               </a>
                             )}

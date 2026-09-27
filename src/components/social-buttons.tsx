@@ -1,4 +1,4 @@
-import { MdOutlineCameraAlt, MdOutlineFacebook } from "react-icons/md";
+import { SiFacebook, SiInstagram } from "react-icons/si";
 import type { Doc } from "@convex/_generated/dataModel";
 import { socialLinks } from "@/lib/lead-links";
 
@@ -25,9 +25,10 @@ export function SocialButtons({ lead, variant = "compact" }: { lead: Lead; varia
         rel="noopener noreferrer"
         onClick={(e) => e.stopPropagation()}
         title={instagram.label === "Instagram" ? "Abrir perfil" : "Buscar o perfil e colar no lead"}
+        aria-label={primary ? instagram.label : undefined}
         className={cls}
       >
-        <MdOutlineCameraAlt size={iconSize} />
+        <SiInstagram size={iconSize} />
         {!primary && instagram.label}
       </a>
       <a
@@ -36,9 +37,10 @@ export function SocialButtons({ lead, variant = "compact" }: { lead: Lead; varia
         rel="noopener noreferrer"
         onClick={(e) => e.stopPropagation()}
         title={facebook.label === "Facebook" ? "Abrir perfil" : "Buscar o perfil e colar no lead"}
+        aria-label={primary ? facebook.label : undefined}
         className={cls}
       >
-        <MdOutlineFacebook size={iconSize} />
+        <SiFacebook size={iconSize} />
         {!primary && facebook.label}
       </a>
     </>

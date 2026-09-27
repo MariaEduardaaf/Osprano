@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Doc } from "@convex/_generated/dataModel";
-import { MdOutlineContentCopy, MdOutlineCheck, MdOpenInNew, MdOutlineInfo } from "react-icons/md";
+import { PiCopy, PiCheck, PiArrowSquareOut, PiInfo } from "react-icons/pi";
 import { socialLinks } from "@/lib/lead-links";
 import { dmMessage } from "@/lib/dm-template";
 import { errorMessage } from "@/lib/errors";
@@ -80,7 +80,7 @@ export function DmComposer({ lead }: { lead: Doc<"leads"> }) {
           className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-semibold hover:bg-surface-solid"
         >
           {lead.instagram ? "Abrir Instagram" : instagram.label}
-          <MdOpenInNew size={12} />
+          <PiArrowSquareOut size={14} />
         </a>
         <a
           href={facebook.href}
@@ -89,12 +89,12 @@ export function DmComposer({ lead }: { lead: Doc<"leads"> }) {
           className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-semibold hover:bg-surface-solid"
         >
           {lead.facebook ? "Abrir Facebook" : facebook.label}
-          <MdOpenInNew size={12} />
+          <PiArrowSquareOut size={14} />
         </a>
       </div>
       {missingProfile && (
         <p className="flex items-start gap-1.5 text-[11px] leading-relaxed text-faint">
-          <MdOutlineInfo size={13} className="mt-0.5 shrink-0" />
+          <PiInfo size={14} className="mt-0.5 shrink-0" />
           Preencha Instagram/Facebook em Informações &gt; Contato
         </p>
       )}
@@ -131,7 +131,7 @@ export function DmComposer({ lead }: { lead: Doc<"leads"> }) {
           disabled={busy === "copy"}
           className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-semibold hover:bg-surface disabled:opacity-50"
         >
-          <MdOutlineContentCopy size={14} />
+          <PiCopy size={14} />
           Copiar
         </button>
         <select
@@ -152,7 +152,7 @@ export function DmComposer({ lead }: { lead: Doc<"leads"> }) {
           disabled={busy === "mark"}
           className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-brand-fg disabled:opacity-50"
         >
-          <MdOutlineCheck size={14} />
+          <PiCheck size={14} />
           Marcar contatado por DM
         </button>
       </div>

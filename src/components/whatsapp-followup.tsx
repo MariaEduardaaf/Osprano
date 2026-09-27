@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { MdOutlineChat, MdOutlineSend, MdOpenInNew } from "react-icons/md";
+import { PiPaperPlaneTilt, PiArrowSquareOut } from "react-icons/pi";
+import { SiWhatsapp } from "react-icons/si";
 import { useAction, useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
@@ -36,7 +37,7 @@ export function WhatsAppFollowup({
         onClick={() => setOpen(true)}
         className="flex w-full items-center justify-center gap-1.5 rounded-md border border-border py-1.5 text-[11px] font-semibold text-muted hover:bg-surface-2"
       >
-        <MdOutlineChat size={14} />
+        <SiWhatsapp size={14} />
         WhatsApp follow-up
       </button>
     );
@@ -110,7 +111,7 @@ export function WhatsAppFollowup({
           disabled={busy || !message.trim()}
           className="inline-flex items-center gap-1 rounded-md bg-brand px-2.5 py-1 text-[11px] font-semibold text-brand-fg disabled:opacity-50"
         >
-          <MdOutlineSend size={13} />
+          <PiPaperPlaneTilt size={14} />
           {busy ? "…" : "Enviar"}
         </button>
         {phone && (
@@ -120,7 +121,7 @@ export function WhatsAppFollowup({
             rel="noreferrer"
             className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-[11px] font-semibold hover:bg-surface-2"
           >
-            <MdOpenInNew size={13} />
+            <PiArrowSquareOut size={14} />
             wa.me
           </a>
         )}

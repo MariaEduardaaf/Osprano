@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
-import { MdClose, MdCheck } from "react-icons/md";
+import { PiX, PiCheck } from "react-icons/pi";
 import {
   CATEGORY_OPTIONS,
   CITIES_BY_COUNTRY,
@@ -129,7 +129,7 @@ export function CreateLeadModal({ onClose }: { onClose: () => void }) {
             aria-label="Fechar"
             className="rounded-lg p-1.5 text-muted hover:bg-surface-2 hover:text-foreground"
           >
-            <MdClose size={20} />
+            <PiX size={20} />
           </button>
         </div>
 
@@ -227,7 +227,7 @@ export function CreateLeadModal({ onClose }: { onClose: () => void }) {
                 disabled={saving}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-fg shadow-[var(--shadow-sm)] transition-colors hover:bg-brand-hover disabled:opacity-60"
               >
-                <MdCheck size={16} />
+                <PiCheck size={16} />
                 {saving ? "Criando…" : "Criar lead"}
               </button>
             </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { MdOutlineLightMode, MdOutlineDarkMode } from "react-icons/md";
+import { PiSun, PiMoon } from "react-icons/pi";
 
 /**
  * Alterna claro/escuro via `data-theme` no <html> + localStorage.
@@ -27,10 +27,10 @@ export function ThemeToggle() {
       className="flex h-9 w-9 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
     >
       <span className="theme-to-light">
-        <MdOutlineLightMode size={19} />
+        <PiSun size={20} />
       </span>
       <span className="theme-to-dark">
-        <MdOutlineDarkMode size={19} />
+        <PiMoon size={20} />
       </span>
     </button>
   );

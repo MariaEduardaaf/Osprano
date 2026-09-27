@@ -3,7 +3,7 @@
 import { useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Doc } from "@convex/_generated/dataModel";
-import { MdDeleteOutline } from "react-icons/md";
+import { PiTrash } from "react-icons/pi";
 
 /**
  * Botão "Excluir" do lead: confirma com a usuária, chama `leads.remove` (que apaga
@@ -53,7 +53,7 @@ export function DeleteLeadButton({
         "inline-flex shrink-0 items-center justify-center rounded-lg p-1.5 text-muted transition-colors hover:text-danger"
       }
     >
-      <MdDeleteOutline size={size} />
+      <PiTrash size={size} />
     </button>
   );
 }

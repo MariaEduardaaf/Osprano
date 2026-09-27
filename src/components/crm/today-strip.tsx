@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Doc, Id } from "@convex/_generated/dataModel";
-import { MdCheck, MdKeyboardArrowDown } from "react-icons/md";
+import { PiCheck, PiCaretDown } from "react-icons/pi";
 import { addDays, daysBetween, type ActionStatus, type NextAction } from "@convex/lib/domain";
 import { daysAgoLabel } from "./next-action-line";
 import { errorMessage } from "@/lib/errors";
@@ -96,7 +96,7 @@ export function TodayStrip({
           disabled={busy === id}
           className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs font-semibold hover:bg-surface-2 disabled:opacity-50"
         >
-          <MdCheck size={14} />
+          <PiCheck size={14} />
           Feito
         </button>
         <div className="relative shrink-0">
@@ -108,7 +108,7 @@ export function TodayStrip({
             className="inline-flex items-center gap-0.5 rounded-md border border-border px-2.5 py-1 text-xs font-semibold text-muted hover:bg-surface-2 disabled:opacity-50"
           >
             Adiar
-            <MdKeyboardArrowDown size={14} />
+            <PiCaretDown size={14} />
           </button>
           {menuFor === id && (
             <div

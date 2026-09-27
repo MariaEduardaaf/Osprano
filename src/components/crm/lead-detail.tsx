@@ -6,16 +6,16 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Doc } from "@convex/_generated/dataModel";
 import {
-  MdClose,
-  MdOutlineCall,
-  MdOpenInNew,
-  MdOutlineGppGood,
-  MdOutlineWarningAmber,
-  MdStar,
-  MdKeyboardArrowDown,
-  MdOutlineReply,
-  MdBlock,
-} from "react-icons/md";
+  PiX,
+  PiPhone,
+  PiArrowSquareOut,
+  PiShieldCheck,
+  PiWarning,
+  PiStarFill,
+  PiCaretDown,
+  PiArrowBendUpLeft,
+  PiProhibit,
+} from "react-icons/pi";
 import {
   PIPELINE_STAGES,
   MARKETS,
@@ -125,7 +125,7 @@ export function LeadDetail({
             <div className="flex shrink-0 items-center gap-1">
               <DeleteLeadButton lead={lead} onDeleted={onClose} />
               <button onClick={onClose} aria-label="Fechar" className="rounded-lg p-1.5 text-muted hover:bg-surface-2 hover:text-foreground">
-                <MdClose size={20} />
+                <PiX size={20} />
               </button>
             </div>
           </div>
@@ -225,7 +225,7 @@ function InfoTab({
         <Row label="Telefone">
           {lead.phone ? (
             <a href={`tel:${lead.phone}`} className="inline-flex items-center gap-1 text-brand hover:underline">
-              {lead.phone} <MdOutlineCall size={14} />
+              {lead.phone} <PiPhone size={14} />
             </a>
           ) : (
             "—"
@@ -234,7 +234,7 @@ function InfoTab({
         <Row label="Website">
           {lead.website ? (
             <a href={lead.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-brand hover:underline">
-              site <MdOpenInNew size={13} />
+              site <PiArrowSquareOut size={14} />
             </a>
           ) : (
             <span className="text-hot">Sem site</span>
@@ -243,7 +243,7 @@ function InfoTab({
         <Row label="Avaliação">
           {lead.rating != null ? (
             <span className="inline-flex items-center gap-1">
-              <MdStar size={14} className="text-warm" /> {lead.rating}/5
+              <PiStarFill size={14} className="text-warm" /> {lead.rating}/5
               {lead.reviewsCount != null ? ` · ${lead.reviewsCount} avaliações` : ""}
             </span>
           ) : (
@@ -272,14 +272,14 @@ function InfoTab({
         <div className="flex items-center gap-2">
           {canContactByEmail(lead) ? (
             <>
-              <MdOutlineGppGood size={18} className="text-brand" />
+              <PiShieldCheck size={20} className="text-brand" />
               <span className="text-sm font-semibold text-brand">
                 {lead.emailable ? "Abordável por email" : "Abordável — consentimento registrado"}
               </span>
             </>
           ) : (
             <>
-              <MdOutlineWarningAmber size={18} className="text-warm" />
+              <PiWarning size={20} className="text-warm" />
               <span className="text-sm font-semibold text-warm">Fora do escopo compliant</span>
             </>
           )}
@@ -378,7 +378,7 @@ function ApproachTab({ lead }: { lead: Doc<"leads"> }) {
       {/* OPTIN-04: some quando há consentimento registrado (o composer já funciona nesse caso). */}
       {!canContactByEmail(lead) && (
         <div className="flex items-start gap-2 rounded-xl border border-warm/30 bg-warm/10 p-3 text-xs leading-relaxed text-ink-soft">
-          <MdOutlineWarningAmber size={16} className="mt-0.5 shrink-0 text-warm" />
+          <PiWarning size={16} className="mt-0.5 shrink-0 text-warm" />
           <span>
             Este lead <strong>não é abordável por email frio</strong> (mercado ou entidade fora da regra opt-out).
             Prefira uma ligação — chamar um número comercial B2B é permitido.
@@ -392,7 +392,7 @@ function ApproachTab({ lead }: { lead: Doc<"leads"> }) {
         <div className="space-y-2 rounded-xl border border-border bg-surface-2/50 p-3">
           <div className="flex items-center justify-between gap-2">
             <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-foreground">
-              <MdOutlineCall size={14} />
+              <PiPhone size={14} />
               Ligação primeiro
             </span>
             {lead.phone && (
@@ -400,7 +400,7 @@ function ApproachTab({ lead }: { lead: Doc<"leads"> }) {
                 href={`tel:${lead.phone.replace(/[^+0-9]/g, "")}`}
                 className="inline-flex items-center gap-1 rounded-md bg-brand px-2.5 py-1 text-[11px] font-semibold text-brand-fg hover:bg-brand-hover"
               >
-                <MdOutlineCall size={13} />
+                <PiPhone size={14} />
                 Ligar
               </a>
             )}
@@ -451,7 +451,7 @@ function ApproachTab({ lead }: { lead: Doc<"leads"> }) {
           disabled={busy === "replied"}
           className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-semibold hover:bg-surface-2 disabled:opacity-50"
         >
-          <MdOutlineReply size={14} />
+          <PiArrowBendUpLeft size={14} />
           Respondeu
         </button>
         {lead.email && (
@@ -466,7 +466,7 @@ function ApproachTab({ lead }: { lead: Doc<"leads"> }) {
             disabled={busy === "optout"}
             className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-semibold text-muted hover:bg-surface-2 disabled:opacity-50"
           >
-            <MdBlock size={14} />
+            <PiProhibit size={14} />
             Pediu opt-out
           </button>
         )}
@@ -561,7 +561,7 @@ function ObjectionCard({ o }: { o: Objection }) {
     <div className="overflow-hidden rounded-xl border border-border bg-surface-2">
       <button onClick={() => setOpen((v) => !v)} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left">
         <span className="text-sm font-semibold">&quot;{o.label}&quot;</span>
-        <MdKeyboardArrowDown size={20} className={`shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`} />
+        <PiCaretDown size={20} className={`shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
         <div className="space-y-3 border-t border-border px-4 py-3.5">
@@ -643,7 +643,7 @@ function ClosingCard({ label, response }: { label: string; response: string }) {
     <div className="overflow-hidden rounded-xl border border-border bg-surface-2">
       <button onClick={() => setOpen((v) => !v)} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left">
         <span className="text-sm font-semibold">&quot;{label}&quot;</span>
-        <MdKeyboardArrowDown size={20} className={`shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`} />
+        <PiCaretDown size={20} className={`shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && <p className="border-t border-border px-4 py-3.5 text-sm leading-relaxed text-ink-soft">{response}</p>}
     </div>

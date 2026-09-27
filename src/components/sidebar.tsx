@@ -4,13 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 import {
-  MdOutlineDashboard,
-  MdOutlineTravelExplore,
-  MdOutlineViewKanban,
-  MdOutlineForwardToInbox,
-  MdOutlineLanguage,
-  MdOutlineSettings,
-} from "react-icons/md";
+  PiSquaresFour,
+  PiBinoculars,
+  PiKanban,
+  PiEnvelopeSimple,
+  PiGlobe,
+  PiGear,
+} from "react-icons/pi";
 import type { IconType } from "react-icons";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -18,11 +18,11 @@ const DEMO = process.env.NEXT_PUBLIC_DEMO === "1";
 
 /** Rótulos curtos: o rail tem 72px. "Meus Projetos" vira "Sites" só aqui (a página mantém o título). */
 const NAV: { href: string; label: string; Icon: IconType }[] = [
-  { href: "/dashboard", label: "Início", Icon: MdOutlineDashboard },
-  { href: "/leads", label: "Leads", Icon: MdOutlineTravelExplore },
-  { href: "/crm", label: "CRM", Icon: MdOutlineViewKanban },
-  { href: "/outreach", label: "Outreach", Icon: MdOutlineForwardToInbox },
-  { href: "/sites", label: "Sites", Icon: MdOutlineLanguage },
+  { href: "/dashboard", label: "Início", Icon: PiSquaresFour },
+  { href: "/leads", label: "Leads", Icon: PiBinoculars },
+  { href: "/crm", label: "CRM", Icon: PiKanban },
+  { href: "/outreach", label: "Outreach", Icon: PiEnvelopeSimple },
+  { href: "/sites", label: "Sites", Icon: PiGlobe },
 ];
 
 function NavItem({ href, label, Icon }: { href: string; label: string; Icon: IconType }) {
@@ -36,7 +36,7 @@ function NavItem({ href, label, Icon }: { href: string; label: string; Icon: Ico
         active ? "bg-brand-soft text-brand" : "text-muted hover:bg-surface-2/60 hover:text-foreground"
       }`}
     >
-      <Icon size={22} />
+      <Icon size={20} />
       {label}
     </Link>
   );
@@ -72,7 +72,7 @@ export function Sidebar() {
       ))}
 
       <div className="mt-auto flex w-full flex-col items-center gap-2 pt-4">
-        <NavItem href="/settings" label="Ajustes" Icon={MdOutlineSettings} />
+        <NavItem href="/settings" label="Ajustes" Icon={PiGear} />
         <ThemeToggle />
         {DEMO ? (
           <span className="rounded-full bg-surface-2 px-2 py-0.5 font-mono text-[9px] font-semibold text-muted">

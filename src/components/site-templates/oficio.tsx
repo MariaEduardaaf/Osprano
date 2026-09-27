@@ -1,4 +1,4 @@
-import { MdOutlinePlace } from "react-icons/md";
+import { PiMapPin } from "react-icons/pi";
 import {
   BigFooter,
   CONTAINER,
@@ -114,7 +114,7 @@ export function Oficio(props: TemplateProps) {
           <div>
             <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-(--site-muted)">{tr.areaHeading}</h2>
             <p className={`${serif} mt-3 flex items-center gap-3 text-4xl @3xl:text-5xl`}>
-              <MdOutlinePlace size={34} className="shrink-0 text-(--site-accent)" aria-hidden />
+              <PiMapPin size={34} className="shrink-0 text-(--site-accent)" aria-hidden />
               {tr.inCity(view.city)}
             </p>
           </div>

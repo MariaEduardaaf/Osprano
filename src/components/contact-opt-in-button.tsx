@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MdOutlineHowToReg, MdOutlineCheckCircle } from "react-icons/md";
+import { PiUserCheck, PiCheckCircle } from "react-icons/pi";
 import { useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
@@ -39,7 +39,7 @@ export function ContactOptInButton({
   if (optInAt) {
     return (
       <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-brand">
-        <MdOutlineCheckCircle size={14} />
+        <PiCheckCircle size={14} />
         Consentimento registrado
       </span>
     );
@@ -51,7 +51,7 @@ export function ContactOptInButton({
         onClick={() => setOpen(true)}
         className="flex w-full items-center justify-center gap-1.5 rounded-md border border-border py-1.5 text-[11px] font-semibold text-muted hover:bg-surface-2"
       >
-        <MdOutlineHowToReg size={14} />
+        <PiUserCheck size={14} />
         Registrar consentimento
       </button>
     );

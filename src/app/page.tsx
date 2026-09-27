@@ -2,20 +2,20 @@ import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import type { IconType } from "react-icons";
 import {
-  MdOutlineTravelExplore,
-  MdOutlineAutoAwesome,
-  MdOutlineForwardToInbox,
-  MdOutlineSend,
-  MdOutlineVisibility,
-  MdOutlineTrendingUp,
-  MdOutlineDashboard,
-  MdOutlineInsights,
-  MdOutlineViewKanban,
-  MdOutlineGppGood,
-  MdArrowForward,
-  MdArrowOutward,
-  MdCheck,
-} from "react-icons/md";
+  PiBinoculars,
+  PiSparkle,
+  PiEnvelopeSimple,
+  PiPaperPlaneTilt,
+  PiEye,
+  PiTrendUp,
+  PiSquaresFour,
+  PiChartLine,
+  PiKanban,
+  PiShieldCheck,
+  PiArrowRight,
+  PiArrowUpRight,
+  PiCheck,
+} from "react-icons/pi";
 import { MARKETS, LAUNCH_MARKETS } from "@convex/lib/domain";
 import { ProductMockup } from "@/components/landing/mockup";
 import { Radar } from "@/components/landing/radar";
@@ -54,21 +54,21 @@ function Logo() {
 }
 
 const STEPS: { icon: IconType; t: string; d: string }[] = [
-  { icon: MdOutlineTravelExplore, t: "Ache a dor", d: "Busque negócios locais por país, cidade e categoria. O Digital Presence Score rankeia quem tem site fraco ou nenhum." },
-  { icon: MdOutlineAutoAwesome, t: "Gere o preview", d: "Em segundos, um preview profissional do site do negócio, num link único rastreado." },
-  { icon: MdOutlineForwardToInbox, t: "A IA escreve a abordagem", d: "Ela lê a dor do lead e escreve o email personalizado citando o problema exato + o link." },
-  { icon: MdOutlineSend, t: "Envie compliant", d: "Só mercados opt-out, só entidades incorporadas, com identificação e opt-out. Nada de spam." },
-  { icon: MdOutlineVisibility, t: "Saiba quando abriram", d: "O lead avança no funil e você é notificado no instante em que o prospect abre o preview." },
-  { icon: MdOutlineTrendingUp, t: "Feche + recorrência", d: "Feche no CRM e transforme a venda em MRR com hospedagem white-label na sua marca." },
+  { icon: PiBinoculars, t: "Ache a dor", d: "Busque negócios locais por país, cidade e categoria. O Digital Presence Score rankeia quem tem site fraco ou nenhum." },
+  { icon: PiSparkle, t: "Gere o preview", d: "Em segundos, um preview profissional do site do negócio, num link único rastreado." },
+  { icon: PiEnvelopeSimple, t: "A IA escreve a abordagem", d: "Ela lê a dor do lead e escreve o email personalizado citando o problema exato + o link." },
+  { icon: PiPaperPlaneTilt, t: "Envie compliant", d: "Só mercados opt-out, só entidades incorporadas, com identificação e opt-out. Nada de spam." },
+  { icon: PiEye, t: "Saiba quando abriram", d: "O lead avança no funil e você é notificado no instante em que o prospect abre o preview." },
+  { icon: PiTrendUp, t: "Feche + recorrência", d: "Feche no CRM e transforme a venda em MRR com hospedagem white-label na sua marca." },
 ];
 
 const FEATURES: { icon: IconType; t: string; d: string }[] = [
-  { icon: MdOutlineDashboard, t: "Dashboard", d: "Funil, taxas de conversão e atividade ao vivo — a saúde da operação num relance." },
-  { icon: MdOutlineInsights, t: "Digital Presence Score", d: "Pontue a dor de 0 a 100 com sinais reais: sem site, só-social, sem HTTPS, não-mobile, lento." },
-  { icon: MdOutlineViewKanban, t: "CRM visual", d: "Kanban do funil (Base → Abordado → Agendado → Follow Up → Convertido). Mova por etapa." },
-  { icon: MdOutlineAutoAwesome, t: "Outreach por IA", d: "Email personalizado citando a dor + link do preview. Você revisa e envia num clique." },
-  { icon: MdOutlineVisibility, t: "Preview rastreado", d: "Cada proposta num link único. Saiba na hora que o cliente abriu — o momento de fechar." },
-  { icon: MdOutlineGppGood, t: "Compliant by design", d: "Só aborda onde é legal (opt-out UE). GDPR-safe, com opt-out em todo email. Sem risco." },
+  { icon: PiSquaresFour, t: "Dashboard", d: "Funil, taxas de conversão e atividade ao vivo — a saúde da operação num relance." },
+  { icon: PiChartLine, t: "Digital Presence Score", d: "Pontue a dor de 0 a 100 com sinais reais: sem site, só-social, sem HTTPS, não-mobile, lento." },
+  { icon: PiKanban, t: "CRM visual", d: "Kanban do funil (Base → Abordado → Agendado → Follow Up → Convertido). Mova por etapa." },
+  { icon: PiSparkle, t: "Outreach por IA", d: "Email personalizado citando a dor + link do preview. Você revisa e envia num clique." },
+  { icon: PiEye, t: "Preview rastreado", d: "Cada proposta num link único. Saiba na hora que o cliente abriu — o momento de fechar." },
+  { icon: PiShieldCheck, t: "Compliant by design", d: "Só aborda onde é legal (opt-out UE). GDPR-safe, com opt-out em todo email. Sem risco." },
 ];
 
 const TESTIMONIALS = [
@@ -216,7 +216,7 @@ export default async function Home() {
               className="group inline-flex items-center gap-2 rounded-xl bg-brand px-7 py-3.5 text-sm font-semibold text-brand-fg shadow-[var(--shadow-md)] transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-lg)]"
             >
               {ctaLabel}
-              <MdArrowForward size={18} className="transition-transform duration-300 group-hover:translate-x-1" />
+              <PiArrowRight size={20} className="transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
             <a
               href="#como"
@@ -231,7 +231,7 @@ export default async function Home() {
           >
             {["GDPR compliant", "Só mercados opt-out", "Sem instalar nada"].map((c) => (
               <span key={c} className="inline-flex items-center gap-1.5">
-                <MdCheck size={16} className="text-brand" />
+                <PiCheck size={16} className="text-brand" />
                 {c}
               </span>
             ))}
@@ -315,7 +315,7 @@ export default async function Home() {
                     0{i + 1}
                   </span>
                   <div className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-border bg-surface text-brand shadow-[var(--shadow-sm)] transition-all duration-300 group-hover:border-brand/40 group-hover:shadow-[0_0_24px_-6px_var(--brand)]">
-                    <s.icon size={22} />
+                    <s.icon size={20} />
                   </div>
                   <div className="pt-1.5">
                     <div className="flex items-center gap-2.5">
@@ -367,7 +367,7 @@ export default async function Home() {
           />
           <div className="relative max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-wider">
-              <MdOutlineGppGood size={14} /> O diferencial
+              <PiShieldCheck size={14} /> O diferencial
             </div>
             <h2 className="mt-5 font-display text-3xl font-bold tracking-tight sm:text-4xl">
               A única prospecção que não te processa.
@@ -421,10 +421,10 @@ export default async function Home() {
                 />
                 <div className="relative flex items-center justify-between">
                   <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-soft text-brand transition-transform duration-300 group-hover:scale-110">
-                    <f.icon size={22} />
+                    <f.icon size={20} />
                   </div>
-                  <MdArrowOutward
-                    size={18}
+                  <PiArrowUpRight
+                    size={20}
                     className="-translate-x-1 translate-y-1 text-faint opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:translate-y-0 group-hover:opacity-100"
                   />
                 </div>
@@ -539,7 +539,7 @@ export default async function Home() {
                 className="group mt-9 inline-flex items-center gap-2 rounded-xl bg-brand px-9 py-4 text-sm font-semibold text-brand-fg shadow-[var(--shadow-md)] transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-lg)]"
               >
                 {ctaLabel}
-                <MdArrowForward size={18} className="transition-transform duration-300 group-hover:translate-x-1" />
+                <PiArrowRight size={20} className="transition-transform duration-300 group-hover:translate-x-1" />
               </Link>
             </div>
           </div>
@@ -624,7 +624,7 @@ export default async function Home() {
                 className="group mt-5 inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-brand-fg shadow-[var(--shadow-sm)] transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)]"
               >
                 {ctaLabel}
-                <MdArrowForward size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
+                <PiArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
               </Link>
             </div>
           </div>
@@ -639,7 +639,7 @@ export default async function Home() {
               className="group inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-muted transition-colors hover:text-foreground"
             >
               Voltar ao topo
-              <MdArrowForward size={13} className="-rotate-90 transition-transform duration-300 group-hover:-translate-y-0.5" />
+              <PiArrowRight size={14} className="-rotate-90 transition-transform duration-300 group-hover:-translate-y-0.5" />
             </a>
           </div>
         </div>

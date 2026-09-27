@@ -1,4 +1,4 @@
-import { MdOpenInNew } from "react-icons/md";
+import { PiArrowSquareOut } from "react-icons/pi";
 import type { Doc } from "@convex/_generated/dataModel";
 import { whatTheyHaveLink } from "@/lib/lead-links";
 
@@ -34,7 +34,7 @@ export function WhatTheyHaveButton({
           : "inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold hover:bg-surface-2"
       }
     >
-      <MdOpenInNew size={primary ? 16 : 14} />
+      <PiArrowSquareOut size={primary ? 16 : 14} />
       {label}
     </a>
   );

@@ -3,14 +3,14 @@
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
-  MdOutlineDescription,
-  MdOutlineAutoAwesome,
-  MdOutlineContentCopy,
-  MdOutlineCheck,
-  MdExpandLess,
-  MdOutlineWarningAmber,
-  MdOutlineInfo,
-} from "react-icons/md";
+  PiFileText,
+  PiSparkle,
+  PiCopy,
+  PiCheck,
+  PiCaretUp,
+  PiWarning,
+  PiInfo,
+} from "react-icons/pi";
 import { useAction } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
@@ -73,7 +73,7 @@ function CopyButton({ text, label }: { text: string; label: string }) {
       aria-label={label}
       className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 text-[10px] font-semibold text-muted hover:bg-surface-2"
     >
-      {copied ? <MdOutlineCheck size={12} /> : <MdOutlineContentCopy size={12} />}
+      {copied ? <PiCheck size={14} /> : <PiCopy size={14} />}
       {copied ? "Copiado!" : "Copiar"}
     </button>
   );
@@ -92,9 +92,9 @@ function Note({ tone, children }: { tone: "warn" | "info"; children: ReactNode }
       }`}
     >
       {warn ? (
-        <MdOutlineWarningAmber size={12} className="mt-0.5 shrink-0 text-warm" />
+        <PiWarning size={14} className="mt-0.5 shrink-0 text-warm" />
       ) : (
-        <MdOutlineInfo size={12} className="mt-0.5 shrink-0 text-faint" />
+        <PiInfo size={14} className="mt-0.5 shrink-0 text-faint" />
       )}
       <div className="min-w-0 space-y-1">{children}</div>
     </div>
@@ -232,7 +232,7 @@ export function CallScriptPanel({
         onClick={() => setOpen(true)}
         className="flex w-full items-center justify-center gap-1.5 rounded-md border border-border py-1.5 text-[11px] font-semibold text-muted hover:bg-surface-2"
       >
-        <MdOutlineDescription size={14} />
+        <PiFileText size={14} />
         Script de ligação
       </button>
     );
@@ -251,7 +251,7 @@ export function CallScriptPanel({
     <div className="space-y-2 rounded-md border border-border bg-surface-2 p-2.5">
       <div className="flex items-center justify-between gap-2">
         <span className="inline-flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-foreground">
-          <MdOutlineDescription size={14} />
+          <PiFileText size={14} />
           Script de ligação
           {language && (
             <span className="rounded-full border border-border bg-surface-solid px-2 py-0.5 text-[10px] font-semibold text-muted">
@@ -264,7 +264,7 @@ export function CallScriptPanel({
           aria-label="Fechar script de ligação"
           className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 text-[10px] font-semibold text-muted hover:bg-surface"
         >
-          <MdExpandLess size={12} />
+          <PiCaretUp size={14} />
           Fechar
         </button>
       </div>
@@ -291,7 +291,7 @@ export function CallScriptPanel({
         disabled={busy}
         className="inline-flex items-center gap-1.5 rounded-md bg-brand px-2.5 py-1 text-[11px] font-semibold text-brand-fg disabled:opacity-50"
       >
-        <MdOutlineAutoAwesome size={13} />
+        <PiSparkle size={14} />
         {busy ? "Gerando…" : script ? "Regenerar script" : "Gerar script"}
       </button>
 
@@ -307,7 +307,7 @@ export function CallScriptPanel({
             <ScriptColumn label="Tradução (pt-BR)" text={translation} />
           ) : (
             <div className="flex items-start gap-1.5 rounded-md border border-dashed border-border bg-surface-solid p-2 text-[10px] leading-relaxed text-muted">
-              <MdOutlineWarningAmber size={12} className="mt-0.5 shrink-0 text-warm" />
+              <PiWarning size={14} className="mt-0.5 shrink-0 text-warm" />
               <span>Tradução pt-BR indisponível — gere o script de novo.</span>
             </div>
           )}

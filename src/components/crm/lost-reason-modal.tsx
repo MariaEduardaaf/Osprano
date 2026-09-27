@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { MdClose } from "react-icons/md";
+import { PiX } from "react-icons/pi";
 import type { Doc } from "@convex/_generated/dataModel";
 import { LOST_REASONS, type LostReason } from "@convex/lib/domain";
 import { errorMessage } from "@/lib/errors";
@@ -76,7 +76,7 @@ export function LostReasonModal({
             aria-label="Fechar"
             className="rounded-lg p-1.5 text-muted hover:bg-surface-2 hover:text-foreground"
           >
-            <MdClose size={20} />
+            <PiX size={20} />
           </button>
         </div>
 

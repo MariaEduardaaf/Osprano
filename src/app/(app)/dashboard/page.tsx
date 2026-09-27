@@ -3,11 +3,11 @@
 import { useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import {
-  MdOutlineTravelExplore,
-  MdOutlineWebAsset,
-  MdOutlineMarkEmailRead,
-  MdOutlineCheckCircle,
-} from "react-icons/md";
+  PiBinoculars,
+  PiBrowser,
+  PiEnvelopeSimpleOpen,
+  PiCheckCircle,
+} from "react-icons/pi";
 import { PageHeader, StatCard } from "@/components/ui";
 import { eventDot, eventIcon } from "@/components/event-glyph";
 import { ChartCard, Donut, VBars, HBars } from "@/components/charts";
@@ -118,12 +118,12 @@ export default function DashboardPage() {
       <PageHeader eyebrow="Visão geral" title="Dashboard" subtitle="A saúde da sua operação num relance" />
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard label="Leads" value={stats?.total ?? "—"} hint="na base" icon={<MdOutlineTravelExplore size={18} />} />
-        <StatCard label="Sem site / social" value={stats?.noSite ?? "—"} hint="maior intenção" icon={<MdOutlineWebAsset size={18} />} />
+        <StatCard label="Leads" value={stats?.total ?? "—"} hint="na base" icon={<PiBinoculars size={20} />} />
+        <StatCard label="Sem site / social" value={stats?.noSite ?? "—"} hint="maior intenção" icon={<PiBrowser size={20} />} />
         {/* OPTIN-04: a métrica agora sai de canContactByEmail no servidor — inclui quem deu
             consentimento explícito, então a copy não pode falar só do regime do mercado. */}
-        <StatCard label="Abordáveis" value={stats?.emailable ?? "—"} hint="opt-out ou com consentimento" icon={<MdOutlineMarkEmailRead size={18} />} />
-        <StatCard label="Convertidos" value={stats?.byStage.converted ?? "—"} hint="fechados" accent icon={<MdOutlineCheckCircle size={18} />} />
+        <StatCard label="Abordáveis" value={stats?.emailable ?? "—"} hint="opt-out ou com consentimento" icon={<PiEnvelopeSimpleOpen size={20} />} />
+        <StatCard label="Convertidos" value={stats?.byStage.converted ?? "—"} hint="fechados" accent icon={<PiCheckCircle size={20} />} />
       </div>
 
       {/* Funnel rates */}

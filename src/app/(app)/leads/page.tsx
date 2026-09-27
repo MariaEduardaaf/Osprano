@@ -13,7 +13,7 @@ import {
   canContactByEmail,
   leadCategoryMatchesSearch,
 } from "@convex/lib/domain";
-import { MdOutlineSearch, MdOutlineSend, MdOutlineGavel, MdOutlineFilterAltOff } from "react-icons/md";
+import { PiMagnifyingGlass, PiPaperPlaneTilt, PiGavel, PiFunnelX } from "react-icons/pi";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { LeadCard } from "@/components/lead-card";
 import { GeneratePreviewButton } from "@/components/generate-preview-button";
@@ -265,7 +265,7 @@ export default function LeadsPage() {
           disabled={busy || !category.trim() || !city.trim()}
           className="flex items-center gap-1.5 rounded-lg bg-brand px-5 py-2 text-sm font-semibold text-brand-fg shadow-[var(--shadow-sm)] transition-colors hover:bg-brand-hover disabled:opacity-40"
         >
-          <MdOutlineSearch size={16} />
+          <PiMagnifyingGlass size={16} />
           {busy ? "Buscando…" : "Buscar"}
         </button>
       </form>
@@ -281,7 +281,7 @@ export default function LeadsPage() {
               : "border border-border text-muted hover:border-border-strong hover:text-foreground"
           }`}
         >
-          <MdOutlineFilterAltOff size={14} />
+          <PiFunnelX size={14} />
           Mostrar todos
         </button>
       </div>
@@ -299,7 +299,7 @@ export default function LeadsPage() {
           role="status"
           className="mb-4 flex items-start gap-2 rounded-xl border border-warm/30 bg-warm/10 p-3 text-xs leading-relaxed text-ink-soft"
         >
-          <MdOutlineGavel size={16} className="mt-0.5 shrink-0 text-warm" />
+          <PiGavel size={16} className="mt-0.5 shrink-0 text-warm" />
           <span>
             <strong>
               {legalReviewMarket.flag} {legalReviewMarket.name}
@@ -342,7 +342,7 @@ export default function LeadsPage() {
             disabled={selected.size === 0}
             className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-fg shadow-[var(--shadow-sm)] transition-colors hover:bg-brand-hover disabled:opacity-40"
           >
-            <MdOutlineSend size={16} />
+            <PiPaperPlaneTilt size={16} />
             Enviar para CRM ({selected.size})
           </button>
         </div>

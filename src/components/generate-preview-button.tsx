@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MdOutlineAutoAwesome, MdOpenInNew } from "react-icons/md";
+import { PiSparkle, PiArrowSquareOut } from "react-icons/pi";
 import { useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
@@ -31,7 +31,7 @@ export function GeneratePreviewButton({
             : "inline-flex items-center gap-1 text-xs font-semibold text-brand hover:underline"
         }
       >
-        Abrir preview <MdOpenInNew size={primary ? 15 : 13} />
+        Abrir preview <PiArrowSquareOut size={primary ? 16 : 14} />
       </a>
     );
   }
@@ -53,7 +53,7 @@ export function GeneratePreviewButton({
           : "inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold hover:bg-surface-2 disabled:opacity-50"
       }
     >
-      <MdOutlineAutoAwesome size={primary ? 16 : 14} />
+      <PiSparkle size={primary ? 16 : 14} />
       {busy ? "Preparando…" : "Preparar preview"}
     </button>
   );

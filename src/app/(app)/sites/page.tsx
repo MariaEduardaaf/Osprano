@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useQuery } from "convex/react";
-import { MdOpenInNew, MdOutlineLanguage } from "react-icons/md";
+import { PiArrowSquareOut, PiGlobe } from "react-icons/pi";
 import { api } from "@convex/_generated/api";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { PublishButton } from "@/components/publish-button";
@@ -73,7 +73,7 @@ export default function SitesPage() {
               </div>
 
               <div className="mt-2 flex items-center gap-1.5 text-[11px] text-faint">
-                <MdOutlineLanguage size={13} />
+                <PiGlobe size={14} />
                 {s.openCount} {s.openCount === 1 ? "abertura" : "aberturas"}
               </div>
 
@@ -90,7 +90,7 @@ export default function SitesPage() {
                   rel="noreferrer"
                   className="inline-flex items-center gap-1 text-xs font-semibold text-muted hover:text-foreground hover:underline"
                 >
-                  Abrir <MdOpenInNew size={13} />
+                  Abrir <PiArrowSquareOut size={14} />
                 </a>
                 <div className="ml-auto">
                   <PublishButton leadId={s.leadId} slug={s.slug} />

@@ -3,14 +3,14 @@
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
-  MdOutlineAutoAwesome,
-  MdOutlineContentCopy,
-  MdOutlineCheck,
-  MdOutlineSend,
-  MdOutlineWarningAmber,
-  MdOutlineInfo,
-  MdOutlineErrorOutline,
-} from "react-icons/md";
+  PiSparkle,
+  PiCopy,
+  PiCheck,
+  PiPaperPlaneTilt,
+  PiWarning,
+  PiInfo,
+  PiWarningCircle,
+} from "react-icons/pi";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
@@ -43,10 +43,10 @@ function Note({ tone, children }: { tone: "stop" | "warn" | "info"; children: Re
       className={`flex items-start gap-1.5 rounded-md border p-2 text-[10px] leading-relaxed ${box}`}
     >
       {tone === "stop" && (
-        <MdOutlineErrorOutline size={12} className="mt-0.5 shrink-0 text-danger" />
+        <PiWarningCircle size={14} className="mt-0.5 shrink-0 text-danger" />
       )}
-      {tone === "warn" && <MdOutlineWarningAmber size={12} className="mt-0.5 shrink-0 text-warm" />}
-      {tone === "info" && <MdOutlineInfo size={12} className="mt-0.5 shrink-0 text-faint" />}
+      {tone === "warn" && <PiWarning size={14} className="mt-0.5 shrink-0 text-warm" />}
+      {tone === "info" && <PiInfo size={14} className="mt-0.5 shrink-0 text-faint" />}
       <div className="min-w-0 space-y-1">{children}</div>
     </div>
   );
@@ -215,7 +215,7 @@ function ComposerBody({
           disabled={busy === "draft"}
           className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-brand-fg disabled:opacity-50"
         >
-          <MdOutlineAutoAwesome size={14} />
+          <PiSparkle size={14} />
           {busy === "draft" ? "Escrevendo…" : "Escrever com IA"}
         </button>
         {/* O composer só abre (`setOpen(true)`) quando `draft` dá certo — um erro aqui
@@ -272,7 +272,7 @@ function ComposerBody({
           disabled={busy === "copy"}
           className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-semibold hover:bg-surface disabled:opacity-50"
         >
-          <MdOutlineContentCopy size={14} />
+          <PiCopy size={14} />
           Copiar
         </button>
         <button
@@ -286,7 +286,7 @@ function ComposerBody({
           disabled={busy === "mark"}
           className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-semibold hover:bg-surface disabled:opacity-50"
         >
-          <MdOutlineCheck size={14} />
+          <PiCheck size={14} />
           Marcar enviado
         </button>
         {hasEmail && (
@@ -317,7 +317,7 @@ function ComposerBody({
             disabled={busy === "send"}
             className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-brand-fg disabled:opacity-50"
           >
-            <MdOutlineSend size={14} />
+            <PiPaperPlaneTilt size={14} />
             {busy === "send" ? "Enviando…" : "Enviar via Resend"}
           </button>
         )}

@@ -1,14 +1,13 @@
 import type { CSSProperties, ReactNode } from "react";
 import {
-  MdCall,
-  MdCheckCircleOutline,
-  MdOutlineChat,
-  MdOutlineMail,
-  MdOutlinePlace,
-  MdStar,
-  MdStarBorder,
-} from "react-icons/md";
-import { FaInstagram } from "react-icons/fa6";
+  PiPhone,
+  PiCheckCircle,
+  PiEnvelope,
+  PiMapPin,
+  PiStarFill,
+  PiStar,
+} from "react-icons/pi";
+import { SiInstagram, SiWhatsapp } from "react-icons/si";
 import {
   ctaOptions,
   mapEmbedUrl,
@@ -128,9 +127,9 @@ export function ctaLabel(cta: SiteCta, ctaKey: CtaKey, tr: TemplateDict, locale:
 }
 
 function CtaIcon({ kind, size = 18 }: { kind: SiteCta["kind"]; size?: number }) {
-  if (kind === "whatsapp") return <MdOutlineChat size={size} aria-hidden />;
-  if (kind === "email") return <MdOutlineMail size={size} aria-hidden />;
-  return <MdCall size={size} aria-hidden />;
+  if (kind === "whatsapp") return <SiWhatsapp size={size} aria-hidden />;
+  if (kind === "email") return <PiEnvelope size={size} aria-hidden />;
+  return <PiPhone size={size} aria-hidden />;
 }
 
 export function CtaLink({ cta, label, className }: { cta: SiteCta; label: string; className: string }) {
@@ -196,7 +195,7 @@ function Stars({ rating, size }: { rating: number; size: number }) {
   return (
     <>
       {Array.from({ length: 5 }, (_, i) =>
-        i < full ? <MdStar key={i} size={size} /> : <MdStarBorder key={i} size={size} />,
+        i < full ? <PiStarFill key={i} size={size} /> : <PiStar key={i} size={size} />,
       )}
     </>
   );
@@ -309,7 +308,7 @@ export function Items({
             }
           >
             {variant === "checks" && (
-              <MdCheckCircleOutline size={22} className="mt-0.5 shrink-0 text-(--site-accent)" aria-hidden />
+              <PiCheckCircle size={20} className="mt-0.5 shrink-0 text-(--site-accent)" aria-hidden />
             )}
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline justify-between gap-4">
@@ -385,7 +384,7 @@ export function Visit({ view, heading, headingClass }: { view: SiteView; heading
     <div>
       <h2 className={headingClass}>{heading}</h2>
       <p className="mt-6 flex items-start gap-3 text-lg leading-relaxed">
-        <MdOutlinePlace size={22} className="mt-1 shrink-0 text-(--site-accent)" aria-hidden />
+        <PiMapPin size={20} className="mt-1 shrink-0 text-(--site-accent)" aria-hidden />
         <span>
           {view.address && <span className="block">{view.address}</span>}
           {view.city && <span className="block text-(--site-muted)">{view.city}</span>}
@@ -413,7 +412,7 @@ function contactRows(view: SiteView): ContactRow[] {
   if (view.phone) {
     rows.push({
       key: "phone",
-      icon: <MdCall size={20} aria-hidden />,
+      icon: <PiPhone size={20} aria-hidden />,
       value: view.phone,
       href: `tel:${view.phone.replace(/\s+/g, "")}`,
     });
@@ -421,19 +420,19 @@ function contactRows(view: SiteView): ContactRow[] {
   if (view.whatsapp) {
     rows.push({
       key: "whatsapp",
-      icon: <MdOutlineChat size={20} aria-hidden />,
+      icon: <SiWhatsapp size={20} aria-hidden />,
       value: `+${view.whatsapp}`,
       href: `https://wa.me/${view.whatsapp}`,
       external: true,
     });
   }
   if (view.email) {
-    rows.push({ key: "email", icon: <MdOutlineMail size={20} aria-hidden />, value: view.email, href: `mailto:${view.email}` });
+    rows.push({ key: "email", icon: <PiEnvelope size={20} aria-hidden />, value: view.email, href: `mailto:${view.email}` });
   }
   if (view.instagram) {
     rows.push({
       key: "instagram",
-      icon: <FaInstagram size={19} aria-hidden />,
+      icon: <SiInstagram size={20} aria-hidden />,
       value: `@${view.instagram}`,
       href: `https://instagram.com/${view.instagram}`,
       external: true,
@@ -514,7 +513,7 @@ export function Values({
         {values.map((v) => (
           <li key={v.title} className={item}>
             {variant === "icons" && (
-              <MdCheckCircleOutline size={30} className="mb-4 text-(--site-accent)" aria-hidden />
+              <PiCheckCircle size={30} className="mb-4 text-(--site-accent)" aria-hidden />
             )}
             <h3 className={titleClass}>{v.title}</h3>
             <p className="mt-3 leading-relaxed text-(--site-muted)">{v.body}</p>

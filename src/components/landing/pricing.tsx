@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { MdCheck } from "react-icons/md";
+import { PiCheck } from "react-icons/pi";
 import { PLANS } from "@convex/lib/domain";
 
 const DEMO = process.env.NEXT_PUBLIC_DEMO === "1";
@@ -75,7 +75,7 @@ export function Pricing() {
               <ul className="mt-6 space-y-2.5 text-sm text-ink-soft">
                 {plan.features.map((f) => (
                   <li key={f} className="flex items-start gap-2">
-                    <MdCheck size={17} className="mt-0.5 shrink-0 text-brand" />
+                    <PiCheck size={16} className="mt-0.5 shrink-0 text-brand" />
                     {f}
                   </li>
                 ))}

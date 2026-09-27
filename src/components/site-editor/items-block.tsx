@@ -1,6 +1,6 @@
 "use client";
 
-import { MdAdd, MdClose } from "react-icons/md";
+import { PiPlus, PiX } from "react-icons/pi";
 import { LIMITS, type SiteContent, type SiteItem } from "@convex/lib/site";
 import { TEMPLATES } from "@/components/site-templates";
 import { Block, inputCls, smallBtnCls } from "./fields";
@@ -54,7 +54,7 @@ export function ItemsBlock({
               onClick={() => onRemove(i)}
               className="rounded-lg p-2 text-muted hover:bg-surface-solid hover:text-foreground"
             >
-              <MdClose size={16} />
+              <PiX size={16} />
             </button>
             <input
               value={it.note ?? ""}
@@ -68,7 +68,7 @@ export function ItemsBlock({
         ))}
       </div>
       <button type="button" onClick={onAdd} disabled={items.length >= LIMITS.items} className={`${smallBtnCls} mt-3`}>
-        <MdAdd size={14} />
+        <PiPlus size={14} />
         Adicionar item
       </button>
     </Block>

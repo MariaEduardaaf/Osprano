@@ -5,25 +5,25 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { IconType } from "react-icons";
 import {
-  MdOutlineDrafts,
-  MdOutlineSend,
-  MdOutlineMarkEmailRead,
-  MdOutlineReply,
-  MdOutlineErrorOutline,
-  MdOpenInNew,
-  MdChevronLeft,
-  MdChevronRight,
-} from "react-icons/md";
+  PiNotePencil,
+  PiPaperPlaneTilt,
+  PiEnvelopeSimpleOpen,
+  PiArrowBendUpLeft,
+  PiWarningCircle,
+  PiArrowSquareOut,
+  PiCaretLeft,
+  PiCaretRight,
+} from "react-icons/pi";
 import { PageHeader, EmptyState } from "@/components/ui";
 
 type Status = "draft" | "sent" | "opened" | "replied" | "bounced";
 
 const STATUS: Record<Status, { label: string; color: string; Icon: IconType }> = {
-  draft: { label: "Rascunho", color: "var(--faint)", Icon: MdOutlineDrafts },
-  sent: { label: "Enviado", color: "var(--brand)", Icon: MdOutlineSend },
-  opened: { label: "Abriu", color: "var(--warm)", Icon: MdOutlineMarkEmailRead },
-  replied: { label: "Respondeu", color: "var(--hot)", Icon: MdOutlineReply },
-  bounced: { label: "Falhou", color: "var(--danger)", Icon: MdOutlineErrorOutline },
+  draft: { label: "Rascunho", color: "var(--faint)", Icon: PiNotePencil },
+  sent: { label: "Enviado", color: "var(--brand)", Icon: PiPaperPlaneTilt },
+  opened: { label: "Abriu", color: "var(--warm)", Icon: PiEnvelopeSimpleOpen },
+  replied: { label: "Respondeu", color: "var(--hot)", Icon: PiArrowBendUpLeft },
+  bounced: { label: "Falhou", color: "var(--danger)", Icon: PiWarningCircle },
 };
 
 const TIER_COLOR: Record<string, string> = { hot: "var(--hot)", warm: "var(--warm)", cold: "var(--cold)" };
@@ -148,7 +148,7 @@ export default function OutreachPage() {
                             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
                             style={{ color: s.color, backgroundColor: `color-mix(in srgb, ${s.color} 14%, transparent)` }}
                           >
-                            <s.Icon size={15} />
+                            <s.Icon size={16} />
                           </span>
                           <span className="font-display font-semibold text-foreground">{it.name}</span>
                         </div>
@@ -191,7 +191,7 @@ export default function OutreachPage() {
                               disabled={busyLead === it.leadId}
                               className="inline-flex items-center gap-1 text-[11px] font-semibold text-hot hover:underline disabled:opacity-50"
                             >
-                              <MdOutlineReply size={12} /> Respondeu
+                              <PiArrowBendUpLeft size={14} /> Respondeu
                             </button>
                           )}
                           {it.previewToken ? (
@@ -201,7 +201,7 @@ export default function OutreachPage() {
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand hover:underline"
                             >
-                              Abrir <MdOpenInNew size={12} />
+                              Abrir <PiArrowSquareOut size={14} />
                             </a>
                           ) : (
                             <span className="text-faint">—</span>
@@ -227,7 +227,7 @@ export default function OutreachPage() {
                   disabled={safePage === 0}
                   className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-muted hover:bg-surface-2 disabled:opacity-40"
                 >
-                  <MdChevronLeft size={16} /> Anterior
+                  <PiCaretLeft size={16} /> Anterior
                 </button>
                 <span className="px-2 font-mono text-xs tabular-nums text-muted">
                   {safePage + 1} / {pageCount}
@@ -237,7 +237,7 @@ export default function OutreachPage() {
                   disabled={safePage >= pageCount - 1}
                   className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-muted hover:bg-surface-2 disabled:opacity-40"
                 >
-                  Próxima <MdChevronRight size={16} />
+                  Próxima <PiCaretRight size={16} />
                 </button>
               </div>
             )}

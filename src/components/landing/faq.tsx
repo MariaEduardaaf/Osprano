@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MdKeyboardArrowDown } from "react-icons/md";
+import { PiCaretDown } from "react-icons/pi";
 
 const QA: { q: string; a: string }[] = [
   {
@@ -46,8 +46,8 @@ export function Faq() {
               className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
             >
               <span className="font-semibold text-foreground">{item.q}</span>
-              <MdKeyboardArrowDown
-                size={22}
+              <PiCaretDown
+                size={20}
                 className={`shrink-0 text-muted transition-transform ${isOpen ? "rotate-180" : ""}`}
               />
             </button>

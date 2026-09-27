@@ -5,14 +5,14 @@ import Link from "next/link";
 import { useQuery, useAction } from "convex/react";
 import type { IconType } from "react-icons";
 import {
-  MdPersonOutline,
-  MdOutlineSecurity,
-  MdOutlineCreditCard,
-  MdAdd,
-  MdOpenInNew,
-  MdOutlineLaptopMac,
-  MdLogout,
-} from "react-icons/md";
+  PiUser,
+  PiShield,
+  PiCreditCard,
+  PiPlus,
+  PiArrowSquareOut,
+  PiLaptop,
+  PiSignOut,
+} from "react-icons/pi";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { api } from "@convex/_generated/api";
 import { PageHeader } from "@/components/ui";
@@ -24,9 +24,9 @@ const DEMO = process.env.NEXT_PUBLIC_DEMO === "1";
 const ACCOUNT = { name: "Conta Osprano", email: "voce@osprano.com", initial: "O" };
 
 const SECTIONS: { id: string; label: string; Icon: IconType }[] = [
-  { id: "perfil", label: "Perfil", Icon: MdPersonOutline },
-  { id: "seguranca", label: "Segurança", Icon: MdOutlineSecurity },
-  { id: "plano", label: "Plano & uso", Icon: MdOutlineCreditCard },
+  { id: "perfil", label: "Perfil", Icon: PiUser },
+  { id: "seguranca", label: "Segurança", Icon: PiShield },
+  { id: "plano", label: "Plano & uso", Icon: PiCreditCard },
 ];
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
@@ -67,7 +67,7 @@ function DemoProfilePanel() {
               </span>
             </div>
             <button className="inline-flex items-center gap-1 text-sm font-medium text-muted hover:text-foreground">
-              <MdAdd size={16} /> Adicionar email
+              <PiPlus size={16} /> Adicionar email
             </button>
           </div>
         </Row>
@@ -95,7 +95,7 @@ function DemoSecurityPanel() {
         </Row>
         <Row label="Dispositivos ativos">
           <div className="flex items-start justify-end gap-3">
-            <MdOutlineLaptopMac size={20} className="mt-0.5 shrink-0 text-muted" />
+            <PiLaptop size={20} className="mt-0.5 shrink-0 text-muted" />
             <div className="text-sm">
               <div className="flex items-center justify-end gap-2">
                 <span className="font-semibold text-foreground">Este dispositivo</span>
@@ -112,7 +112,7 @@ function DemoSecurityPanel() {
             href="/"
             className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-semibold text-foreground hover:bg-surface-2"
           >
-            <MdLogout size={15} /> Sair
+            <PiSignOut size={16} /> Sair
           </Link>
         </Row>
         <Row label="Apagar conta">
@@ -164,7 +164,7 @@ function RealProfilePanel() {
               onClick={() => openUserProfile()}
               className="inline-flex items-center gap-1 text-sm font-medium text-muted hover:text-foreground"
             >
-              <MdAdd size={16} /> Adicionar email
+              <PiPlus size={16} /> Adicionar email
             </button>
           </div>
         </Row>
@@ -209,7 +209,7 @@ function RealSecurityPanel() {
             onClick={() => openUserProfile()}
             className="flex items-start justify-end gap-3 text-left"
           >
-            <MdOutlineLaptopMac size={20} className="mt-0.5 shrink-0 text-muted" />
+            <PiLaptop size={20} className="mt-0.5 shrink-0 text-muted" />
             <div className="text-sm">
               <div className="flex items-center justify-end gap-2">
                 <span className="font-semibold text-foreground">Este dispositivo</span>
@@ -226,7 +226,7 @@ function RealSecurityPanel() {
             onClick={() => void signOut({ redirectUrl: "/" })}
             className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-semibold text-foreground hover:bg-surface-2"
           >
-            <MdLogout size={15} /> Sair
+            <PiSignOut size={16} /> Sair
           </button>
         </Row>
         <Row label="Apagar conta">
@@ -318,7 +318,7 @@ function PlanPanel() {
             disabled={busy}
             className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm font-semibold hover:bg-surface-2 disabled:opacity-50"
           >
-            <MdOpenInNew size={16} />
+            <PiArrowSquareOut size={16} />
             {busy ? "Abrindo…" : "Abrir portal de billing"}
           </button>
           {err && <p className="mt-2 text-sm text-danger">{err}</p>}
@@ -359,7 +359,7 @@ export default function SettingsPage() {
                       : "text-muted hover:bg-surface-2/60 hover:text-foreground"
                   }`}
                 >
-                  <s.Icon size={18} className={active ? "text-brand" : "text-faint"} />
+                  <s.Icon size={20} className={active ? "text-brand" : "text-faint"} />
                   {s.label}
                 </button>
               );
