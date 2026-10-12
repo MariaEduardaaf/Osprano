@@ -28,7 +28,9 @@ export const scoreLead = internalAction({
   args: { leadId: v.id("leads") },
   handler: async (ctx, { leadId }) => {
     const lead = await ctx.runQuery(internal.leads.getInternal, { leadId });
-    if (!lead) return;
+    // Lead do Google não tem site/telefone/nota no banco (Fase 10): repontuar aqui trocaria
+    // o score calculado na busca por sinais vazios.
+    if (!lead || lead.source === "places") return;
 
     const web = classifyWebsite(lead.website);
     let noHttps = false;

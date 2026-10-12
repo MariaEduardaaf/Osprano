@@ -18,6 +18,9 @@ export const discover = internalAction({
     max: v.optional(v.number()),
   },
   handler: async (ctx, { orgId, source, ...args }) => {
-    return source === "osm" ? await runOsmSearch(ctx, orgId, args) : await runPlacesSearch(ctx, orgId, args);
+    if (source === "osm") return await runOsmSearch(ctx, orgId, args);
+    const r = await runPlacesSearch(ctx, orgId, args);
+    // conteúdo do Google não vai para o terminal
+    return { found: r.found, inserted: r.inserted, droppedWithSite: r.droppedWithSite };
   },
 });

@@ -1,9 +1,12 @@
-import { action, type ActionCtx } from "./_generated/server";
+import { action, internalMutation, type ActionCtx } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { requireOrgId } from "./model/tenant";
 import { isSearchableMarket, MARKETS, clampDiscoveryCount, keepOnlyWithoutSite } from "./lib/domain";
 import { userError } from "./lib/errors";
+import { TEXT_SEARCH_FIELDS, fieldMask, toPlaceLite, type GooglePlaceLite } from "./lib/placesFields";
+import { placesDerived, insertPlacesLead as insertPlacesLeadModel } from "./model/discovery";
 
 interface PlaceResult {
   id: string;
@@ -13,20 +16,26 @@ interface PlaceResult {
   websiteUri?: string;
   rating?: number;
   userRatingCount?: number;
-  primaryType?: string;
   businessStatus?: string;
 }
 
 /**
  * Discover local businesses via Google Places Text Search (New). Uses the
  * Enterprise field mask INLINE (name/address/phone/website/rating/reviews in one
- * call) — ~10× cheaper than a Details-per-place path. Each discovered lead is
- * scheduled for Digital Presence scoring.
+ * call) — ~10× cheaper than a Details-per-place path. Grava só place_id + derivados;
+ * o conteúdo ao vivo volta na resposta (`shown`) para a tela mostrar na hora, sem
+ * gravar; não agenda scoring (o score sai pronto da busca).
  *
  * Guarded to mercados pesquisáveis (launch opt-out + opt-in). A emailabilidade
- * continua governada pelo isEmailable no insertDiscovered: leads de mercados
- * opt-in nascem emailable=false (ligação primeiro).
+ * é derivada em `placesDerived`: leads de mercados opt-in nascem emailable=false
+ * (ligação primeiro).
  */
+type SearchResult = {
+  found: number;
+  inserted: number;
+  droppedWithSite: number;
+  shown: Array<{ leadId: Id<"leads">; place: GooglePlaceLite }>;
+};
 type SearchArgs = { countryCode: string; category: string; city: string; max?: number };
 
 /** Núcleo da busca, sem auth: usado pela action pública e pela operação via CLI (admin). */
@@ -34,7 +43,7 @@ export async function runPlacesSearch(
   ctx: ActionCtx,
   orgId: string,
   args: SearchArgs,
-): Promise<{ found: number; inserted: number; droppedWithSite: number }> {
+): Promise<SearchResult> {
     const country = args.countryCode.toUpperCase();
     if (!isSearchableMarket(country)) {
       const name = MARKETS[country]?.name ?? country;
@@ -57,6 +66,7 @@ export async function runPlacesSearch(
     let places: PlaceResult[] = [];
     let inserted = 0;
     let droppedWithSite = 0;
+    const shown: SearchResult["shown"] = [];
     try {
       const collected: PlaceResult[] = [];
       let pageToken: string | undefined;
@@ -74,18 +84,7 @@ export async function runPlacesSearch(
           headers: {
             "Content-Type": "application/json",
             "X-Goog-Api-Key": key,
-            "X-Goog-FieldMask": [
-              "places.id",
-              "places.displayName",
-              "places.formattedAddress",
-              "places.nationalPhoneNumber",
-              "places.websiteUri",
-              "places.rating",
-              "places.userRatingCount",
-              "places.primaryType",
-              "places.businessStatus",
-              "nextPageToken",
-            ].join(","),
+            "X-Goog-FieldMask": fieldMask(TEXT_SEARCH_FIELDS),
           },
           body: JSON.stringify(reqBody),
         });
@@ -115,24 +114,26 @@ export async function runPlacesSearch(
 
       for (const { place: p } of kept) {
         if (p.businessStatus && p.businessStatus !== "OPERATIONAL") continue;
-        const { leadId, created } = await ctx.runMutation(internal.leads.insertDiscovered, {
+        const { leadId, created } = await ctx.runMutation(internal.places.insertPlacesLead, {
           orgId,
-          source: "places",
           placeId: p.id,
-          name: p.displayName?.text ?? "—",
-          category: p.primaryType ?? args.category,
-          address: p.formattedAddress,
+          category: args.category,
           city: args.city,
           countryCode: country,
-          phone: p.nationalPhoneNumber,
-          website: p.websiteUri,
-          rating: p.rating,
-          reviewsCount: p.userRatingCount,
+          derived: placesDerived(
+            {
+              name: p.displayName?.text,
+              website: p.websiteUri,
+              phone: p.nationalPhoneNumber,
+              rating: p.rating,
+              reviewsCount: p.userRatingCount,
+            },
+            country,
+          ),
         });
-        // Lead que já existia só foi atualizado: não conta nem gasta cota (a reserva é
-        // devolvida pelo `want - inserted`), mas repontua do mesmo jeito.
+        // Lead que já existia não conta nem gasta cota (a reserva é devolvida pelo `want - inserted`).
         if (created) inserted += 1;
-        await ctx.scheduler.runAfter(0, internal.scoring.scoreLead, { leadId });
+        shown.push({ leadId, place: toPlaceLite(p) });
       }
     } catch (err) {
       const toRefund = want - inserted;
@@ -147,8 +148,36 @@ export async function runPlacesSearch(
       await ctx.runMutation(internal.workspaces.refund, { orgId, kind: "leads", count: leftover });
     }
 
-    return { found: places.length, inserted, droppedWithSite };
+    return { found: places.length, inserted, droppedWithSite, shown };
 }
+
+const signalsV = v.object({
+  noSite: v.boolean(),
+  socialOnly: v.boolean(),
+  noHttps: v.boolean(),
+  notMobile: v.boolean(),
+  slow: v.boolean(),
+  sparseProfile: v.boolean(),
+});
+
+export const insertPlacesLead = internalMutation({
+  args: {
+    orgId: v.string(),
+    placeId: v.string(),
+    category: v.string(),
+    city: v.string(),
+    countryCode: v.string(),
+    derived: v.object({
+      signals: signalsV,
+      score: v.number(),
+      tier: v.union(v.literal("hot"), v.literal("warm"), v.literal("cold")),
+      legalForm: v.union(v.literal("incorporated"), v.literal("sole_trader"), v.literal("unknown")),
+      contactType: v.union(v.literal("role"), v.literal("named"), v.literal("unknown")),
+      emailable: v.boolean(),
+    }),
+  },
+  handler: (ctx, args) => insertPlacesLeadModel(ctx, args),
+});
 
 export const search = action({
   args: {
@@ -157,7 +186,7 @@ export const search = action({
     city: v.string(),
     max: v.optional(v.number()),
   },
-  handler: async (ctx, args): Promise<{ found: number; inserted: number; droppedWithSite: number }> => {
+  handler: async (ctx, args): Promise<SearchResult> => {
     const orgId = await requireOrgId(ctx);
     return await runPlacesSearch(ctx, orgId, args);
   },

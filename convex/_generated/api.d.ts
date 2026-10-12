@@ -31,6 +31,7 @@ import type * as lib_outreachAi from "../lib/outreachAi.js";
 import type * as lib_placesFields from "../lib/placesFields.js";
 import type * as lib_site from "../lib/site.js";
 import type * as lib_stripe from "../lib/stripe.js";
+import type * as model_discovery from "../model/discovery.js";
 import type * as model_leads from "../model/leads.js";
 import type * as model_previews from "../model/previews.js";
 import type * as model_purge from "../model/purge.js";
@@ -76,6 +77,7 @@ declare const fullApi: ApiFromModules<{
   "lib/placesFields": typeof lib_placesFields;
   "lib/site": typeof lib_site;
   "lib/stripe": typeof lib_stripe;
+  "model/discovery": typeof model_discovery;
   "model/leads": typeof model_leads;
   "model/previews": typeof model_previews;
   "model/purge": typeof model_purge;
