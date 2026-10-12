@@ -5,7 +5,14 @@ import { v } from "convex/values";
 import { requireOrgId } from "./model/tenant";
 import { isSearchableMarket, MARKETS, clampDiscoveryCount, keepOnlyWithoutSite } from "./lib/domain";
 import { userError } from "./lib/errors";
-import { TEXT_SEARCH_FIELDS, fieldMask, toPlaceLite, type GooglePlaceLite } from "./lib/placesFields";
+import {
+  DETAILS_BATCH_MAX,
+  DETAILS_FIELDS_FULL,
+  DETAILS_FIELDS_LIST,
+  TEXT_SEARCH_FIELDS,
+  fieldMask, toPlaceLite,
+  type GooglePlaceLite,
+} from "./lib/placesFields";
 import { placesDerived, insertPlacesLead as insertPlacesLeadModel } from "./model/discovery";
 
 interface PlaceResult {
@@ -189,5 +196,98 @@ export const search = action({
   handler: async (ctx, args): Promise<SearchResult> => {
     const orgId = await requireOrgId(ctx);
     return await runPlacesSearch(ctx, orgId, args);
+  },
+});
+
+function fetchPlaceDetails(key: string, placeId: string, fields: readonly string[]): Promise<Response> {
+  return fetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}?languageCode=en`, {
+    headers: { "X-Goog-Api-Key": key, "X-Goog-FieldMask": fieldMask(fields) },
+  });
+}
+
+// Dado do Google ao vivo, só na resposta (useAction não é reativo nem cacheado). Nunca gravar,
+// nunca devolver por query, nunca logar o corpo. Cada lugar consultado conta 1 na cota mensal
+// `detailsPerMonth`.
+export const details = action({
+  args: { leadId: v.id("leads") },
+  handler: async (ctx, { leadId }): Promise<{ gone: boolean; place: GooglePlaceLite | null }> => {
+    const orgId = await requireOrgId(ctx);
+    const key = process.env.GOOGLE_PLACES_API_KEY;
+    if (!key) throw userError("GOOGLE_PLACES_API_KEY não configurada no deployment Convex.");
+    const lead = await ctx.runQuery(internal.leads.getInternal, { leadId });
+    if (!lead || lead.orgId !== orgId || lead.source !== "places" || !lead.placeId) {
+      throw userError("Lead não encontrado");
+    }
+    await ctx.runMutation(internal.workspaces.reserve, { orgId, kind: "details", count: 1 });
+
+    let res: Response;
+    try {
+      res = await fetchPlaceDetails(key, lead.placeId, DETAILS_FIELDS_FULL);
+    } catch (err) {
+      await ctx.runMutation(internal.workspaces.refund, { orgId, kind: "details", count: 1 });
+      throw err;
+    }
+    if (res.status === 404) {
+      await ctx.runMutation(internal.workspaces.refund, { orgId, kind: "details", count: 1 });
+      return { gone: true, place: null };
+    }
+    if (!res.ok) {
+      console.error(`Places Details ${res.status}`);
+      await ctx.runMutation(internal.workspaces.refund, { orgId, kind: "details", count: 1 });
+      throw userError(`Places API respondeu ${res.status}`);
+    }
+    return { gone: false, place: toPlaceLite(await res.json()) };
+  },
+});
+
+export const detailsMany = action({
+  args: { leadIds: v.array(v.id("leads")) },
+  handler: async (
+    ctx,
+    { leadIds },
+  ): Promise<{
+    places: Array<{ leadId: Id<"leads">; place: GooglePlaceLite }>;
+    gone: Id<"leads">[];
+    failed: number;
+  }> => {
+    const orgId = await requireOrgId(ctx);
+    const key = process.env.GOOGLE_PLACES_API_KEY;
+    if (!key) throw userError("GOOGLE_PLACES_API_KEY não configurada no deployment Convex.");
+
+    const ids = [...new Set(leadIds)].slice(0, DETAILS_BATCH_MAX);
+    const leads = await Promise.all(ids.map((leadId) => ctx.runQuery(internal.leads.getInternal, { leadId })));
+    // Lead confirmado não precisa do Google.
+    const eligible = leads.flatMap((l) =>
+      l && l.orgId === orgId && l.source === "places" && l.placeId && !l.confirmation
+        ? [{ leadId: l._id, placeId: l.placeId }]
+        : [],
+    );
+    if (eligible.length === 0) return { places: [], gone: [], failed: 0 };
+
+    await ctx.runMutation(internal.workspaces.reserve, { orgId, kind: "details", count: eligible.length });
+
+    const places: Array<{ leadId: Id<"leads">; place: GooglePlaceLite }> = [];
+    const gone: Id<"leads">[] = [];
+    let failed = 0;
+    await Promise.all(
+      eligible.map(async ({ leadId, placeId }) => {
+        try {
+          const res = await fetchPlaceDetails(key, placeId, DETAILS_FIELDS_LIST);
+          if (res.status === 404) gone.push(leadId);
+          else if (!res.ok) {
+            console.error(`Places Details ${res.status}`);
+            failed += 1;
+          } else places.push({ leadId, place: toPlaceLite(await res.json()) });
+        } catch {
+          failed += 1;
+        }
+      }),
+    );
+
+    const toRefund = gone.length + failed;
+    if (toRefund > 0) {
+      await ctx.runMutation(internal.workspaces.refund, { orgId, kind: "details", count: toRefund });
+    }
+    return { places, gone, failed };
   },
 });

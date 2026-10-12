@@ -64,3 +64,15 @@ test("places.ts: sem gravação legada, sem log de conteúdo", () => {
 test("scoring.ts pula lead do Google", () => {
   assert.ok(scoring.includes('lead.source === "places"'));
 });
+
+test("places.ts: actions de detalhe com cota e estorno", () => {
+  for (const s of ["export const details", "export const detailsMany", 'kind: "details"', "DETAILS_FIELDS_FULL", "DETAILS_FIELDS_LIST", "DETAILS_BATCH_MAX", "status === 404"]) {
+    assert.ok(places.includes(s), s);
+  }
+  for (const line of places.split("\n")) {
+    if (line.includes("console.")) {
+      assert.equal(line.includes("await res.json()"), false, line);
+      assert.equal(/place/i.test(line.replace(/Places (API|Details)/g, "")), false, line);
+    }
+  }
+});
