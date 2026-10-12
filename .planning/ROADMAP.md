@@ -247,8 +247,22 @@ Plans:
   3. O cliente confirma ou edita nome, telefone, e-mail e endereço; o preview público, a mensagem e o prompt da IA usam só dado confirmado ou do OpenStreetMap
   4. Depois da migração, leads antigos mantêm estágio, notas, histórico, site gerado e dados confirmados, e não sobra dado do Google gravado neles
   5. Toda tela com conteúdo do Google mostra a atribuição do Google Maps, e esse conteúdo nunca aparece ao lado de um mapa
-**Plans**: TBD
-**Depende de você**: confirmar a regra dos 30 dias de latitude/longitude e rodar a migração dos leads reais em produção depois de ver o resultado num ensaio (backup antes).
+**Plans**: 12 plans
+
+Plans:
+- [ ] 10-01-PLAN.md: googleData.ts (o que pode sair do app, confirmação, limpeza da migração) e placesFields.ts (máscaras e preços do Google) (GPLC-02, GPLC-03, GPLC-04)
+- [ ] 10-02-PLAN.md: schema aditivo (confirmação, contador, índices) e cota mensal de consultas ao Google 25/300/400 (GPLC-02, SCAL-01)
+- [ ] 10-03-PLAN.md: name opcional, rótulo "Negócio do Google" nas telas, DM e links só com nome confirmado (GPLC-01, GPLC-03)
+- [ ] 10-04-PLAN.md: descoberta grava só place_id e derivados; actions details/detailsMany com cota (GPLC-01, GPLC-02)
+- [ ] 10-05-PLAN.md: preview, publicação, IA, roteiro e WhatsApp só com dado compartilhável; leads.confirmInfo (GPLC-03)
+- [ ] 10-06-PLAN.md: memória do Google só em JS, GoogleAttribution, GoogleCard e confirmação digitada no drawer (GPLC-02, GPLC-03, GPLC-05)
+- [ ] 10-07-PLAN.md: SCAL-01 no servidor: listForDiscovery paginada, listCrm limitada, stats/analytics, sites, outbox, supressão (SCAL-01)
+- [ ] 10-08-PLAN.md: código da migração (model/googleMigration.ts, googleCompliance.ts, seed só de dev) (GPLC-04)
+- [ ] 10-09-PLAN.md: tela de Leads paginada com Google ao vivo em memória e botão de carregar a página (GPLC-02, GPLC-05, SCAL-01)
+- [ ] 10-10-PLAN.md: Kanban, faixa Hoje e Excluir sobre listCrm com otimistas (SCAL-01)
+- [ ] 10-11-PLAN.md: apagar leads.list e ensaio da migração no DEV com backup (GPLC-04, SCAL-01)
+- [ ] 10-12-PLAN.md: portão de produção: verificação final, migração aprovada pela Duda, conferência no app (todos)
+**Depende de você**: conferir o país de cobrança da conta Google Cloud (define termos EEA ou não-EEA) e rodar a migração dos leads reais em produção depois de ver o resultado num ensaio (backup antes).
 
 ### Phase 11: Cobrança endurecida
 
