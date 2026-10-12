@@ -223,7 +223,17 @@ A ordem segue o que bloqueia receber dinheiro e o que muda o modelo de dados. Pr
   3. O cadastro só conclui com aceite de Termos e DPA e declaração de uso profissional; a versão e a data do aceite aparecem gravadas no workspace, e subir a versão dos documentos pede novo aceite no próximo acesso
   4. Um e-mail de suporte e privacidade aparece na landing e dentro do app
   5. Em Ajustes, o cliente exclui a conta: os dados do workspace somem do Convex, a assinatura é cancelada no Stripe e o login do Clerk é removido
-**Plans**: TBD
+**Plans**: 7 plans (3 waves)
+
+Plans:
+- [ ] 09-01-PLAN.md (W1): base: `convex/lib/legal.ts` (identidade com placeholders, versão única, aceite), schema com campos de aceite e `uploads.by_org`, ctx falso de testes, componentes `LegalLinks`/`LegalDoc` e layout de `/legal`
+- [ ] 09-02-PLAN.md (W1): landing honesta: sem depoimentos, notificação, white-label ou toggle anual; features de `PLANS` corrigidas; teste de honestidade
+- [ ] 09-03-PLAN.md (W2): páginas Informações da empresa, Cookies, Subprocessadores e Aviso ao prospect; coluna "Legal" com suporte no rodapé da landing
+- [ ] 09-04-PLAN.md (W2): Termos, Privacidade (GDPR + LGPD) e DPA (art. 28) em rascunho técnico
+- [ ] 09-05-PLAN.md (W2): aceite com versão e data no workspace, gate no app, guarda no servidor (cota, IA, envio, checkout), rodapé legal no app
+- [ ] 09-06-PLAN.md (W2): exclusão de conta em Ajustes (Stripe cancelado, Convex limpo em lotes, login do Clerk removido)
+- [ ] 09-07-PLAN.md (W3): verificação completa + conferência da Duda (gate e exclusão ponta a ponta com Stripe em modo teste)
+
 **Depende de você**: razão social, CNPJ e endereço da empresa brasileira para a página Informações da empresa; revisão de advogado dos Termos, Privacidade e DPA antes de cobrar (o texto é rascunho técnico, não parecer); caixa de e-mail de suporte/privacidade criada.
 
 ### Phase 10: Dados do Google conformes

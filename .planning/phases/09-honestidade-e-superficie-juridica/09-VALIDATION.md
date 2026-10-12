@@ -19,8 +19,8 @@ created: 2026-10-12
 |----------|-------|
 | **Framework** | `node:test` com `--experimental-strip-types`, sem dependências |
 | **Config file** | none (script `test` em package.json) |
-| **Quick run command** | `node --experimental-strip-types --test tests/legal.test.ts tests/purge.test.ts tests/landing-honesty.test.ts tests/legal-pages.test.ts && ./node_modules/.bin/tsc --noEmit` |
-| **Full suite command** | `node --experimental-strip-types --test tests/*.test.ts && ./node_modules/.bin/tsc --noEmit && ./node_modules/.bin/eslint && ./node_modules/.bin/next build` |
+| **Quick run command** | `node --experimental-strip-types --test tests/legal.test.ts tests/fake-ctx.test.ts tests/acceptance.test.ts tests/purge.test.ts tests/stripe.test.ts tests/landing-honesty.test.ts tests/legal-pages.test.ts tests/legal-docs-content.test.ts && ./node_modules/.bin/tsc --noEmit && ./node_modules/.bin/tsc --noEmit -p convex` |
+| **Full suite command** | `node --experimental-strip-types --test tests/*.test.ts && ./node_modules/.bin/tsc --noEmit && ./node_modules/.bin/tsc --noEmit -p convex && ./node_modules/.bin/eslint && ./node_modules/.bin/next build` |
 | **Estimated runtime** | ~120 seconds (suite completa com build) |
 
 ---
@@ -36,16 +36,21 @@ created: 2026-10-12
 
 ## Per-Task Verification Map
 
-Preenchido pelo planner/executor a partir do mapa abaixo (requisito → teste).
+Preenchido pelo planner (2026-10-12). O `tsc` da raiz EXCLUI `convex/` e `tests/`: por isso os comandos incluem `tsc --noEmit -p convex`.
 
-| Req ID | Behavior | Test Type | Automated Command | File Exists |
-|--------|----------|-----------|-------------------|-------------|
-| LEGAL-01 | landing e `PLANS` sem termos proibidos (depoimentos, white-label, domínio próprio, notificado, anual, Export CSV e demais da tabela da pesquisa) | unit (leitura de fonte) | `node --experimental-strip-types --test tests/landing-honesty.test.ts` | ❌ W0 |
-| LEGAL-02 | 7 páginas em `src/app/legal/**/page.tsx`, links do rodapé só para rotas existentes, `/legal` fora das rotas protegidas do proxy | unit (fs) | `node --experimental-strip-types --test tests/legal-pages.test.ts` | ❌ W0 |
-| LEGAL-02/04 | `legalPlaceholders()` lista campos pendentes e fica vazio quando preenchido | unit | `node --experimental-strip-types --test tests/legal.test.ts` | ❌ W0 |
-| LEGAL-03 | `isAccepted` (sem campos, versão antiga, sem uso profissional = false; atual + true = true); `acceptTerms` recusa versão diferente; `reserveUsage` recusa workspace não aceito | unit (fake ctx) | `node --experimental-strip-types --test tests/legal.test.ts` | ❌ W0 |
-| LEGAL-05 | `purgeOrgBatch` apaga leads (cascata), previews, events, outreach, uploads + storage, supressões da org; preserva supressão global; idempotente | unit (fake ctx em memória) | `node --experimental-strip-types --test tests/purge.test.ts` | ❌ W0 |
-| LEGAL-05 | `stripeDelete` trata 404 como sucesso | unit (fetch stub) | `node --experimental-strip-types --test tests/stripe.test.ts` | ✅ estender |
+| Req ID | Plan / Task | Behavior | Test Type | Automated Command | File Exists |
+|--------|-------------|----------|-----------|-------------------|-------------|
+| LEGAL-01 | 09-02 T1-T2 | landing e `PLANS` sem termos proibidos (depoimentos, white-label, domínio próprio, notificado, toggle anual, Export CSV, "Sem risco", "48") e features batendo com os limites | unit (leitura de fonte) | `node --experimental-strip-types --test tests/landing-honesty.test.ts` | ❌ W1 |
+| LEGAL-02/04 | 09-01 T1 | `legalPlaceholders()` lista campos pendentes e fica vazio quando preenchido; `LEGAL_DOCS` com 7 slugs; helpers | unit | `node --experimental-strip-types --test tests/legal.test.ts` | ❌ W1 |
+| infra | 09-01 T2 | ctx falso em memória (query/withIndex/eq, insert/get/patch/delete, storage) | unit | `node --experimental-strip-types --test tests/fake-ctx.test.ts` | ❌ W1 |
+| LEGAL-02/04 | 09-03 T1-T2 | 7 páginas em `src/app/legal/<slug>/page.tsx` usando `LegalDoc`; fatos de empresa, cookies, subprocessadores, aviso ao prospect; rodapé da landing com `LegalLinks`; `/legal` fora do proxy | unit (fs) | `node --experimental-strip-types --test tests/legal-pages.test.ts` | ❌ W2 |
+| LEGAL-02 | 09-04 T1-T2 | Termos (B2B, responsável pelo contato, links do Google), Privacidade (GDPR, LGPD, art. 27, transferência), DPA (art. 28, operadora, link de subprocessadores); sem LSSI/NIF/travessão | unit (leitura de fonte) | `node --experimental-strip-types --test tests/legal-docs-content.test.ts` | ❌ W2 |
+| LEGAL-03 | 09-01 T1 | `isAccepted` (sem campos, versão antiga, sem uso profissional = false; atual + true = true) | unit | `node --experimental-strip-types --test tests/legal.test.ts` | ❌ W1 |
+| LEGAL-03 | 09-05 T1 | `acceptTermsFor` recusa versão diferente e grava versão/data/uso profissional; `reserveUsage` recusa sem aceite; demo isento; `assertAccepted` | unit (fake ctx) | `node --experimental-strip-types --test tests/acceptance.test.ts` | ❌ W2 |
+| LEGAL-03 | 09-05 T2 | guarda em `outreach.draft/callScript/send`, `whatsapp.sendFollowup`, `billing.createCheckout` | typecheck + grep | `./node_modules/.bin/tsc --noEmit -p convex` | ✅ comando existe |
+| LEGAL-05 | 09-06 T1 | `purgeOrgBatch` apaga leads (cascata), previews, events, outreach, uploads + storage, supressões da org, users e o workspace por último; preserva supressão global e outras orgs; idempotente | unit (fake ctx) | `node --experimental-strip-types --test tests/purge.test.ts` | ❌ W2 |
+| LEGAL-05 | 09-06 T1 | `stripeDelete`: 200 = "ok", 404 = "gone", 500 lança | unit (fetch stub) | `node --experimental-strip-types --test tests/stripe.test.ts` | ✅ estender |
+| todos | 09-07 T1 | suíte inteira + tipos (raiz e convex) + lint + build | full | full suite command | ✅ |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -53,11 +58,15 @@ Preenchido pelo planner/executor a partir do mapa abaixo (requisito → teste).
 
 ## Wave 0 Requirements
 
-- [ ] `convex/lib/legal.ts` (módulo puro: identidade, versão dos documentos, `legalPlaceholders()`, `isAccepted()`)
-- [ ] `tests/legal.test.ts`
-- [ ] `tests/landing-honesty.test.ts`
-- [ ] `tests/legal-pages.test.ts`
-- [ ] `tests/purge.test.ts` (fake ctx em memória)
+Não há Wave 0 separada: cada plano cria o próprio teste antes do código (tarefas `tdd="true"`).
+
+- [ ] `convex/lib/legal.ts` + `tests/legal.test.ts` (09-01)
+- [ ] `tests/fake-ctx.ts` + `tests/fake-ctx.test.ts` (09-01)
+- [ ] `tests/landing-honesty.test.ts` (09-02)
+- [ ] `tests/legal-pages.test.ts` (09-03)
+- [ ] `tests/legal-docs-content.test.ts` (09-04)
+- [ ] `tests/acceptance.test.ts` (09-05)
+- [ ] `tests/purge.test.ts` e extensão de `tests/stripe.test.ts` (09-06)
 
 ---
 
@@ -66,7 +75,7 @@ Preenchido pelo planner/executor a partir do mapa abaixo (requisito → teste).
 | Behavior | Requirement | Why Manual | Test Instructions |
 |----------|-------------|------------|-------------------|
 | Exclusão de conta ponta a ponta | LEGAL-05 | Depende de Stripe (modo teste) e Clerk reais | Conta de teste → assinar em modo teste → apagar conta em Ajustes → conferir no dashboard do Convex que o workspace não tem mais dados, assinatura cancelada no Stripe e usuário ausente no Clerk |
-| Faixa de placeholder visível | LEGAL-02/04 | Visual | Abrir `/legal/aviso-legal` com identidade ainda em placeholder: faixa de aviso aparece |
+| Faixa de placeholder visível | LEGAL-02/04 | Visual | Abrir `/legal/empresa` com identidade ainda em placeholder: faixa de aviso aparece |
 | Gate de aceite no primeiro acesso | LEGAL-03 | Fluxo de UI com Clerk | Conta nova → tela de aceite antes do app; aceitar → app abre; subir versão → pede de novo |
 
 ---
