@@ -9,6 +9,7 @@ import type { Id } from "./_generated/dataModel";
 import { requireOrgId } from "./model/tenant";
 import { deleteLeadCascade } from "./model/leads";
 import { userError } from "./lib/errors";
+import { confirmPatch } from "./lib/googleData";
 import {
   classifyWebsite,
   computeScore,
@@ -27,6 +28,13 @@ const legalFormV = v.union(
   v.literal("incorporated"),
   v.literal("sole_trader"),
   v.literal("unknown"),
+);
+const confirmViaV = v.union(
+  v.literal("call"),
+  v.literal("visit"),
+  v.literal("website"),
+  v.literal("social"),
+  v.literal("other"),
 );
 const contactTypeV = v.union(v.literal("role"), v.literal("named"), v.literal("unknown"));
 
@@ -329,6 +337,25 @@ export const updateInfo = mutation({
       patch.facebook = normalizeFacebook(args.facebook);
     }
     await ctx.db.patch(args.id, patch); // chave presente com undefined = remove o campo
+  },
+});
+
+/** Fase 10: nome, telefone e endereço que a cliente confirmou com o próprio negócio (ou editou).
+ *  Primeira confirmação de lead do Google exige origem e nome; regras em googleData.confirmPatch. */
+export const confirmInfo = mutation({
+  args: {
+    id: v.id("leads"),
+    name: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    address: v.optional(v.string()),
+    via: v.optional(confirmViaV),
+    noSite: v.optional(v.boolean()),
+  },
+  handler: async (ctx, { id, ...args }) => {
+    const orgId = await requireOrgId(ctx);
+    const lead = await ctx.db.get(id);
+    if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
+    await ctx.db.patch(id, confirmPatch(lead, args, Date.now()));
   },
 });
 
