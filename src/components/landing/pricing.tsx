@@ -1,6 +1,3 @@
-"use client";
-
-import { useState } from "react";
 import Link from "next/link";
 import { MdCheck } from "react-icons/md";
 import { PLANS } from "@convex/lib/domain";
@@ -9,38 +6,11 @@ const DEMO = process.env.NEXT_PUBLIC_DEMO === "1";
 const CTA_HREF = DEMO ? "/dashboard" : "/sign-up";
 
 export function Pricing() {
-  const [annual, setAnnual] = useState(false);
-
   return (
     <div>
-      <div className="mb-10 flex justify-center">
-        <div className="inline-flex items-center gap-1 rounded-full border border-border bg-surface p-1 shadow-[var(--shadow-sm)]">
-          <button
-            onClick={() => setAnnual(false)}
-            className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
-              !annual ? "bg-brand text-brand-fg" : "text-muted"
-            }`}
-          >
-            Mensal
-          </button>
-          <button
-            onClick={() => setAnnual(true)}
-            className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
-              annual ? "bg-brand text-brand-fg" : "text-muted"
-            }`}
-          >
-            Anual
-            <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${annual ? "bg-white/20" : "bg-brand-soft text-brand"}`}>
-              −30%
-            </span>
-          </button>
-        </div>
-      </div>
-
       <div className="grid gap-4 md:grid-cols-3">
         {Object.values(PLANS).map((plan) => {
           const featured = plan.id === "pro";
-          const monthly = annual ? Math.round(plan.price * 0.7) : plan.price;
           return (
             <div
               key={plan.id}
@@ -58,7 +28,7 @@ export function Pricing() {
               <h3 className="font-display text-xl font-bold">{plan.name}</h3>
               <div className="mt-3 flex items-baseline gap-1">
                 <span className="font-display text-4xl font-bold tabular-nums">
-                  {plan.price === 0 ? "Grátis" : `€${monthly}`}
+                  {plan.price === 0 ? "Grátis" : `€${plan.price}`}
                 </span>
                 {plan.price !== 0 && <span className="text-sm text-muted">/mês</span>}
               </div>

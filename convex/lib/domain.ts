@@ -668,7 +668,7 @@ export const PLANS: Record<Plan, PlanDef> = {
     price: 0,
     leadsPerMonth: 60,
     sitesPerMonth: 2,
-    features: ["5 categorias", "Digital Presence Score", "2 sites/mês", "Preview rastreado"],
+    features: ["60 leads/mês", "2 sites/mês", "Digital Presence Score", "Preview rastreado"],
   },
   pro: {
     id: "pro",
@@ -676,13 +676,7 @@ export const PLANS: Record<Plan, PlanDef> = {
     price: 49,
     leadsPerMonth: 2000,
     sitesPerMonth: 50,
-    features: [
-      "Todas as categorias",
-      "Todos os mercados opt-out",
-      "Outreach por IA",
-      "50 sites/mês",
-      "Export CSV",
-    ],
+    features: ["2.000 leads/mês", "50 sites/mês", "Todos os mercados", "Abordagem escrita por IA"],
   },
   agency: {
     id: "agency",
@@ -690,7 +684,7 @@ export const PLANS: Record<Plan, PlanDef> = {
     price: 149,
     leadsPerMonth: 10000,
     sitesPerMonth: 500,
-    features: ["Tudo do Pro", "White-label + domínio próprio", "500 sites/mês", "Prioridade"],
+    features: ["10.000 leads/mês", "500 sites/mês", "Tudo do Pro"],
   },
 };
 
