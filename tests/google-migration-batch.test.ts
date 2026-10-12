@@ -87,3 +87,10 @@ test("mergeReports sums and concatenates ids", () => {
   assert.equal(m.leadsScanned, 5);
   assert.deepEqual(m.publishedNameKeptLeadIds, ["x", "y"]);
 });
+
+test("googleCompliance.ts: dev guard first, loop via migrateBatch, no console", () => {
+  const src = readFileSync(new URL("../convex/googleCompliance.ts", import.meta.url), "utf8");
+  assert.match(src, /seedDevFixtures = internalMutation\(\{[^]*?handler: async \(ctx, \{ orgId \}\) => \{\s*\n\s*if \(!isDevEnv\(\)\) throw/);
+  assert.ok(src.includes("internal.googleCompliance.migrateBatch"));
+  assert.ok(!src.includes("console."));
+});
