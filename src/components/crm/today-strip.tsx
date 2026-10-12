@@ -35,10 +35,10 @@ export function TodayStrip({
   // adiar = setNextAction com addDays(at, n) e a mesma nota, otimista como o setStage do Kanban
   const setNextAction = useMutation(api.leads.setNextAction).withOptimisticUpdate(
     (store, { id, at, note }) => {
-      const cur = store.getQuery(api.leads.list, {});
+      const cur = store.getQuery(api.leads.listCrm, {});
       if (!cur) return;
       store.setQuery(
-        api.leads.list,
+        api.leads.listCrm,
         {},
         cur.map((l) => (l._id === id ? { ...l, nextActionAt: at, nextActionNote: note } : l)),
       );

@@ -9,7 +9,7 @@ import { MdDeleteOutline } from "react-icons/md";
 /**
  * Botão "Excluir" do lead: confirma com a usuária, chama `leads.remove` (que apaga
  * preview, fotos, histórico e outreach em cascata) e some da lista na hora — optimistic
- * update em `api.leads.list`, o mesmo padrão do `setStage` no Kanban.
+ * update em `api.leads.listCrm`, o mesmo padrão do `setStage` no Kanban.
  */
 export function DeleteLeadButton({
   lead,
@@ -24,10 +24,10 @@ export function DeleteLeadButton({
   className?: string;
 }) {
   const remove = useMutation(api.leads.remove).withOptimisticUpdate((store, { id }) => {
-    const cur = store.getQuery(api.leads.list, {});
+    const cur = store.getQuery(api.leads.listCrm, {});
     if (!cur) return;
     store.setQuery(
-      api.leads.list,
+      api.leads.listCrm,
       {},
       cur.filter((l) => l._id !== id),
     );
