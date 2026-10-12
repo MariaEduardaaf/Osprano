@@ -81,9 +81,13 @@ export async function migrateLeads(
       .withIndex("by_lead", (q) => q.eq("leadId", lead._id))
       .first();
     // Ordem importa: o preview é comparado com o lead ANTES do patch.
-    const next = preview
+    const scrubbed = preview
       ? scrubPreviewContent(parseSiteContent(preview.content), lead, preview.published === true && !!preview.slug)
       : null;
+    // Formato antigo (sem version 2) pode guardar endereço do Google que o parse
+    // descarta: regravar sempre no formato novo para o campo cru sair do banco.
+    const legacy = !!preview && (preview.content as { version?: unknown } | null)?.version !== 2;
+    const next = scrubbed && legacy ? { ...scrubbed, changed: true } : scrubbed;
     if (preview && next) {
       if (next.changed) {
         r.previewsCleaned++;
