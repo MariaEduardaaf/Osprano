@@ -2,6 +2,7 @@ import { internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
 import { classifyWebsite, emailFields, normalizeInstagram, normalizeFacebook } from "./lib/domain";
+import { leadLabel } from "./lib/googleData";
 import { deleteLeadCascade } from "./model/leads";
 import { buildImportedLead, importDedupeKey } from "./lib/importLead";
 
@@ -132,7 +133,7 @@ export const markApproached = internalMutation({
       await ctx.db.insert("events", { orgId, type: "stage_change", leadId: lead._id, at: now, meta: { from: lead.stage, to: "approached" } });
       const text = note?.trim();
       if (text) await ctx.db.insert("events", { orgId, type: "note", leadId: lead._id, at: now, meta: { text } });
-      moved.push(lead.name);
+      moved.push(leadLabel(lead));
     }
     return { moved, notFound };
   },
@@ -189,7 +190,7 @@ export const purgeUnsavedWithSite = internalMutation({
     const names: string[] = [];
     for (const lead of matches) {
       await deleteLeadCascade(ctx, lead);
-      names.push(lead.name);
+      names.push(leadLabel(lead));
     }
     return { deleted: names.length, names };
   },
@@ -242,8 +243,8 @@ export const importLeads = internalMutation({
     const existing = await ctx.db.query("leads").withIndex("by_org", (q) => q.eq("orgId", orgId)).collect();
     const seen = new Set<string>();
     for (const l of existing) {
-      seen.add(importDedupeKey(l));
-      seen.add(importDedupeKey({ name: l.name, city: l.city }));
+      seen.add(importDedupeKey({ ...l, name: l.name ?? "" }));
+      seen.add(importDedupeKey({ name: l.name ?? "", city: l.city }));
     }
     const now = Date.now();
     const inserted: string[] = [];

@@ -7,6 +7,7 @@ import { requireOrgId } from "./model/tenant";
 import { assertAccepted } from "./model/workspace";
 import { writeEmail, writeCallScript, langForLead } from "./lib/outreachAi";
 import type { OutreachWarning } from "./lib/outreachAi";
+import { leadLabel } from "./lib/googleData";
 import { normalizeEmail, canContactByEmail, addDays } from "./lib/domain";
 import { optOutFooter, senderIdentityFrom, callerNameFrom } from "./lib/compliance";
 import {
@@ -85,7 +86,7 @@ export const outbox = query({
 
       items.push({
         leadId: row.leadId,
-        name: lead.name,
+        name: leadLabel(lead),
         category: lead.category ?? null,
         city: lead.city ?? null,
         score: lead.score ?? null,

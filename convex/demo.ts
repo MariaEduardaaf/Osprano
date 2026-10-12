@@ -306,7 +306,7 @@ export const seed = mutation({
 
       const id = await ctx.db.insert("leads", {
         orgId: ORG,
-        source: "places",
+        source: "manual", // seed fictício: não se passa por dado do Google (Fase 10)
         placeId: `demo-${i}`,
         name,
         category,
@@ -345,7 +345,7 @@ export const seed = mutation({
       const domain = o.name.toLowerCase().replace(/[^a-z]/g, "");
       const id = await ctx.db.insert("leads", {
         orgId: ORG,
-        source: "places",
+        source: "manual", // seed fictício: não se passa por dado do Google (Fase 10)
         placeId: `demo-${i}`,
         name: o.name,
         category: o.category,
@@ -490,7 +490,7 @@ export const legacyPreview = mutation({
     if (!preview) throw userError("Lead sem preview");
     await ctx.db.patch(preview._id, {
       content: {
-        name: lead.name,
+        name: lead.name ?? "",
         category: lead.category ?? null,
         city: lead.city ?? null,
         phone: lead.phone ?? null,

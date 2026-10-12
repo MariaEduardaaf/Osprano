@@ -702,7 +702,7 @@ function noVerifiedSignalWarning(): OutreachWarning {
 /** Cabeçalho factual do lead na mensagem de usuário (nome, cidade, categoria — nada inferido). */
 function businessLine(lead: Doc<"leads">): string {
   return (
-    `Business: ${lead.name}` +
+    `Business: ${lead.name ?? ""}` +
     `${lead.city ? ` in ${lead.city}` : ""}` +
     `${lead.category ? `, a ${lead.category.replace(/_/g, " ")}` : ""}. `
   );
@@ -777,7 +777,7 @@ export async function writeEmail(
   } catch {
     // Fallback de parse: o corpo cru veio no idioma do prospect — o assunto TEM que
     // acompanhar, senão o alemão recebe assunto em inglês com corpo em alemão.
-    subject = fallbackSubject(lang, lead.name);
+    subject = fallbackSubject(lang, lead.name ?? "");
     body = text;
   }
 

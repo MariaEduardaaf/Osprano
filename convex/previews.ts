@@ -1,3 +1,4 @@
+import { leadLabel } from "./lib/googleData";
 import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { requireOrgId } from "./model/tenant";
@@ -284,7 +285,7 @@ export const listSites = query({
           template: content.template,
           palette: content.palette,
           // U+2014 escapado: o mesmo travessão de antes (a página Sites o mostra quando o lead sumiu).
-          name: lead?.name ?? "—",
+          name: lead ? leadLabel(lead) : "—",
           city: lead?.city ?? null,
           category: lead?.category ?? null,
           score: lead?.score ?? null,

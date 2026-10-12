@@ -63,7 +63,7 @@ export const scoreLead = internalAction({
     };
     const score = computeScore(signals);
 
-    const legalForm = inferLegalForm(lead.name, lead.countryCode);
+    const legalForm = inferLegalForm(lead.name ?? "", lead.countryCode);
     const contactType = inferContactType(discoveredEmail);
     const emailable = isEmailable({ countryCode: lead.countryCode, legalForm, contactType });
 

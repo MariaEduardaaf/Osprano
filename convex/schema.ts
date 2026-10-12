@@ -81,7 +81,7 @@ export default defineSchema({
     ),
     placeId: v.optional(v.string()),
 
-    name: v.string(),
+    name: v.optional(v.string()), // ausente em lead do Google até a cliente confirmar (Fase 10)
     category: v.optional(v.string()),
     address: v.optional(v.string()),
     city: v.optional(v.string()),

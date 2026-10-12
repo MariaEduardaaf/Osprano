@@ -379,7 +379,7 @@ export function validateSiteContent(c: SiteContent): void {
 
 /** O que o lead precisa ter para alimentar o conteúdo inicial (Doc<"leads"> serve). */
 export interface LeadLike {
-  name: string;
+  name?: string;
   category?: string | null;
   city?: string | null;
   countryCode: string;
@@ -406,7 +406,7 @@ export function defaultContentForLead(lead: LeadLike): SiteContent {
     palette: defaultPalette(template),
     // 80 é o limite de `validateSiteContent`; um nome maior seria erro no
     // primeiro Salvar sem ela ter mexido no campo.
-    name: lead.name.trim().slice(0, LIMITS.name),
+    name: (lead.name ?? "").trim().slice(0, LIMITS.name),
     city: lead.city ?? null,
     countryCode: lead.countryCode,
     ...opt("phone", lead.phone || undefined),

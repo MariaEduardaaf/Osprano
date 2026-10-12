@@ -1,4 +1,5 @@
 import { query } from "./_generated/server";
+import { leadLabel } from "./lib/googleData";
 import { requireOrgId } from "./model/tenant";
 
 /** Recent activity for the workspace (preview opens, sends, stage changes). */
@@ -21,7 +22,7 @@ export const recent = query({
           _id: e._id,
           type: e.type,
           at: e.at,
-          leadName: lead?.name ?? null,
+          leadName: lead ? leadLabel(lead) : null,
           // `source` cobre contact_opt_in/wa_opt_in (ver eventLabel em dashboard/page.tsx).
           meta: (e.meta ?? null) as { to?: string; channel?: string; source?: string } | null,
         };

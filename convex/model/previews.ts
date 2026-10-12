@@ -40,7 +40,7 @@ export async function readContent(ctx: QueryCtx | MutationCtx, preview: Doc<"pre
   if (content.name) return content;
   const lead = await ctx.db.get(preview.leadId);
   if (!lead) return content;
-  return { ...content, name: lead.name, city: lead.city ?? null, countryCode: lead.countryCode };
+  return { ...content, name: lead.name ?? "", city: lead.city ?? null, countryCode: lead.countryCode };
 }
 
 /** URLs do storage para as imagens enviadas (spec 2.3). Id sem arquivo (apagado) some da lista. */
