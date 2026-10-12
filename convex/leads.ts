@@ -5,6 +5,7 @@ import {
   internalMutation,
 } from "./_generated/server";
 import { v } from "convex/values";
+import { paginationOptsValidator } from "convex/server";
 import type { Id } from "./_generated/dataModel";
 import { requireOrgId } from "./model/tenant";
 import { deleteLeadCascade } from "./model/leads";
@@ -20,6 +21,9 @@ import {
   emailFields,
   normalizeInstagram,
   normalizeFacebook,
+  OPT_IN_MARKETS,
+  CRM_LIMIT,
+  STATS_LIMIT,
   type Signals,
   type ContactType,
 } from "./lib/domain";
@@ -69,6 +73,7 @@ const signalsV = v.object({
 // Public (authed) API
 // ---------------------------------------------------------------------------
 
+/** @deprecated SCAL-01: substituída por listForDiscovery/listCrm; apagada no plano 10-11. */
 /** Leads for the current org, ranked by digital-presence pain (score desc). */
 export const list = query({
   args: { stage: v.optional(stageArg) },
@@ -84,6 +89,59 @@ export const list = query({
           .withIndex("by_org", (q) => q.eq("orgId", orgId))
           .collect();
     return leads.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  },
+});
+
+/**
+ * Tela de Leads (SCAL-01): mais recentes primeiro (o lote da busca aparece no topo); a tela
+ * ordena por score o que já carregou. Cidade/categoria filtram no cliente sobre as páginas carregadas.
+ */
+export const listForDiscovery = query({
+  args: {
+    paginationOpts: paginationOptsValidator,
+    countryCode: v.optional(v.string()),
+    regime: v.union(v.literal("email"), v.literal("call")),
+  },
+  handler: async (ctx, { paginationOpts, countryCode, regime }) => {
+    const orgId = await requireOrgId(ctx);
+    if (countryCode) {
+      return await ctx.db
+        .query("leads")
+        .withIndex("by_org_country", (q) => q.eq("orgId", orgId).eq("countryCode", countryCode))
+        .order("desc")
+        .paginate(paginationOpts);
+    }
+    return await ctx.db
+      .query("leads")
+      .withIndex("by_org", (q) => q.eq("orgId", orgId))
+      .order("desc")
+      .filter((q) => {
+        const optIn = q.or(...OPT_IN_MARKETS.map((cc) => q.eq(q.field("countryCode"), cc)));
+        return regime === "call" ? optIn : q.not(optIn);
+      })
+      .paginate(paginationOpts);
+  },
+});
+
+/**
+ * Kanban do CRM: leads salvos (saved true) + legado sem o campo, por índice, sem ler a descoberta.
+ * ponytail: teto de 1.000 cards; se uma org passar disso, paginar por coluna (by_org_stage).
+ */
+export const listCrm = query({
+  args: {},
+  handler: async (ctx) => {
+    const orgId = await requireOrgId(ctx);
+    const saved = await ctx.db
+      .query("leads")
+      .withIndex("by_org_saved", (q) => q.eq("orgId", orgId).eq("saved", true))
+      .order("desc")
+      .take(CRM_LIMIT);
+    const legacy = await ctx.db
+      .query("leads")
+      .withIndex("by_org_saved", (q) => q.eq("orgId", orgId).eq("saved", undefined))
+      .order("desc")
+      .take(CRM_LIMIT);
+    return [...saved, ...legacy].slice(0, CRM_LIMIT).sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
   },
 });
 
@@ -115,7 +173,7 @@ export const stats = query({
     const leads = await ctx.db
       .query("leads")
       .withIndex("by_org", (q) => q.eq("orgId", orgId))
-      .collect();
+      .take(STATS_LIMIT);
 
     const byStage = { base: 0, approached: 0, scheduled: 0, followup: 0, converted: 0, lost: 0 };
     let emailable = 0;
@@ -128,7 +186,7 @@ export const stats = query({
       if (canContactByEmail(lead)) emailable += 1;
       if (lead.signals?.noSite || lead.signals?.socialOnly) noSite += 1;
     }
-    return { total: leads.length, byStage, emailable, noSite };
+    return { total: leads.length, byStage, emailable, noSite, truncated: leads.length === STATS_LIMIT };
   },
 });
 
@@ -140,7 +198,7 @@ export const analytics = query({
     const leads = await ctx.db
       .query("leads")
       .withIndex("by_org", (q) => q.eq("orgId", orgId))
-      .collect();
+      .take(STATS_LIMIT);
 
     const tiers = { hot: 0, warm: 0, cold: 0 };
     const scoreBuckets = [0, 0, 0, 0, 0]; // 0-19, 20-39, 40-59, 60-79, 80-100
@@ -160,7 +218,14 @@ export const analytics = query({
         });
       }
     }
-    return { total: leads.length, tiers, scoreBuckets, byCountry, signals };
+    return {
+      total: leads.length,
+      tiers,
+      scoreBuckets,
+      byCountry,
+      signals,
+      truncated: leads.length === STATS_LIMIT,
+    };
   },
 });
 
@@ -518,10 +583,11 @@ export const existingPlaceIds = internalQuery({
   },
 });
 
+// Google Places NÃO passa por aqui (Fase 10): usa internal.places.insertPlacesLead, que nunca grava conteúdo do Google.
 export const insertDiscovered = internalMutation({
   args: {
     orgId: v.string(),
-    source: v.union(v.literal("places"), v.literal("fsq"), v.literal("osm"), v.literal("scrape")),
+    source: v.union(v.literal("fsq"), v.literal("osm"), v.literal("scrape")),
     placeId: v.string(),
     name: v.string(),
     category: v.optional(v.string()),

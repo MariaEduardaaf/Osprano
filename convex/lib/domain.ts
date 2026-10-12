@@ -705,6 +705,10 @@ export function clampDiscoveryCount(max?: number): number {
   return Math.min(Math.max(safe, 1), 50);
 }
 
+/** SCAL-01: tetos de leitura por query (Fase 10). */
+export const CRM_LIMIT = 1000;
+export const STATS_LIMIT = 5000;
+
 /** Category options for the discovery UI — value is the Places search term, label is pt-BR. */
 export const CATEGORY_OPTIONS: { value: string; label: string }[] = [
   { value: "restaurant", label: "Restaurante" },

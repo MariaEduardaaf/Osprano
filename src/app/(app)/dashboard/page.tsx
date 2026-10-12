@@ -11,7 +11,7 @@ import {
 import { PageHeader, StatCard } from "@/components/ui";
 import { eventDot, eventIcon } from "@/components/event-glyph";
 import { ChartCard, Donut, VBars, HBars } from "@/components/charts";
-import { PIPELINE_STAGES, MARKETS } from "@convex/lib/domain";
+import { PIPELINE_STAGES, MARKETS, STATS_LIMIT } from "@convex/lib/domain";
 
 const STAGE_COLOR: Record<string, string> = {
   base: "var(--cold)",
@@ -118,7 +118,7 @@ export default function DashboardPage() {
       <PageHeader eyebrow="Visão geral" title="Dashboard" subtitle="A saúde da sua operação num relance" />
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard label="Leads" value={stats?.total ?? "—"} hint="na base" icon={<MdOutlineTravelExplore size={18} />} />
+        <StatCard label="Leads" value={stats ? (stats.truncated ? `${STATS_LIMIT}+` : stats.total) : "—"} hint="na base" icon={<MdOutlineTravelExplore size={18} />} />
         <StatCard label="Sem site / social" value={stats?.noSite ?? "—"} hint="maior intenção" icon={<MdOutlineWebAsset size={18} />} />
         {/* OPTIN-04: a métrica agora sai de canContactByEmail no servidor — inclui quem deu
             consentimento explícito, então a copy não pode falar só do regime do mercado. */}
