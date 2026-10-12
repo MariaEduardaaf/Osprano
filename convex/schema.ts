@@ -6,9 +6,11 @@ import { v } from "convex/values";
  *
  * Multi-tenant by `orgId` (MVP: orgId === Clerk user subject; org support later).
  *
- * Google Places ToS: only `placeId` is storable indefinitely. Contact fields
- * (name/phone/website) must be refreshed within ~30 days — see `fetchedAt`.
- * The storable/resellable backbone is Foursquare OS (source === "fsq").
+ * Google Maps Platform (Fase 10): de lead vindo do Google (source places) só o placeId é
+ * guardado. Nome, endereço, telefone, site, nota e avaliações do Google NUNCA são gravados;
+ * nome/telefone/endereço só existem quando a cliente confirmou com o próprio negócio (campo
+ * confirmation). Leads do OpenStreetMap guardam os dados (ODbL, com atribuição). O que pode
+ * sair do app passa por convex/lib/googleData.ts.
  */
 
 const stage = v.union(
@@ -54,6 +56,7 @@ export default defineSchema({
     // usage (reset monthly from periodStart)
     leadsUsed: v.number(),
     sitesUsed: v.number(),
+    detailsUsed: v.optional(v.number()), // consultas ao Google Places (Place Details) no mês; ausente = 0
     periodStart: v.number(),
     // billing (Stripe)
     stripeCustomerId: v.optional(v.string()),
@@ -143,11 +146,28 @@ export default defineSchema({
     callScriptPt: v.optional(v.string()),
     callScriptAt: v.optional(v.number()),
 
-    fetchedAt: v.number(), // for the Google Places 30-day refresh policy
+    // Fase 10: a cliente atestou nome/telefone/endereço com o próprio negócio (nunca copiado do Google).
+    confirmation: v.optional(
+      v.object({
+        at: v.number(),
+        via: v.union(
+          v.literal("call"),
+          v.literal("visit"),
+          v.literal("website"),
+          v.literal("social"),
+          v.literal("other"),
+        ),
+        noSite: v.optional(v.boolean()), // "conferi que o negócio não tem site próprio"
+      }),
+    ),
+
+    fetchedAt: v.number(), // quando a descoberta trouxe o lead (não é mais prazo de refresh do Google)
   })
     .index("by_org", ["orgId"])
     .index("by_org_stage", ["orgId", "stage"])
-    .index("by_org_place", ["orgId", "placeId"]),
+    .index("by_org_place", ["orgId", "placeId"])
+    .index("by_org_country", ["orgId", "countryCode"]) // lista da descoberta por país, mais recentes primeiro
+    .index("by_org_saved", ["orgId", "saved"]), // Kanban do CRM; saved ausente = legado no CRM
 
   previews: defineTable({
     orgId: v.string(),
@@ -163,7 +183,8 @@ export default defineSchema({
     .index("by_token", ["token"])
     .index("by_lead", ["leadId"])
     .index("by_slug", ["slug"])
-    .index("by_org", ["orgId"]),
+    .index("by_org", ["orgId"])
+    .index("by_org_open", ["orgId", "openCount"]),
 
   // Fotos enviadas para o site de um lead (spec 2.2/2.4). A linha existe para
   // `saveContent` (plano B) só aceitar storageId do próprio org e para apagar o
@@ -202,6 +223,7 @@ export default defineSchema({
     repliedAt: v.optional(v.number()), // TRCK-02: timestamp real da marcação manual de "respondeu"
   })
     .index("by_org", ["orgId"])
+    .index("by_org_channel", ["orgId", "channel"])
     .index("by_lead", ["leadId"])
     .index("by_unsub_token", ["unsubscribeToken"]),
 
