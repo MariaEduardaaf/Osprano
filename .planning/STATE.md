@@ -1,10 +1,10 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.3
-milestone_name: Automação da prospecção
-status: ready-to-plan
-stopped_at: Roadmap do milestone v1.3 criado (Fases 9-14); pronto para /gsd:plan-phase 9. v1.2 fechado e em produção desde 2026-09-18.
-last_updated: "2026-09-26T00:00:00.000Z"
+milestone_name: Pronto pra vender
+status: defining-requirements
+stopped_at: Milestone v1.3 redefinido como "Pronto pra vender" (2026-10-12); pesquisa comercial e roadmap em andamento.
+last_updated: "2026-10-12T00:00:00.000Z"
 progress:
   total_phases: 14
   completed_phases: 8
@@ -16,17 +16,17 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-09-26)
+See: .planning/PROJECT.md (updated 2026-10-12)
 
 **Core value:** O usuário prospecta e aborda negócios europeus sem risco legal — compliance garantido por código, contagem de plano/billing íntegra.
-**Current focus:** v1.3 Automação da prospecção: verificação de site, pipeline automático pós-seleção, envio/follow-up automático onde permitido, fila de ligação e redes sociais.
+**Current focus:** v1.3 Pronto pra vender: vender o Osprano como SaaS por assinatura, sem envio automático no lançamento.
 
 ## Current Position
 
-Phase: 9 (Base de compliance compartilhada): not started
+Phase: Not started (defining requirements)
 Plan: —
-Status: Ready to plan
-Last activity: 2026-09-26: Roadmap do milestone v1.3 criado (Fases 9-14), REQUIREMENTS.md e STATE.md atualizados
+Status: Defining requirements
+Last activity: 2026-10-12 — Milestone v1.3 redefinido como "Pronto pra vender" (substitui "Automação da prospecção", Fases 9-14 nunca iniciadas)
 
 Contexto de produção em 2026-09-26: Google Places ligada em prod (projeto GCP
 `soprano-503222`, faturamento "Pagamento do Firebase", cota SearchText 30/dia,
