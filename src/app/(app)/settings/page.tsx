@@ -16,6 +16,7 @@ import {
 import { useUser, useClerk } from "@clerk/nextjs";
 import { api } from "@convex/_generated/api";
 import { PageHeader } from "@/components/ui";
+import { DeleteAccount } from "@/components/delete-account";
 import { errorMessage } from "@/lib/errors";
 
 const DEMO = process.env.NEXT_PUBLIC_DEMO === "1";
@@ -230,9 +231,7 @@ function RealSecurityPanel() {
           </button>
         </Row>
         <Row label="Apagar conta">
-          <button onClick={() => openUserProfile()} className="text-sm font-semibold text-danger hover:underline">
-            Apagar conta
-          </button>
+          <DeleteAccount />
         </Row>
       </div>
     </div>
