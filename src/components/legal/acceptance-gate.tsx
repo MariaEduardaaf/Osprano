@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { useClerk } from "@clerk/nextjs";
 import { api } from "@convex/_generated/api";
 import { legalHref } from "@convex/lib/legal";
@@ -17,8 +17,11 @@ export function AcceptanceGate({ children }: { children: React.ReactNode }) {
 }
 
 function RealGate({ children }: { children: React.ReactNode }) {
-  const s = useQuery(api.workspaces.current);
-  if (s === undefined) return <p className="p-6 text-sm text-faint">Carregando…</p>;
+  // Só consulta depois que o token do Clerk chegou ao Convex; antes disso a query
+  // lança "Não autenticado" e derruba a página inteira numa recarga.
+  const { isAuthenticated } = useConvexAuth();
+  const s = useQuery(api.workspaces.current, isAuthenticated ? {} : "skip");
+  if (!isAuthenticated || s === undefined) return <p className="p-6 text-sm text-faint">Carregando…</p>;
   if (s.acceptanceOk) return <>{children}</>;
   return <AcceptanceScreen requiredVersion={s.requiredVersion} previousVersion={s.acceptedVersion} />;
 }
