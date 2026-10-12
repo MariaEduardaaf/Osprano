@@ -16,7 +16,7 @@ const fieldCls =
  * Erro do servidor aparece abaixo do campo e o digitado fica. O pai remonta o campo por `key`
  * quando o valor salvo muda, então o rascunho nunca fica preso num valor velho.
  */
-function InlineField({
+export function InlineField({
   label,
   value,
   placeholder,

@@ -54,3 +54,23 @@ test("GPLC-05: arquivo com Google não importa mapa nem modelo de site", () => {
     assert.doesNotMatch(s, /site-templates|MapEmbed/, f);
   }
 });
+
+test("BusinessData: confirmação digitada, sem preencher do Google", () => {
+  const s = read("src/components/crm/business-data.tsx");
+  assert.match(s, /Não salvamos dados do Google\./);
+  assert.match(s, /api\.leads\.confirmInfo/);
+  assert.doesNotMatch(s, /(value|defaultValue)=\{[^}]*place/);
+  assert.doesNotMatch(s, /—/);
+});
+
+test("drawer: BusinessData presente, sem mapa nem corpo de modelo", () => {
+  const d = read("src/components/crm/lead-detail.tsx");
+  assert.match(d, /<BusinessData/);
+  assert.doesNotMatch(d, /label="Endereço"/);
+  for (const s of [d, read("src/components/crm/business-data.tsx")]) {
+    assert.doesNotMatch(s, /MapEmbed|preview-site|renderTemplate\(|buildSiteView\(/);
+  }
+  const t = read("src/components/site-templates/template-thumb.tsx");
+  assert.match(t, /renderHero\(/);
+  assert.doesNotMatch(t, /renderTemplate\(|MapEmbed/);
+});

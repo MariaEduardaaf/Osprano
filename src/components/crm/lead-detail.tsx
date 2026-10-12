@@ -27,6 +27,7 @@ import {
 } from "@convex/lib/domain";
 import { defaultPalette, suggestTemplate } from "@convex/lib/site";
 import { NextActionForm } from "@/components/crm/next-action-form";
+import { BusinessData } from "@/components/crm/business-data";
 import { LeadInfoFields } from "@/components/crm/lead-info-fields";
 import { LostReasonModal } from "@/components/crm/lost-reason-modal";
 import { LeadTimeline } from "@/components/crm/lead-timeline";
@@ -208,7 +209,7 @@ function InfoTab({
 
   return (
     <div className="space-y-6">
-      {/* blocos novos do CRM, acima dos dados do Google (que não mudam) */}
+      {/* blocos do CRM; dados do negócio em BusinessData */}
       {lead.stage === "lost" && (
         // sem lostReason (legado): só "Perdido"; sem lostNote: sem o terceiro segmento.
         // Reabrir é o "Em aberto" ou uma pílula de Etapa, abaixo; não há botão próprio.
@@ -217,21 +218,12 @@ function InfoTab({
         </p>
       )}
       <NextActionForm lead={lead} autoFocus={autoFocusAction} />
+      <BusinessData lead={lead} />
       <LeadInfoFields lead={lead} />
 
       <section>
         <Row label="Categoria">{(lead.category ?? "—").replace(/_/g, " ")}</Row>
         <Row label="Cidade">{lead.city ? `${lead.city}${market ? `, ${market.name}` : ""}` : "—"}</Row>
-        <Row label="Endereço">{lead.address ?? "—"}</Row>
-        <Row label="Telefone">
-          {lead.phone ? (
-            <a href={`tel:${lead.phone}`} className="inline-flex items-center gap-1 text-brand hover:underline">
-              {lead.phone} <MdOutlineCall size={14} />
-            </a>
-          ) : (
-            "—"
-          )}
-        </Row>
         <Row label="Website">
           {lead.website ? (
             <a href={lead.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-brand hover:underline">
