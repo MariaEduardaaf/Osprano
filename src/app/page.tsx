@@ -58,8 +58,8 @@ const STEPS: { icon: IconType; t: string; d: string }[] = [
   { icon: MdOutlineAutoAwesome, t: "Gere o preview", d: "Em segundos, um preview profissional do site do negócio, num link único rastreado." },
   { icon: MdOutlineForwardToInbox, t: "A IA escreve a abordagem", d: "Ela lê a dor do lead e escreve o email personalizado citando o problema exato + o link." },
   { icon: MdOutlineSend, t: "Envie compliant", d: "Só mercados opt-out, só entidades incorporadas, com identificação e opt-out. Nada de spam." },
-  { icon: MdOutlineVisibility, t: "Saiba quando abriram", d: "O lead avança no funil e você é notificado no instante em que o prospect abre o preview." },
-  { icon: MdOutlineTrendingUp, t: "Feche + recorrência", d: "Feche no CRM e transforme a venda em MRR com hospedagem white-label na sua marca." },
+  { icon: MdOutlineVisibility, t: "Veja quem abriu", d: "Quando o prospect abre o preview, a abertura aparece no painel e o lead avança no funil." },
+  { icon: MdOutlineTrendingUp, t: "Feche + recorrência", d: "Feche no CRM, publique o site do cliente e ofereça manutenção mensal." },
 ];
 
 const FEATURES: { icon: IconType; t: string; d: string }[] = [
@@ -67,14 +67,8 @@ const FEATURES: { icon: IconType; t: string; d: string }[] = [
   { icon: MdOutlineInsights, t: "Digital Presence Score", d: "Pontue a dor de 0 a 100 com sinais reais: sem site, só-social, sem HTTPS, não-mobile, lento." },
   { icon: MdOutlineViewKanban, t: "CRM visual", d: "Kanban do funil (Base → Abordado → Agendado → Follow Up → Convertido). Mova por etapa." },
   { icon: MdOutlineAutoAwesome, t: "Outreach por IA", d: "Email personalizado citando a dor + link do preview. Você revisa e envia num clique." },
-  { icon: MdOutlineVisibility, t: "Preview rastreado", d: "Cada proposta num link único. Saiba na hora que o cliente abriu — o momento de fechar." },
-  { icon: MdOutlineGppGood, t: "Compliant by design", d: "Só aborda onde é legal (opt-out UE). GDPR-safe, com opt-out em todo email. Sem risco." },
-];
-
-const TESTIMONIALS = [
-  { name: "James Whitfield", role: "Web studio · Manchester", quote: "Parei de caçar contato na mão. O Osprano acha os negócios com site ruim, escreve o email e eu só fecho." },
-  { name: "Sophie Bakker", role: "Freelancer · Amsterdam", quote: "Saber a hora exata que o cliente abriu a prévia mudou minha taxa de fechamento. E tudo dentro da lei." },
-  { name: "Liam O'Brien", role: "Agência · Dublin", quote: "A hospedagem white-label virou minha maior fonte de recorrência. Venda única virou MRR de verdade." },
+  { icon: MdOutlineVisibility, t: "Preview rastreado", d: "Cada proposta num link único. A abertura aparece no painel e o lead avança no funil." },
+  { icon: MdOutlineGppGood, t: "Compliant by design", d: "Só libera email nos mercados opt-out, só para entidades incorporadas, e põe opt-out em todo email." },
 ];
 
 function Section({
@@ -229,7 +223,7 @@ export default async function Home() {
             className="hero-rise mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted"
             style={{ "--rise-delay": "680ms" } as React.CSSProperties}
           >
-            {["GDPR compliant", "Só mercados opt-out", "Sem instalar nada"].map((c) => (
+            {["Opt-out em todo email", "Só mercados opt-out", "Sem instalar nada"].map((c) => (
               <span key={c} className="inline-flex items-center gap-1.5">
                 <MdCheck size={16} className="text-brand" />
                 {c}
@@ -276,9 +270,9 @@ export default async function Home() {
         <Reveal variant="up">
           <div className="grid grid-cols-2 divide-border sm:grid-cols-4 sm:divide-x">
             {[
-              { n: 5, suffix: "", l: "mercados opt-out da UE" },
+              { n: 5, suffix: "", l: "mercados opt-out na Europa" },
               { n: 100, prefix: "0–", suffix: "", l: "Digital Presence Score" },
-              { n: 48, suffix: "", l: "negócios na primeira varredura" },
+              { n: 50, prefix: "até ", suffix: "", l: "negócios por busca" },
               { n: 100, suffix: "%", l: "dos emails com opt-out" },
             ].map((s, i) => (
               <div key={s.l} className="px-6 py-12 text-center">
@@ -370,17 +364,17 @@ export default async function Home() {
               <MdOutlineGppGood size={14} /> O diferencial
             </div>
             <h2 className="mt-5 font-display text-3xl font-bold tracking-tight sm:text-4xl">
-              A única prospecção que não te processa.
+              Prospecção com guardrails de compliance.
             </h2>
             <p className="mt-4 text-lg leading-relaxed text-white/80">
-              As ferramentas de sempre disparam WhatsApp a frio — ilegal na UE e cara. O Osprano só
-              aborda onde a lei permite (mercados opt-out), só entidades incorporadas, e com opt-out
-              em todo email. Você escala tranquilo.
+              As ferramentas de sempre disparam WhatsApp a frio, o que é ilegal na UE. O Osprano só
+              libera email onde a lei permite (mercados opt-out), só para entidades incorporadas, e
+              com opt-out em todo email.
             </p>
             <div className="mt-8 grid gap-4 sm:grid-cols-3">
               {[
                 ["Mercados opt-out", "UK · Holanda · Irlanda · Suécia · Noruega"],
-                ["GDPR-safe", "Base legal + opt-out em cada envio"],
+                ["Opt-out em cada email", "Identificação e descadastro em todo envio"],
                 ["A armadilha do autônomo", "Só incorporados / inbox de função"],
               ].map(([t, d]) => (
                 <div key={t} className="rounded-xl bg-white/10 p-4 backdrop-blur-sm transition-colors duration-300 hover:bg-white/15">
@@ -441,38 +435,11 @@ export default async function Home() {
         index="04"
         eyebrow="Modelo de receita"
         title="Uma venda única vira receita todo mês."
-        subtitle="Cobre pela hospedagem e manutenção enquanto o Osprano faz o trabalho pesado. Ajuste e veja a projeção."
+        subtitle="Ofereça manutenção mensal a cada site fechado. Ajuste e veja a projeção."
       >
         <Reveal variant="up" className="mx-auto max-w-3xl">
           <RevenueCalculator />
         </Reveal>
-      </Section>
-
-      {/* testimonials — pull-quotes editoriais, sem estrelinha de template */}
-      <Section title="Quem prospecta com o Osprano, fecha mais.">
-        <div className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-3">
-          {TESTIMONIALS.map((t, i) => (
-            <Reveal key={t.name} variant="up" delay={i * 100} className="bg-surface">
-              <figure className="flex h-full flex-col p-7 sm:p-8">
-                <span className="font-display text-6xl font-bold leading-none text-brand/25" aria-hidden>
-                  &ldquo;
-                </span>
-                <blockquote className="mt-2 flex-1 text-balance font-display text-lg font-medium leading-snug text-foreground">
-                  {t.quote}
-                </blockquote>
-                <figcaption className="mt-7 flex items-center gap-3 border-t border-border pt-5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-soft font-display text-sm font-bold text-brand">
-                    {t.name[0]}
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold">{t.name}</div>
-                    <div className="font-mono text-[11px] uppercase tracking-wider text-muted">{t.role}</div>
-                  </div>
-                </figcaption>
-              </figure>
-            </Reveal>
-          ))}
-        </div>
       </Section>
 
       {/* pricing */}

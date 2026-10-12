@@ -17,7 +17,7 @@ export default function SitesPage() {
   return (
     <>
       <PageHeader
-        eyebrow="White-label"
+        eyebrow="Sites publicados"
         title="Meus Projetos"
         subtitle="Previews gerados e sites publicados"
       />
@@ -26,7 +26,7 @@ export default function SitesPage() {
         <p className="text-sm text-faint">Carregando…</p>
       ) : sites.length === 0 ? (
         <EmptyState title="Nenhum site ainda">
-          Vá em Leads, gere um preview e publique — vira um site white-label com URL própria.
+          Vá em Leads, gere um preview e publique: vira um site com link público.
         </EmptyState>
       ) : (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">

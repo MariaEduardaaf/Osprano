@@ -18,11 +18,11 @@ const QA: { q: string; a: string }[] = [
   },
   {
     q: "Como eu sei que o cliente viu a proposta?",
-    a: "Cada preview tem um link único rastreado. No instante em que o prospect abre, o lead avança no funil e você é notificado — o melhor momento pra fechar.",
+    a: "Cada preview tem um link único rastreado. Quando o prospect abre, a abertura aparece no painel e o lead avança no funil: é o melhor momento pra fechar.",
   },
   {
     q: "Como funciona a receita recorrente?",
-    a: "Em vez de vender o site uma vez, você oferece site + hospedagem + manutenção white-label, na sua marca. O Osprano hospeda; você cobra todo mês. Venda única vira MRR.",
+    a: "Em vez de vender o site uma vez, você oferece site + manutenção mensal. O Osprano publica o site num endereço do Osprano, e o que você cobra do seu cliente todo mês é com você.",
   },
   {
     q: "Preciso saber programar?",
