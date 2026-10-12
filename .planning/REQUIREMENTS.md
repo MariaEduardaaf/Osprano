@@ -97,7 +97,7 @@ Milestone v1.3 "Pronto pra vender" (redefinido em 2026-10-12; substitui "Automa�
 ### Honestidade e jurídico
 
 - [ ] **LEGAL-01**: A landing descreve só o que o produto faz no lançamento: sem depoimentos inventados, sem "notificado quando abrem", sem white-label/domínio próprio, sem toggle anual sem preço; os planos mostrados são os planos reais.
-- [ ] **LEGAL-02**: Existem páginas públicas de Aviso Legal (LSSI art. 10: nome, NIF, domicílio, e-mail), Privacidade, Termos, Cookies, DPA, Subprocessadores e Aviso ao prospect (GDPR art. 14), linkadas no rodapé da landing e do app. Os Termos dizem que o cliente é o responsável pelo contato que faz, que o uso é só profissional (B2B) e avisam do conteúdo do Google Maps com link aos termos do Google.
+- [ ] **LEGAL-02**: Existem páginas públicas de Informações da empresa (razão social, CNPJ, endereço, país, e-mail; a vendedora é empresa brasileira), Privacidade (GDPR + LGPD), Termos, Cookies, DPA, Subprocessadores e Aviso ao prospect (GDPR art. 14), linkadas no rodapé da landing e do app. Os Termos dizem que o cliente é o responsável pelo contato que faz, que o uso é só profissional (B2B) e avisam do conteúdo do Google Maps com link aos termos do Google.
 - [ ] **LEGAL-03**: O cadastro exige aceite dos Termos e do DPA e a declaração de uso profissional; versão e data do aceite ficam gravadas no workspace, e uma versão nova pede novo aceite.
 - [ ] **LEGAL-04**: Um contato de suporte e de privacidade aparece na landing e dentro do app.
 - [ ] **LEGAL-05**: O cliente consegue excluir a própria conta: todos os dados do workspace no Convex são apagados e a assinatura no Stripe é cancelada (não só o usuário do Clerk).
@@ -133,7 +133,7 @@ Milestone v1.3 "Pronto pra vender" (redefinido em 2026-10-12; substitui "Automa�
 - [ ] **BILL-05**: O webhook do Stripe rejeita evento com timestamp fora de ±5 min e compara a assinatura em tempo constante.
 - [ ] **BILL-06**: Pagamento atrasado ou falho (`past_due`, `invoice.payment_failed`, `incomplete_expired`) mostra aviso no app, restringe o uso depois de um prazo de carência e volta ao normal quando o pagamento entra.
 - [ ] **BILL-07**: Não dá para assinar duas vezes; quem já assina troca ou cancela o plano pelo portal do Stripe.
-- [ ] **BILL-08**: O checkout calcula IVA (Stripe Tax), coleta o VAT ID e o nome da empresa e gera fatura válida; só empresa ou profissional pode assinar.
+- [ ] **BILL-08**: O checkout aplica o tratamento fiscal correto para uma empresa brasileira vendendo SaaS B2B a clientes na UE (exportação de serviço no Brasil; reverse charge do IVA para o cliente UE, a confirmar com contador), coleta VAT ID e nome da empresa e gera o documento fiscal exigido; só empresa ou profissional pode assinar. Conta Stripe da empresa brasileira (ou alternativa) definida na pesquisa da Fase 11.
 - [ ] **BILL-09**: Depois do checkout há uma tela de sucesso; `APP_URL` ausente falha de forma visível em vez de cair em localhost; evento de assinatura sem workspace ou com preço desconhecido gera log de erro.
 - [ ] **BILL-10**: O fluxo de cobrança é verificado ponta a ponta em modo teste (assinar, trocar, cancelar, pagamento falho) e com um pagamento real reembolsado em produção.
 

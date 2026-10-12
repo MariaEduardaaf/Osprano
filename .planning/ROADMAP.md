@@ -219,12 +219,12 @@ A ordem segue o que bloqueia receber dinheiro e o que muda o modelo de dados. Pr
 **Requirements**: LEGAL-01, LEGAL-02, LEGAL-03, LEGAL-04, LEGAL-05
 **Success Criteria** (what must be TRUE):
   1. A landing não tem depoimento inventado, nem "notificado quando abrem", nem white-label/domínio próprio, nem toggle anual sem preço; os planos exibidos são os planos reais
-  2. Aviso Legal (nome, NIF, domicílio, e-mail), Privacidade, Termos, Cookies, DPA, Subprocessadores e Aviso ao prospect abrem por URL pública e estão linkados no rodapé da landing e do app; os Termos dizem que o cliente responde pelo contato que faz, que o uso é só B2B e linkam os termos do Google Maps
+  2. Informações da empresa (razão social, CNPJ, endereço, país, e-mail da empresa brasileira), Privacidade (GDPR + LGPD), Termos, Cookies, DPA, Subprocessadores e Aviso ao prospect abrem por URL pública e estão linkados no rodapé da landing e do app; os Termos dizem que o cliente responde pelo contato que faz, que o uso é só B2B e linkam os termos do Google Maps
   3. O cadastro só conclui com aceite de Termos e DPA e declaração de uso profissional; a versão e a data do aceite aparecem gravadas no workspace, e subir a versão dos documentos pede novo aceite no próximo acesso
   4. Um e-mail de suporte e privacidade aparece na landing e dentro do app
   5. Em Ajustes, o cliente exclui a conta: os dados do workspace somem do Convex, a assinatura é cancelada no Stripe e o login do Clerk é removido
 **Plans**: TBD
-**Depende de você**: NIF e domicílio para o Aviso Legal; revisão de advogado dos Termos, Privacidade e DPA antes de cobrar (o texto é rascunho técnico, não parecer); caixa de e-mail de suporte/privacidade criada.
+**Depende de você**: razão social, CNPJ e endereço da empresa brasileira para a página Informações da empresa; revisão de advogado dos Termos, Privacidade e DPA antes de cobrar (o texto é rascunho técnico, não parecer); caixa de e-mail de suporte/privacidade criada.
 
 ### Phase 10: Dados do Google conformes
 
@@ -252,7 +252,7 @@ A ordem segue o que bloqueia receber dinheiro e o que muda o modelo de dados. Pr
   4. O checkout calcula IVA, coleta VAT ID e nome da empresa, gera fatura válida, e recusa pessoa física
   5. Depois do checkout há uma tela de sucesso; `APP_URL` ausente falha de forma visível (nunca cai em localhost); evento sem workspace ou com preço desconhecido deixa log de erro
 **Plans**: TBD
-**Depende de você**: Stripe Tax ativado e configurado (registro de IVA/OSS), produtos e preços criados no Stripe, e a alta de autónoma ativa (bloqueia a fatura real).
+**Depende de você**: conta Stripe (ou alternativa) da empresa brasileira, produtos e preços criados, e orientação do contador sobre exportação de serviço e IVA do cliente UE (bloqueia a fatura real). A pesquisa desta fase confere se a Stripe atende empresa brasileira cobrando em euro.
 
 ### Phase 12: Planos e custo por cliente
 
@@ -320,4 +320,4 @@ A ordem segue o que bloqueia receber dinheiro e o que muda o modelo de dados. Pr
   1. Em modo teste do Stripe, assinar, trocar de plano, cancelar e falhar um pagamento levam o workspace ao estado certo, com o webhook processando cada evento
   2. Em produção (modo live), um pagamento real é feito, gera fatura com IVA e VAT ID corretos, o plano muda no app, e o valor é reembolsado
 **Plans**: TBD
-**Depende de você**: Stripe em modo live com preços e Stripe Tax ativos, alta de autónoma concluída, e um cartão para o pagamento real de teste.
+**Depende de você**: Stripe (ou alternativa) em modo live com preços, tratamento fiscal validado pelo contador, zero placeholders na identidade legal, e um cartão para o pagamento real de teste.

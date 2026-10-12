@@ -292,3 +292,9 @@ O checkout atual (`checkout/sessions`, `mode: subscription`) **não** envia `aut
 - Não li a metade final do texto da LSSI (Arts. 22 a fim) nem a Ley 11/2022 General de Telecomunicaciones (chamadas/Lista Robinson para a fila "Ligar").
 - Cookies reais em produção (Clerk/Vercel) não foram medidos; só a leitura de código.
 - Valor atual de cota de autónomos e epígrafe exatos: confirmar com gestor.
+
+---
+
+## Correção de premissa (2026-10-12)
+
+A Duda informou: "não tenho empresa na Espanha, tudo é do Brasil". Esta pesquisa assumiu uma operadora estabelecida na Espanha. Não se aplicam como escritos: LSSI art. 10 (Aviso Legal com NIF), alta de autónoma, ROI/modelo 349, OSS espanhol, Verifactu. Continuam valendo: termos EEA do Google (a cobrança da conta Google é que define; conferir o endereço de faturamento da conta GCP), GDPR por art. 3(2) para clientes e prospects na UE (com novo ponto: representante na UE, art. 27, e transferência internacional), cláusulas dos Termos, subprocessadores, cookies, envio por "abrir no meu e-mail". Novos pontos para advogado/contador: LGPD, exportação de serviço pela empresa brasileira, IVA do cliente UE (reverse charge em B2B), e o risco de residência fiscal/estabelecimento permanente se a Duda mora na Espanha e opera pela empresa brasileira.

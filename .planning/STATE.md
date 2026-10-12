@@ -30,8 +30,8 @@ Last activity: 2026-10-12 — Roadmap do v1.3 "Pronto pra vender" criado (Fases 
 
 Contexto de produção em 2026-09-26: Google Places ligada em prod (projeto GCP
 `soprano-503222`, faturamento "Pagamento do Firebase", cota SearchText 30/dia,
-`GOOGLE_PLACES_API_KEY` no Convex prod). Pendências externas da Duda por fase: NIF,
-advogado e caixa de suporte (Fase 9); Stripe Tax, preços e alta de autónoma (Fases 11 e
+`GOOGLE_PLACES_API_KEY` no Convex prod). Pendências externas da Duda por fase: dados da empresa brasileira (razão social, CNPJ, endereço),
+advogado e caixa de suporte (Fase 9); conta Stripe da empresa brasileira, preços e orientação do contador (Fases 11 e
 16); `ANTHROPIC_API_KEY` em prod (Fase 12); conta/chave Serper.dev (Fase 14);
 dependências novas de monitor de erros e i18n (Fase 15). Envio automático e follow-up
 estão no backlog v2 (AUTO-*, FUP-*).

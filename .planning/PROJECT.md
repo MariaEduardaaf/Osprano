@@ -30,7 +30,7 @@ Milestone **v1.2** fechado: a **Fase 7** deu à descoberta uma segunda fonte sem
 - Custo por cliente sob controle: limites por plano para buscas, verificação e IA, cabendo no preço
 - Prontidão comercial: Termos, Privacidade, DPA, purge 30 dias do Google Places + deleção de lead, gating por plano, webhook Stripe endurecido, paginação/rate-limit, checkout Stripe verificado ponta a ponta em produção, onboarding do cliente novo
 
-**Pré-requisitos operacionais (dela):** `ANTHROPIC_API_KEY` em prod; conta/chave Serper.dev; Stripe em modo real com preços criados; entidade para faturar (autónoma/empresa); revisão jurídica de Termos/Privacidade/DPA.
+**Pré-requisitos operacionais (dela):** `ANTHROPIC_API_KEY` em prod; conta/chave Serper.dev; Stripe em modo real com preços criados; empresa brasileira que fatura (dados e tratamento fiscal de exportação com contador; corrigido em 2026-10-12: não há empresa na Espanha); revisão jurídica de Termos/Privacidade/DPA.
 
 ## Core Value
 
