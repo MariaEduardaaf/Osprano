@@ -11,6 +11,7 @@ import {
   MdStar,
 } from "react-icons/md";
 import type { Doc } from "@convex/_generated/dataModel";
+import { leadLabel } from "@convex/lib/googleData";
 import { MARKETS, canContactByEmail } from "@convex/lib/domain";
 import { Badge } from "./ui";
 import { CallScriptPanel } from "./call-script-panel";
@@ -74,7 +75,7 @@ export function LeadCard({
       {/* name + select */}
       <div className="flex items-start justify-between gap-3">
         <h3 className="line-clamp-2 font-display text-base font-semibold leading-snug text-foreground">
-          {lead.name}
+          {leadLabel(lead)}
         </h3>
         <div className="flex shrink-0 items-center gap-0.5">
           <DeleteLeadButton lead={lead} />

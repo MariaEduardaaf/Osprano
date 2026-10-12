@@ -7,6 +7,7 @@ import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import { api } from "@convex/_generated/api";
 import type { Doc, Id } from "@convex/_generated/dataModel";
+import { leadLabel } from "@convex/lib/googleData";
 import { imageIds, type SiteContent } from "@convex/lib/site";
 import { buildSiteView } from "@/components/site-templates";
 import { EmptyState, PageHeader } from "@/components/ui";
@@ -237,7 +238,7 @@ function EditorBody({ lead, preview, backHref }: { lead: Doc<"leads">; preview: 
 
   return (
     <>
-      <PageHeader eyebrow="Site" title="Editor do site" subtitle={lead.city ? `${lead.name} · ${lead.city}` : lead.name} />
+      <PageHeader eyebrow="Site" title="Editor do site" subtitle={lead.city ? `${leadLabel(lead)} · ${lead.city}` : leadLabel(lead)} />
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[440px_minmax(0,1fr)]">
         <div className="order-2 space-y-4 xl:order-1">
           <TemplateBlock

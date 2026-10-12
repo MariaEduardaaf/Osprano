@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { MdClose } from "react-icons/md";
 import type { Doc } from "@convex/_generated/dataModel";
+import { leadLabel } from "@convex/lib/googleData";
 import { LOST_REASONS, type LostReason } from "@convex/lib/domain";
 import { errorMessage } from "@/lib/errors";
 
@@ -67,7 +68,7 @@ export function LostReasonModal({
           <div>
             <div className="font-mono text-[10px] font-semibold uppercase tracking-wider text-hot">Perdido</div>
             <h2 id="lost-reason-title" className="font-display text-lg font-bold">
-              Por que {lead.name} foi perdido?
+              Por que {leadLabel(lead)} foi perdido?
             </h2>
           </div>
           <button

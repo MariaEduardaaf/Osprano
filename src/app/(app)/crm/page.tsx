@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Doc, Id } from "@convex/_generated/dataModel";
+import { leadLabel } from "@convex/lib/googleData";
 import {
   MdOutlineCall,
   MdDragIndicator,
@@ -43,7 +44,7 @@ const SORTS: { id: string; label: string; cmp: (a: Doc<"leads">, b: Doc<"leads">
   { id: "next_action", label: "Próxima ação", cmp: compareByNextAction },
   { id: "score_asc", label: "Score (menor)", cmp: (a, b) => (a.score ?? 0) - (b.score ?? 0) },
   { id: "recent", label: "Mais recentes", cmp: (a, b) => b._creationTime - a._creationTime },
-  { id: "name", label: "Nome (A–Z)", cmp: (a, b) => a.name.localeCompare(b.name) },
+  { id: "name", label: "Nome (A–Z)", cmp: (a, b) => leadLabel(a).localeCompare(leadLabel(b)) },
 ];
 
 const STAGE_DOT: Record<string, string> = {
@@ -128,7 +129,7 @@ export default function CrmPage() {
     .filter((l) =>
       needle === ""
         ? true
-        : `${l.name} ${l.category ?? ""} ${l.city ?? ""}`.toLowerCase().includes(needle),
+        : `${leadLabel(l)} ${l.category ?? ""} ${l.city ?? ""}`.toLowerCase().includes(needle),
     )
     .slice()
     .sort(cmp);
@@ -348,7 +349,7 @@ export default function CrmPage() {
                             />
                           </div>
 
-                          <h3 className="mt-2 truncate font-display text-sm font-semibold">{lead.name}</h3>
+                          <h3 className="mt-2 truncate font-display text-sm font-semibold">{leadLabel(lead)}</h3>
                           <p className="truncate text-[11px] text-muted">
                             {(lead.category ?? "—").replace(/_/g, " ")}
                             {lead.city ? ` · ${lead.city}` : ""}

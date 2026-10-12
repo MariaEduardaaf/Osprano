@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Doc, Id } from "@convex/_generated/dataModel";
+import { leadLabel } from "@convex/lib/googleData";
 import { MdCheck, MdKeyboardArrowDown } from "react-icons/md";
 import { addDays, daysBetween, type ActionStatus, type NextAction } from "@convex/lib/domain";
 import { daysAgoLabel } from "./next-action-line";
@@ -85,7 +86,7 @@ export function TodayStrip({
     return (
       <li key={id} className="flex items-center gap-3 py-1.5 text-sm">
         <button onClick={() => onOpen(id)} className="shrink-0 truncate font-semibold hover:underline">
-          {item.lead.name}
+          {leadLabel(item.lead)}
         </button>
         <span className="min-w-0 flex-1 truncate text-muted">{item.action.note}</span>
         {item.status === "overdue" && (

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Doc } from "@convex/_generated/dataModel";
+import { leadLabel, shareableName } from "@convex/lib/googleData";
 import {
   MdClose,
   MdOutlineCall,
@@ -120,7 +121,7 @@ export function LeadDetail({
                 <span className="font-display font-bold tabular-nums">{lead.score ?? "—"}</span>
                 {tier.label}
               </span>
-              <h2 className="font-display text-xl font-bold leading-tight">{lead.name}</h2>
+              <h2 className="font-display text-xl font-bold leading-tight">{leadLabel(lead)}</h2>
             </div>
             <div className="flex shrink-0 items-center gap-1">
               <DeleteLeadButton lead={lead} onDeleted={onClose} />
@@ -506,7 +507,7 @@ function SiteTab({ lead }: { lead: Doc<"leads"> }) {
           <TemplateThumb
             template={template}
             palette={paletteId}
-            name={lead.name}
+            name={shareableName(lead) ?? ""}
             className="rounded-lg border border-border"
           />
         </div>

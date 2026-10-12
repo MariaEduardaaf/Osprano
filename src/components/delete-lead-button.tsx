@@ -3,6 +3,7 @@
 import { useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Doc } from "@convex/_generated/dataModel";
+import { leadLabel } from "@convex/lib/googleData";
 import { MdDeleteOutline } from "react-icons/md";
 
 /**
@@ -16,7 +17,7 @@ export function DeleteLeadButton({
   size = 16,
   className,
 }: {
-  lead: Pick<Doc<"leads">, "_id" | "name">;
+  lead: Pick<Doc<"leads">, "_id" | "name" | "source">;
   /** Fecha o drawer quando o lead apagado é o que está aberto. */
   onDeleted?: () => void;
   size?: number;
@@ -35,7 +36,7 @@ export function DeleteLeadButton({
   async function onClick(e: React.MouseEvent) {
     e.stopPropagation();
     if (
-      !window.confirm(`Excluir ${lead.name}? Apaga preview, fotos e histórico. Não dá pra desfazer.`)
+      !window.confirm(`Excluir ${leadLabel(lead)}? Apaga preview, fotos e histórico. Não dá pra desfazer.`)
     )
       return;
     await remove({ id: lead._id });
@@ -46,7 +47,7 @@ export function DeleteLeadButton({
     <button
       type="button"
       onClick={onClick}
-      aria-label={`Excluir ${lead.name}`}
+      aria-label={`Excluir ${leadLabel(lead)}`}
       title="Excluir"
       className={
         className ??
