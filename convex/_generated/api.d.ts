@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as account from "../account.js";
 import type * as admin from "../admin.js";
 import type * as adminActions from "../adminActions.js";
 import type * as billing from "../billing.js";
@@ -30,6 +31,7 @@ import type * as lib_site from "../lib/site.js";
 import type * as lib_stripe from "../lib/stripe.js";
 import type * as model_leads from "../model/leads.js";
 import type * as model_previews from "../model/previews.js";
+import type * as model_purge from "../model/purge.js";
 import type * as model_tenant from "../model/tenant.js";
 import type * as model_uploads from "../model/uploads.js";
 import type * as model_workspace from "../model/workspace.js";
@@ -49,6 +51,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  account: typeof account;
   admin: typeof admin;
   adminActions: typeof adminActions;
   billing: typeof billing;
@@ -71,6 +74,7 @@ declare const fullApi: ApiFromModules<{
   "lib/stripe": typeof lib_stripe;
   "model/leads": typeof model_leads;
   "model/previews": typeof model_previews;
+  "model/purge": typeof model_purge;
   "model/tenant": typeof model_tenant;
   "model/uploads": typeof model_uploads;
   "model/workspace": typeof model_workspace;
