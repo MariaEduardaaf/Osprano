@@ -5,6 +5,7 @@ import { MdOutlineAutoAwesome, MdOpenInNew } from "react-icons/md";
 import { useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
+import { errorMessage } from "@/lib/errors";
 
 /** Prepara (garante) o preview rastreado do lead e então revela o link de abrir. Dois passos: um link que aparece depois do clique não cai no bloqueador de pop-up. */
 export function GeneratePreviewButton({
@@ -17,6 +18,7 @@ export function GeneratePreviewButton({
   const generate = useMutation(api.previews.generate);
   const [token, setToken] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
   const primary = variant === "primary";
 
   if (token) {
@@ -37,11 +39,15 @@ export function GeneratePreviewButton({
   }
 
   return (
+    <>
     <button
       onClick={async () => {
         setBusy(true);
+        setErr(null);
         try {
           setToken(await generate({ leadId }));
+        } catch (e) {
+          setErr(errorMessage(e, "Falha ao preparar o preview"));
         } finally {
           setBusy(false);
         }
@@ -56,5 +62,11 @@ export function GeneratePreviewButton({
       <MdOutlineAutoAwesome size={primary ? 16 : 14} />
       {busy ? "Preparando…" : "Preparar preview"}
     </button>
+    {err && (
+      <span role="alert" className="mt-1 block text-[11px] text-danger">
+        {err}
+      </span>
+    )}
+    </>
   );
 }

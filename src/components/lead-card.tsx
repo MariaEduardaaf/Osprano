@@ -11,9 +11,11 @@ import {
   MdStar,
 } from "react-icons/md";
 import type { Doc } from "@convex/_generated/dataModel";
-import { leadLabel } from "@convex/lib/googleData";
+import { isGoogleLead, leadLabel } from "@convex/lib/googleData";
 import { MARKETS, canContactByEmail } from "@convex/lib/domain";
 import { Badge } from "./ui";
+import { GoogleCard } from "@/components/google/google-card";
+import { useGooglePlace } from "@/lib/use-google-places";
 import { CallScriptPanel } from "./call-script-panel";
 import { ContactOptInButton } from "./contact-opt-in-button";
 import { WhatTheyHaveButton } from "./what-they-have-button";
@@ -61,7 +63,8 @@ export function LeadCard({
   const noSite = !!(signals?.noSite || signals?.socialOnly);
   const category = (lead.category ?? "").replace(/_/g, " ");
   const callMode = variant === "call";
-
+  // Só lê a memória da página (busca ou botão explícito); o card nunca consulta o Google.
+  const place = useGooglePlace(isGoogleLead(lead) && !lead.confirmation ? lead._id : null);
 
   return (
     <div
@@ -131,6 +134,8 @@ export function LeadCard({
           )}
         </div>
       </div>
+
+      {place && <GoogleCard place={place} compact className="mt-3" />}
 
       {/* info rows */}
       <div className="mt-5 space-y-2.5">
