@@ -5,6 +5,7 @@ import { requireOrgId } from "./model/tenant";
 import { assertAccepted } from "./model/workspace";
 import { hasWaOptIn } from "./lib/domain";
 import { userError } from "./lib/errors";
+import { shareableFacts } from "./lib/googleData";
 
 /**
  * Send a WhatsApp follow-up. COMPLIANCE: allowed ONLY after the prospect has a
@@ -26,13 +27,14 @@ export const sendFollowup = action({
     if (!hasWaOptIn(lead)) {
       throw userError("WhatsApp só com opt-in registrado do prospect.");
     }
-    if (!lead.phone) throw userError("Lead sem telefone.");
+    const phone = shareableFacts(lead).phone;
+    if (!phone) throw userError("Lead sem telefone.");
 
     const token = process.env.WHATSAPP_TOKEN;
     const phoneId = process.env.WHATSAPP_PHONE_ID;
     if (!token || !phoneId) throw userError("WHATSAPP_TOKEN / WHATSAPP_PHONE_ID não configurados.");
 
-    const to = lead.phone.replace(/[^0-9]/g, "");
+    const to = phone.replace(/[^0-9]/g, "");
     const res = await fetch(`https://graph.facebook.com/v21.0/${phoneId}/messages`, {
       method: "POST",
       headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },

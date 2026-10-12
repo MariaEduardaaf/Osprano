@@ -7,7 +7,7 @@ import { requireOrgId } from "./model/tenant";
 import { assertAccepted } from "./model/workspace";
 import { writeEmail, writeCallScript, langForLead } from "./lib/outreachAi";
 import type { OutreachWarning } from "./lib/outreachAi";
-import { leadLabel } from "./lib/googleData";
+import { CONFIRM_NAME_MESSAGE, leadLabel, shareableFacts, shareableLead } from "./lib/googleData";
 import { normalizeEmail, canContactByEmail, addDays } from "./lib/domain";
 import { optOutFooter, senderIdentityFrom, callerNameFrom } from "./lib/compliance";
 import {
@@ -226,6 +226,9 @@ export const draft = action({
     assertAccepted(await ctx.runQuery(internal.workspaces.getInternal, { orgId }), orgId);
     const lead = await ctx.runQuery(internal.leads.getInternal, { leadId });
     if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
+    // Fase 10: a IA só recebe dado compartilhável (googleData.ts); lead do Google precisa de nome confirmado
+    const safe = shareableLead(lead);
+    if (!safe.name) throw userError(CONFIRM_NAME_MESSAGE);
     if (!canContactByEmail(lead)) {
       throw userError("Mercado opt-in: registre o consentimento do prospect antes de enviar email.");
     }
@@ -255,7 +258,7 @@ export const draft = action({
     // Mesma identidade do rodapé de opt-out (RESEND_FROM), agora também no CORPO: sem
     // isso a IA inventava quem assina. Sem display name no RESEND_FROM → undefined, e o
     // prompt emite o marcador `[seu nome]` em vez de um nome falso.
-    const email = await writeEmail(key, lead, `${appUrl}/p/${token}`, {
+    const email = await writeEmail(key, safe, `${appUrl}/p/${token}`, {
       callerName: callerNameFrom(process.env.RESEND_FROM),
     });
 
@@ -288,7 +291,10 @@ export const callScript = action({
     assertAccepted(await ctx.runQuery(internal.workspaces.getInternal, { orgId }), orgId);
     const lead = await ctx.runQuery(internal.leads.getInternal, { leadId });
     if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
-    if (!lead.phone) throw userError("Lead sem telefone.");
+    // Fase 10: a IA só recebe dado compartilhável (googleData.ts); lead do Google precisa de nome confirmado
+    const safe = shareableLead(lead);
+    if (!safe.name) throw userError(CONFIRM_NAME_MESSAGE);
+    if (!shareableFacts(lead).phone) throw userError("Lead sem telefone.");
     const key = process.env.ANTHROPIC_API_KEY;
     if (!key) throw userError("ANTHROPIC_API_KEY não configurada no deployment Convex.");
 
@@ -307,7 +313,7 @@ export const callScript = action({
     // identidade do email). Ausente/sem display name → o script sai com `[seu nome]`,
     // que a usuária troca antes de discar. NUNCA um nome inventado pelo modelo: ela lê
     // o script em voz alta num idioma que não fala e se apresentaria como outra pessoa.
-    const result = await writeCallScript(key, lead, {
+    const result = await writeCallScript(key, safe, {
       callerName: callerNameFrom(process.env.RESEND_FROM),
     });
     await ctx.runMutation(internal.leads.setCallScript, {
