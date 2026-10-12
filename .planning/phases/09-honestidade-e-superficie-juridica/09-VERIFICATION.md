@@ -1,7 +1,7 @@
 ---
 phase: 09-honestidade-e-superficie-juridica
 verified: 2026-10-12T00:00:00Z
-status: human_needed
+status: passed
 score: 5/5 requisitos verificados no código; 4 itens dependem de serviço real
 re_verification: nao
 gaps: []
@@ -84,3 +84,18 @@ Nenhum gap de código. O status é human_needed só porque gate, reaceite, exclu
 
 _Verificado: 2026-10-12_
 _Verificador: Claude (gsd-verifier)_
+
+
+## Conferência humana (2026-10-12, autorizada pela Duda)
+
+Rodada no deployment Convex de DEV (`ardent-jay-971`, `npx convex dev --once`) com Next local e conta de teste do Clerk de desenvolvimento (criada pela API, porque o cadastro pelo formulário é barrado pelo Turnstile do Clerk em navegador automatizado):
+
+| Item | Resultado |
+|------|-----------|
+| Gate no primeiro acesso | ✓ conta nova caiu em "Antes de começar"; botão travado com 1 caixa, liberado com 2; após aceitar abriu o dashboard; workspace gravou `termsVersion 2026-10-12`, `termsAcceptedAt`, `professionalUse true` |
+| Reaceite após subir versão | ✓ com `LEGAL_VERSION` trocada temporariamente no dev, a tela voltou com "Nossos documentos foram atualizados"; versão revertida e redeployada |
+| Faixa de placeholder | ✓ `/legal/empresa` mostra "[a preencher]" e o aviso; nota de advogado escondida por `VERCEL_ENV === "production"` (não testável localmente) |
+| Exclusão ponta a ponta | ✓ "apagar" minúsculo mantém o botão travado; "APAGAR" apaga e volta à landing; 0 linhas da org em workspaces/users/leads/previews/outreach/events/uploads/suppressions; Clerk devolve 404 para o usuário |
+| Cancelamento no Stripe | ✗ não testado: o dev não tem `STRIPE_SECRET_KEY`; a conta de teste não tinha assinatura. Coberto só pelos testes unitários (`stripeDelete`). Retestar na Fase 11/16 com Stripe em modo teste |
+
+**Bug achado e corrigido:** recarga completa derrubava o app 1 em 6 vezes ("Não autenticado" na query do gate antes do token do Clerk). Corrigido em `5e02109` (gate espera `useConvexAuth`); 0 em 12 recargas depois. Registrado em `docs/LESSONS.md`.

@@ -96,11 +96,11 @@ Milestone v1.3 "Pronto pra vender" (redefinido em 2026-10-12; substitui "Automa�
 
 ### Honestidade e jurídico
 
-- [ ] **LEGAL-01**: A landing descreve só o que o produto faz no lançamento: sem depoimentos inventados, sem "notificado quando abrem", sem white-label/domínio próprio, sem toggle anual sem preço; os planos mostrados são os planos reais.
-- [ ] **LEGAL-02**: Existem páginas públicas de Informações da empresa (razão social, CNPJ, endereço, país, e-mail; a vendedora é empresa brasileira), Privacidade (GDPR + LGPD), Termos, Cookies, DPA, Subprocessadores e Aviso ao prospect (GDPR art. 14), linkadas no rodapé da landing e do app. Os Termos dizem que o cliente é o responsável pelo contato que faz, que o uso é só profissional (B2B) e avisam do conteúdo do Google Maps com link aos termos do Google.
-- [ ] **LEGAL-03**: O cadastro exige aceite dos Termos e do DPA e a declaração de uso profissional; versão e data do aceite ficam gravadas no workspace, e uma versão nova pede novo aceite.
-- [ ] **LEGAL-04**: Um contato de suporte e de privacidade aparece na landing e dentro do app.
-- [ ] **LEGAL-05**: O cliente consegue excluir a própria conta: todos os dados do workspace no Convex são apagados e a assinatura no Stripe é cancelada (não só o usuário do Clerk).
+- [x] **LEGAL-01**: A landing descreve só o que o produto faz no lançamento: sem depoimentos inventados, sem "notificado quando abrem", sem white-label/domínio próprio, sem toggle anual sem preço; os planos mostrados são os planos reais.
+- [x] **LEGAL-02**: Existem páginas públicas de Informações da empresa (razão social, CNPJ, endereço, país, e-mail; a vendedora é empresa brasileira), Privacidade (GDPR + LGPD), Termos, Cookies, DPA, Subprocessadores e Aviso ao prospect (GDPR art. 14), linkadas no rodapé da landing e do app. Os Termos dizem que o cliente é o responsável pelo contato que faz, que o uso é só profissional (B2B) e avisam do conteúdo do Google Maps com link aos termos do Google.
+- [x] **LEGAL-03**: O cadastro exige aceite dos Termos e do DPA e a declaração de uso profissional; versão e data do aceite ficam gravadas no workspace, e uma versão nova pede novo aceite.
+- [x] **LEGAL-04**: Um contato de suporte e de privacidade aparece na landing e dentro do app.
+- [x] **LEGAL-05**: O cliente consegue excluir a própria conta: todos os dados do workspace no Convex são apagados e a assinatura no Stripe é cancelada (não só o usuário do Clerk).
 
 ### Dados do Google conformes
 
@@ -267,11 +267,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SITE-05 | Phase 8 | Complete |
 | SITE-06 | Phase 8 | Complete |
 | SITE-07 | Phase 8 | Complete |
-| LEGAL-01 | Phase 9 | Pending |
-| LEGAL-02 | Phase 9 | Pending |
-| LEGAL-03 | Phase 9 | Pending |
-| LEGAL-04 | Phase 9 | Pending |
-| LEGAL-05 | Phase 9 | Pending |
+| LEGAL-01 | Phase 9 | Complete |
+| LEGAL-02 | Phase 9 | Complete |
+| LEGAL-03 | Phase 9 | Complete |
+| LEGAL-04 | Phase 9 | Complete |
+| LEGAL-05 | Phase 9 | Complete |
 | GPLC-01 | Phase 10 | Pending |
 | GPLC-02 | Phase 10 | Pending |
 | GPLC-03 | Phase 10 | Pending |

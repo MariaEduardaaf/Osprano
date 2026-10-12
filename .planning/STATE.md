@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Pronto pra vender
-status: human-verification
+status: ready-to-plan
 stopped_at: Roadmap do milestone v1.3 "Pronto pra vender" criado (Fases 9-16, 48/48 requisitos mapeados); Fase 9 pronta para planejar.
 last_updated: "2026-10-12T00:00:00.000Z"
 progress:
   total_phases: 16
-  completed_phases: 8
+  completed_phases: 9
   total_plans: 22
   completed_plans: 22
 ---
@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-10-12)
 
 ## Current Position
 
-Phase: 9 de 16 (Honestidade e superfície jurídica), código completo no branch `v1.3-pronto-pra-vender` (planos 09-01..09-06 com SUMMARY; 09-07 task 1 verde: 390/390 testes, tsc app+convex, eslint, next build)
-Plan: 7 of 7, aguardando conferência humana (09-VERIFICATION.md: human_needed, 4 itens; exige `npx convex dev` autorizado pela Duda)
-Status: Human verification pending
+Phase: 10 de 16 (Dados do Google conformes), pronta para planejar. Fase 9 concluída em 2026-10-12 (código + conferência no dev; cancelamento Stripe fica para Fase 11/16)
+Plan: —
+Status: Ready to plan
 Last activity: 2026-10-12 — Roadmap do v1.3 "Pronto pra vender" criado (Fases 9-16; substitui "Automação da prospecção", Fases 9-14 nunca iniciadas)
 
 Contexto de produção em 2026-09-26: Google Places ligada em prod (projeto GCP

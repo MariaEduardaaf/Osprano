@@ -215,3 +215,13 @@ open conta.
 `fix:` esperado, não bug. Pra testar o guard de verdade é preciso sessão autenticada real
 (fora do demo) ou abrir numa aba separada da sessão logada. Ao verificar tracking no modo
 demo, não confiar no `openCount`.
+
+**Recarregar uma página do app às vezes derruba tudo com "Não autenticado"** (2026-10-12)
+`sintoma:` recarga completa de `/settings` (1 em 6) mostra "This page couldn't load"; console:
+`ConvexError [CONVEX Q(workspaces:current)] Não autenticado`, stack em `RealGate`.
+`causa:` `useQuery` dispara antes de o token do Clerk chegar ao Convex; a query exige auth,
+lança no servidor e o erro sobe pela renderização sem error boundary.
+`fix:` `useConvexAuth()` e `useQuery(..., isAuthenticated ? {} : "skip")` no `AcceptanceGate`
+(`src/components/legal/acceptance-gate.tsx`), que é a primeira query do layout `(app)`; como
+os filhos só montam depois do gate, o resto do app fica protegido junto. Só aparece com login
+real (não no modo demo) e só em recarga completa, não em navegação client.
