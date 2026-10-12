@@ -73,25 +73,6 @@ const signalsV = v.object({
 // Public (authed) API
 // ---------------------------------------------------------------------------
 
-/** @deprecated SCAL-01: substituída por listForDiscovery/listCrm; apagada no plano 10-11. */
-/** Leads for the current org, ranked by digital-presence pain (score desc). */
-export const list = query({
-  args: { stage: v.optional(stageArg) },
-  handler: async (ctx, args) => {
-    const orgId = await requireOrgId(ctx);
-    const leads = args.stage
-      ? await ctx.db
-          .query("leads")
-          .withIndex("by_org_stage", (q) => q.eq("orgId", orgId).eq("stage", args.stage!))
-          .collect()
-      : await ctx.db
-          .query("leads")
-          .withIndex("by_org", (q) => q.eq("orgId", orgId))
-          .collect();
-    return leads.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
-  },
-});
-
 /**
  * Tela de Leads (SCAL-01): mais recentes primeiro (o lote da busca aparece no topo); a tela
  * ordena por score o que já carregou. Cidade/categoria filtram no cliente sobre as páginas carregadas.

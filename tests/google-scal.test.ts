@@ -56,3 +56,8 @@ test("listSites, outbox e isEmailSuppressed sem .collect()", () => {
   assert.ok(!fn.includes(".collect()"));
   assert.equal(fn.split(".first()").length - 1, 2);
 });
+
+test("leads.ts não tem list nem .collect()", () => {
+  assert.ok(!leads.includes("export const list ="));
+  assert.ok(!leads.includes(".collect()"));
+});
