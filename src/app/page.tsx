@@ -24,6 +24,7 @@ import { Faq } from "@/components/landing/faq";
 import { Pricing } from "@/components/landing/pricing";
 import { Reveal, CountUp, Tilt } from "@/components/landing/motion";
 import { LandingHeader } from "@/components/landing/header";
+import { LegalLinks } from "@/components/legal/legal-links";
 import { LaptopShowcase } from "@/components/landing/laptop";
 
 const SCAN_FEED = [
@@ -524,7 +525,7 @@ export default async function Home() {
         </div>
 
         <div className="relative mx-auto max-w-6xl px-6 pb-12 pt-16">
-          <div className="grid gap-12 pb-14 md:grid-cols-[1.3fr_1fr_1fr]">
+          <div className="grid gap-12 pb-14 md:grid-cols-[1.3fr_1fr_1fr_1fr]">
             {/* marca */}
             <div>
               <div className="flex items-center gap-2.5">
@@ -594,6 +595,9 @@ export default async function Home() {
                 <MdArrowForward size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
               </Link>
             </div>
+
+            {/* legal + suporte */}
+            <LegalLinks />
           </div>
 
           {/* linha final */}
