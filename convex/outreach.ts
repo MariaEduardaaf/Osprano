@@ -4,6 +4,7 @@ import { api, internal } from "./_generated/api";
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { requireOrgId } from "./model/tenant";
+import { assertAccepted } from "./model/workspace";
 import { writeEmail, writeCallScript, langForLead } from "./lib/outreachAi";
 import type { OutreachWarning } from "./lib/outreachAi";
 import { normalizeEmail, canContactByEmail, addDays } from "./lib/domain";
@@ -221,6 +222,7 @@ export const draft = action({
     { leadId },
   ): Promise<{ subject: string; body: string; warnings: OutreachWarning[] }> => {
     const orgId = await requireOrgId(ctx);
+    assertAccepted(await ctx.runQuery(internal.workspaces.getInternal, { orgId }), orgId);
     const lead = await ctx.runQuery(internal.leads.getInternal, { leadId });
     if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
     if (!canContactByEmail(lead)) {
@@ -282,6 +284,7 @@ export const callScript = action({
     { leadId },
   ): Promise<{ script: string; translation: string; warnings: OutreachWarning[] }> => {
     const orgId = await requireOrgId(ctx);
+    assertAccepted(await ctx.runQuery(internal.workspaces.getInternal, { orgId }), orgId);
     const lead = await ctx.runQuery(internal.leads.getInternal, { leadId });
     if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
     if (!lead.phone) throw userError("Lead sem telefone.");
@@ -486,6 +489,7 @@ export const send = action({
   args: { leadId: v.id("leads") },
   handler: async (ctx, { leadId }): Promise<{ sent: boolean }> => {
     const orgId = await requireOrgId(ctx);
+    assertAccepted(await ctx.runQuery(internal.workspaces.getInternal, { orgId }), orgId);
     const lead = await ctx.runQuery(internal.leads.getInternal, { leadId });
     if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
     if (!canContactByEmail(lead)) {

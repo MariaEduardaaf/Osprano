@@ -2,6 +2,7 @@ import { action } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { requireOrgId } from "./model/tenant";
+import { assertAccepted } from "./model/workspace";
 import { stripePost } from "./lib/stripe";
 import { userError } from "./lib/errors";
 
@@ -22,6 +23,7 @@ export const createCheckout = action({
     const appUrl = process.env.APP_URL ?? "http://localhost:3000";
 
     const ws = await ctx.runQuery(internal.workspaces.getInternal, { orgId });
+    assertAccepted(ws, orgId);
     let customerId = ws?.stripeCustomerId;
     if (!customerId) {
       const customer = await stripePost(secret, "customers", {

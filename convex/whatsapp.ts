@@ -2,6 +2,7 @@ import { action, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { requireOrgId } from "./model/tenant";
+import { assertAccepted } from "./model/workspace";
 import { hasWaOptIn } from "./lib/domain";
 import { userError } from "./lib/errors";
 
@@ -19,6 +20,7 @@ export const sendFollowup = action({
   args: { leadId: v.id("leads"), message: v.string() },
   handler: async (ctx, { leadId, message }): Promise<{ sent: boolean }> => {
     const orgId = await requireOrgId(ctx);
+    assertAccepted(await ctx.runQuery(internal.workspaces.getInternal, { orgId }), orgId);
     const lead = await ctx.runQuery(internal.leads.getInternal, { leadId });
     if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
     if (!hasWaOptIn(lead)) {
