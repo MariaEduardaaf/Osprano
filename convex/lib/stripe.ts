@@ -25,6 +25,20 @@ export async function stripePost(
   return data;
 }
 
+/** DELETE em recurso do Stripe. 404 vira "gone" (já cancelado/inexistente): idempotente. */
+export async function stripeDelete(secret: string, path: string): Promise<"ok" | "gone"> {
+  const res = await fetch(`https://api.stripe.com/v1/${path}`, {
+    method: "DELETE",
+    headers: { authorization: `Bearer ${secret}` },
+  });
+  if (res.status === 404) return "gone";
+  if (!res.ok) {
+    console.error(`Stripe ${res.status}:`, (await res.text()).slice(0, 200));
+    throw userError(`Stripe respondeu ${res.status}`);
+  }
+  return "ok";
+}
+
 /** Mapeia um price_id do Stripe para o plano interno. Inverso de billing.ts:priceFor.
  *  Price desconhecido → undefined (falha segura: applySubscription mantém o plano atual). */
 export function planForPrice(priceId: string | undefined): "pro" | "agency" | undefined {
