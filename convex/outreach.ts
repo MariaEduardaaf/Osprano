@@ -54,15 +54,18 @@ export const getForLead = query({
     ("Acompanhe cada abordagem por email"), usa `leadId` como chave de linha (uma linha de
     WhatsApp duplicaria a chave) e oferece "Respondeu", que marca a linha de EMAIL. Sem o
     filtro, um follow-up de WhatsApp apareceria como "email enviado". */
+// ponytail: a caixa de saída mostra os 300 envios mais recentes; paginar se uma org passar disso
+const OUTBOX_LIMIT = 300;
+
 export const outbox = query({
   args: {},
   handler: async (ctx) => {
     const orgId = await requireOrgId(ctx);
     const rows = await ctx.db
       .query("outreach")
-      .withIndex("by_org", (q) => q.eq("orgId", orgId))
-      .filter((q) => q.eq(q.field("channel"), "email"))
-      .collect();
+      .withIndex("by_org_channel", (q) => q.eq("orgId", orgId).eq("channel", "email"))
+      .order("desc")
+      .take(OUTBOX_LIMIT);
 
     const items = [];
     for (const row of rows) {

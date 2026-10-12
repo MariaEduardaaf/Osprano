@@ -264,14 +264,18 @@ export const getBySlug = query({
  * `template`/`palette` saem de `parseSiteContent(content)`: não há coluna nova
  * (spec 2.2) e não se resolve storage aqui (a miniatura usa só os defaults).
  */
+// ponytail: Sites mostra os 200 mais abertos; paginar se uma org passar disso
+const SITES_LIMIT = 200;
+
 export const listSites = query({
   args: {},
   handler: async (ctx) => {
     const orgId = await requireOrgId(ctx);
     const previews = await ctx.db
       .query("previews")
-      .withIndex("by_org", (q) => q.eq("orgId", orgId))
-      .collect();
+      .withIndex("by_org_open", (q) => q.eq("orgId", orgId))
+      .order("desc")
+      .take(SITES_LIMIT);
     const rows = await Promise.all(
       previews.map(async (p) => {
         const lead = await ctx.db.get(p.leadId);

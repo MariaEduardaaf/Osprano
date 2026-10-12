@@ -43,17 +43,24 @@ export const add = internalMutation({
  * Fonte ÚNICA da regra de supressão (dual-scope: row da própria org OU global,
  * orgId undefined). Actions usam a internalQuery abaixo (ctx.runQuery); mutations
  * chamam este helper direto, porque uma mutation não pode ctx.runQuery.
+ * Duas leituras limitadas (SCAL-01), mesma regra dual-scope.
  * email DEVE vir normalizado (normalizeEmail).
  */
 export async function isEmailSuppressed(
   ctx: QueryCtx,
   { email, orgId }: { email: string; orgId: string },
 ): Promise<boolean> {
-  const rows = await ctx.db
+  const own = await ctx.db
+    .query("suppressions")
+    .withIndex("by_org_email", (q) => q.eq("orgId", orgId).eq("email", email))
+    .first();
+  if (own) return true;
+  const global = await ctx.db
     .query("suppressions")
     .withIndex("by_email", (q) => q.eq("email", email))
-    .collect();
-  return rows.some((r) => r.orgId === orgId || r.orgId === undefined);
+    .filter((q) => q.eq(q.field("orgId"), undefined))
+    .first();
+  return global !== null;
 }
 
 /** Dual-scope: suprimido se houver row da própria org OU global (orgId undefined). */
