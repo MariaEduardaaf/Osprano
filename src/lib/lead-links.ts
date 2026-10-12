@@ -5,6 +5,7 @@
 // seguro ali.
 import type { Doc } from "@convex/_generated/dataModel";
 import { MARKETS } from "../../convex/lib/domain.ts";
+import { shareableName } from "../../convex/lib/googleData.ts";
 
 type LeadForLinks = Pick<
   Doc<"leads">,
@@ -44,7 +45,7 @@ export function whatTheyHaveLink(lead: LeadForLinks): WhatTheyHaveLink {
   }
   const country = MARKETS[lead.countryCode]?.name ?? lead.countryCode;
   const locality = lead.address ?? lead.city ?? "";
-  const query = `${lead.name}, ${locality}, ${country}`;
+  const query = `${lead.name ?? ""}, ${locality}, ${country}`;
   return {
     href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`,
     label: "Buscar no Google",
@@ -55,7 +56,10 @@ export function whatTheyHaveLink(lead: LeadForLinks): WhatTheyHaveLink {
 // Instagram / Facebook: sem site publicado, é lá que ela vai mandar DM.
 // ---------------------------------------------------------------------------
 
-type LeadForSocial = Pick<Doc<"leads">, "instagram" | "facebook" | "name" | "city">;
+type LeadForSocial = Pick<
+  Doc<"leads">,
+  "instagram" | "facebook" | "name" | "city" | "source" | "confirmation"
+>;
 
 export type SocialLabel = "Instagram" | "Achar no Instagram" | "Facebook" | "Achar no Facebook";
 
@@ -75,10 +79,11 @@ export interface SocialLinks {
  * alguma ação (abrir perfil ou buscar).
  */
 export function socialLinks(lead: LeadForSocial): SocialLinks {
+  const name = shareableName(lead) ?? "";
   const instagram = lead.instagram
     ? { href: `https://www.instagram.com/${lead.instagram}/`, label: "Instagram" as const }
     : {
-        href: `https://www.instagram.com/explore/search/keyword/?q=${encodeURIComponent(lead.name)}`,
+        href: `https://www.instagram.com/explore/search/keyword/?q=${encodeURIComponent(name)}`,
         label: "Achar no Instagram" as const,
       };
 
@@ -86,7 +91,7 @@ export function socialLinks(lead: LeadForSocial): SocialLinks {
     ? { href: lead.facebook, label: "Facebook" as const }
     : {
         href: `https://www.facebook.com/search/pages/?q=${encodeURIComponent(
-          `${lead.name} ${lead.city ?? ""}`,
+          `${name} ${lead.city ?? ""}`,
         )}`,
         label: "Achar no Facebook" as const,
       };

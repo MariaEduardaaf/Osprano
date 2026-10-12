@@ -91,6 +91,7 @@ test("socialLinks: instagram salvo vira link direto ao perfil", () => {
     instagram: "padariacentral",
     facebook: undefined,
     name: "Padaria Central",
+    source: "osm",
     city: "Lisboa",
   });
   assert.equal(instagram.href, "https://www.instagram.com/padariacentral/");
@@ -102,6 +103,7 @@ test("socialLinks: sem instagram busca pelo nome", () => {
     instagram: undefined,
     facebook: undefined,
     name: "Padaria Central",
+    source: "osm",
     city: "Lisboa",
   });
   assert.equal(instagram.label, "Achar no Instagram");
@@ -116,6 +118,7 @@ test("socialLinks: facebook salvo (já é URL) vira link direto", () => {
     instagram: undefined,
     facebook: "https://www.facebook.com/padariacentral",
     name: "Padaria Central",
+    source: "osm",
     city: "Lisboa",
   });
   assert.equal(facebook.href, "https://www.facebook.com/padariacentral");
@@ -127,6 +130,7 @@ test("socialLinks: sem facebook busca por nome + cidade", () => {
     instagram: undefined,
     facebook: undefined,
     name: "Padaria Central",
+    source: "osm",
     city: "Lisboa",
   });
   assert.equal(facebook.label, "Achar no Facebook");
@@ -141,10 +145,36 @@ test("socialLinks: sem facebook e sem cidade busca só pelo nome (com espaço so
     instagram: undefined,
     facebook: undefined,
     name: "Padaria Central",
+    source: "osm",
     city: undefined,
   });
   assert.equal(
     facebook.href,
     "https://www.facebook.com/search/pages/?q=" + encodeURIComponent("Padaria Central "),
   );
+});
+
+test("socialLinks: lead do Google sem confirmação não leva o nome nas buscas", () => {
+  const { instagram, facebook } = socialLinks({
+    instagram: undefined,
+    facebook: undefined,
+    name: "Casa Nova",
+    source: "places",
+    city: "Lisboa",
+  });
+  assert.ok(!instagram.href.includes("Casa"));
+  assert.ok(!facebook.href.includes("Casa"));
+});
+
+test("socialLinks: lead do Google confirmado leva o nome nas buscas", () => {
+  const { instagram, facebook } = socialLinks({
+    instagram: undefined,
+    facebook: undefined,
+    name: "Casa Nova",
+    source: "places",
+    confirmation: { at: 1, via: "call" },
+    city: "Lisboa",
+  });
+  assert.ok(instagram.href.includes("Casa%20Nova"));
+  assert.ok(facebook.href.includes("Casa%20Nova"));
 });

@@ -8,6 +8,7 @@ import { MdOutlineContentCopy, MdOutlineCheck, MdOpenInNew, MdOutlineInfo } from
 import { socialLinks } from "@/lib/lead-links";
 import { dmMessage } from "@/lib/dm-template";
 import { errorMessage } from "@/lib/errors";
+import { CONFIRM_NAME_MESSAGE, isGoogleLead, shareableName } from "@convex/lib/googleData";
 
 const SIGNATURE_KEY = "osprano.dmSignature";
 const DEFAULT_SIGNATURE = "Duda";
@@ -37,12 +38,32 @@ type Channel = "instagram" | "facebook";
  * leads sem site (spec abordagem-por-dm). Sem gate de compliance: markDm não é cold email.
  */
 export function DmComposer({ lead }: { lead: Doc<"leads"> }) {
+  const name = shareableName(lead);
+  if (!name) {
+    return (
+      <p className="mt-3 rounded-lg border border-border bg-surface-2 p-3 text-xs text-muted">
+        {CONFIRM_NAME_MESSAGE} Use a aba Informações.
+      </p>
+    );
+  }
+  return <DmComposerBody lead={lead} name={name} />;
+}
+
+function DmComposerBody({ lead, name }: { lead: Doc<"leads">; name: string }) {
   const markDm = useMutation(api.outreach.markDm);
   const { instagram, facebook } = socialLinks(lead);
+  // Nota e avaliações do Google nunca entram na mensagem.
+  const google = isGoogleLead(lead);
+  const dmLead = {
+    ...lead,
+    name,
+    rating: google ? undefined : lead.rating,
+    reviewsCount: google ? undefined : lead.reviewsCount,
+  };
 
   const [signature, setSignature] = useState(readSignature);
   const [touched, setTouched] = useState(false);
-  const [body, setBody] = useState(() => dmMessage(lead, { signature: readSignature() }));
+  const [body, setBody] = useState(() => dmMessage(dmLead, { signature: readSignature() }));
   const [channel, setChannel] = useState<Channel>(lead.instagram ? "instagram" : "facebook");
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -65,7 +86,7 @@ export function DmComposer({ lead }: { lead: Doc<"leads"> }) {
     // Só regenera sozinho enquanto ela não mexeu no texto — depois de editar o corpo à
     // mão, trocar a assinatura não pode apagar a edição (mesma lógica do OutreachComposer:
     // o campo é dela a partir do primeiro toque).
-    if (!touched) setBody(dmMessage(lead, { signature: value }));
+    if (!touched) setBody(dmMessage(dmLead, { signature: value }));
   }
 
   const missingProfile = !lead.instagram || !lead.facebook;

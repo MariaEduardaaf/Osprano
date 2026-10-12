@@ -2,7 +2,7 @@ import { MdOutlineCameraAlt, MdOutlineFacebook } from "react-icons/md";
 import type { Doc } from "@convex/_generated/dataModel";
 import { socialLinks } from "@/lib/lead-links";
 
-type Lead = Pick<Doc<"leads">, "instagram" | "facebook" | "name" | "city">;
+type Lead = Pick<Doc<"leads">, "instagram" | "facebook" | "name" | "city" | "source" | "confirmation">;
 
 /**
  * Instagram e Facebook do lead, lado a lado com WhatTheyHaveButton. Perfil
