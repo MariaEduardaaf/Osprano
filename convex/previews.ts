@@ -234,8 +234,9 @@ export const publish = mutation({
     const preview = await ensurePreview(ctx, lead);
     if (preview.published && preview.slug) return preview.slug;
 
-    await reserveUsage(ctx, orgId, "sites", 1);
     const content = await readContent(ctx, preview);
+    if (!content.name.trim()) throw userError("Dê um nome ao site antes de publicar.");
+    await reserveUsage(ctx, orgId, "sites", 1);
     // O slug sai do nome do SITE (o que ela salvou), não do nome cru do lead.
     const slug = `${slugify(content.name)}-${crypto.randomUUID().slice(0, 6)}`;
     await ctx.db.patch(preview._id, { published: true, slug, content });

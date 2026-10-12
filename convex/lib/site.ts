@@ -13,6 +13,7 @@
 import { v, type Infer } from "convex/values";
 import type { Id } from "../_generated/dataModel";
 import { userError } from "./errors.ts";
+import { isGoogleLead, shareableCategory, shareableFacts, type LeadFacts } from "./googleData.ts";
 
 export const TEMPLATE_IDS = ["mesa", "estudio", "oficio", "vitrine"] as const;
 export type TemplateId = (typeof TEMPLATE_IDS)[number];
@@ -379,6 +380,8 @@ export function validateSiteContent(c: SiteContent): void {
 
 /** O que o lead precisa ter para alimentar o conteúdo inicial (Doc<"leads"> serve). */
 export interface LeadLike {
+  source?: LeadFacts["source"];
+  confirmation?: LeadFacts["confirmation"];
   name?: string;
   category?: string | null;
   city?: string | null;
@@ -397,24 +400,29 @@ export interface LeadLike {
  * público, e WhatsApp derivado do telefone afirmaria um atendimento que
  * ninguém verificou. `instagram` é a exceção: quando o lead já tem o handle
  * (achado no OSM ou digitado à mão), ele é público por natureza: pré-preenche.
+ * Lead do Google: só o que a cliente confirmou (Fase 10); nota e avaliações do Google nunca entram.
  */
 export function defaultContentForLead(lead: LeadLike): SiteContent {
-  const template = suggestTemplate(lead.category);
+  // LeadLike aceita null onde LeadFacts espera undefined; a forma é a mesma para os helpers.
+  const facts = shareableFacts(lead as LeadFacts);
+  const category = shareableCategory(lead as LeadFacts);
+  const google = isGoogleLead(lead);
+  const template = suggestTemplate(category);
   return {
     version: 2,
     template,
     palette: defaultPalette(template),
     // 80 é o limite de `validateSiteContent`; um nome maior seria erro no
     // primeiro Salvar sem ela ter mexido no campo.
-    name: (lead.name ?? "").trim().slice(0, LIMITS.name),
+    name: (facts.name ?? "").slice(0, LIMITS.name),
     city: lead.city ?? null,
     countryCode: lead.countryCode,
-    ...opt("phone", lead.phone || undefined),
-    ...opt("address", lead.address || undefined),
+    ...opt("phone", facts.phone || undefined),
+    ...opt("address", facts.address || undefined),
     ...opt("instagram", lead.instagram || undefined),
-    category: lead.category ?? null,
-    rating: lead.rating ?? null,
-    reviewsCount: lead.reviewsCount ?? null,
+    category,
+    rating: google ? null : (lead.rating ?? null),
+    reviewsCount: google ? null : (lead.reviewsCount ?? null),
   };
 }
 
