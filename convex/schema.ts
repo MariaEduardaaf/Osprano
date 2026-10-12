@@ -59,6 +59,10 @@ export default defineSchema({
     stripeCustomerId: v.optional(v.string()),
     stripeSubscriptionId: v.optional(v.string()),
     subscriptionStatus: v.optional(v.string()),
+    // aceite legal (LEGAL-03): versão única dos documentos em convex/lib/legal.ts; ausente = não aceitou
+    termsVersion: v.optional(v.string()),
+    termsAcceptedAt: v.optional(v.number()),
+    professionalUse: v.optional(v.boolean()),
   })
     .index("by_org", ["orgId"])
     .index("by_customer", ["stripeCustomerId"]),
@@ -171,7 +175,9 @@ export default defineSchema({
     at: v.number(),
   })
     .index("by_storage", ["storageId"])
-    .index("by_lead", ["leadId"]),
+    .index("by_lead", ["leadId"])
+    // exclusão de conta (LEGAL-05) varre uploads órfãos por org
+    .index("by_org", ["orgId"]),
 
   outreach: defineTable({
     orgId: v.string(),

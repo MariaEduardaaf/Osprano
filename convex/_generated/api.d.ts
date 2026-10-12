@@ -23,6 +23,7 @@ import type * as lib_enrich from "../lib/enrich.js";
 import type * as lib_env from "../lib/env.js";
 import type * as lib_errors from "../lib/errors.js";
 import type * as lib_importLead from "../lib/importLead.js";
+import type * as lib_legal from "../lib/legal.js";
 import type * as lib_osm from "../lib/osm.js";
 import type * as lib_outreachAi from "../lib/outreachAi.js";
 import type * as lib_site from "../lib/site.js";
@@ -63,6 +64,7 @@ declare const fullApi: ApiFromModules<{
   "lib/env": typeof lib_env;
   "lib/errors": typeof lib_errors;
   "lib/importLead": typeof lib_importLead;
+  "lib/legal": typeof lib_legal;
   "lib/osm": typeof lib_osm;
   "lib/outreachAi": typeof lib_outreachAi;
   "lib/site": typeof lib_site;
