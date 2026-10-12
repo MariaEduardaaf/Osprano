@@ -92,76 +92,121 @@ Milestone v1.2 (2026-09-18): modelos de site por segmento e a base de descoberta
 
 ## v1.3 Requirements
 
-Milestone v1.3 "Automação da prospecção" (2026-09-26). Escopo aprovado pela Duda no chat a partir do fluxo que ela descreveu (ver PROJECT.md, "Current Milestone"); pesquisa em `.planning/research/` (SUMMARY.md). Decisões aprovadas: Serper.dev como busca web; Noruega vira ligação primeiro; webhooks de devolução/denúncia agora, "respondeu" segue manual e o follow-up é um só; fila de ligação como filtro "Ligar" no CRM; provedor de envio automático decidido na pesquisa da fase de envio (a AUP da Resend proíbe cold outreach). Pré-requisito operacional: `ANTHROPIC_API_KEY` em prod antes da fase do pipeline. Fases 9 a 14 do roadmap (ordem por risco crescente; ver `.planning/ROADMAP.md`, "Milestone v1.3").
+Milestone v1.3 "Pronto pra vender" (redefinido em 2026-10-12; substitui "Automação da prospecção" de 2026-09-26, cujas Fases 9-14 nunca começaram). Objetivo: um desconhecido acha o Osprano, assina, configura e prospecta sozinho, com custo por cliente que cabe no preço e sem risco legal para a Duda como operadora. Decisões da Duda em 2026-10-12: (1) lançar **sem envio automático**: o app prepara tudo e o cliente envia do próprio e-mail; (2) dados do Google **conformes aos termos EEA**: só `place_id` é persistido; (3) público **inglês + português**. Pesquisa em `.planning/research/commercial/` (COST-PRICING, LEGAL, LAUNCH-READINESS) e, para verificação/pipeline/ligação, `.planning/research/SUMMARY.md`.
 
-### Base de compliance e segurança do envio (Fase 9)
+### Honestidade e jurídico
 
-- [ ] **BASE-01**: Todo e-mail, manual ou automático, passa por uma única função server-side de compliance (`canContactByEmail`, supressão, rodapé de opt-out, `List-Unsubscribe`), conferida no momento do envio, nunca a partir de estado cacheado.
-- [ ] **BASE-02**: O mesmo e-mail nunca é enviado duas vezes, mesmo com retry ou execução concorrente (trava atômica antes da chamada ao provedor).
+- [ ] **LEGAL-01**: A landing descreve só o que o produto faz no lançamento: sem depoimentos inventados, sem "notificado quando abrem", sem white-label/domínio próprio, sem toggle anual sem preço; os planos mostrados são os planos reais.
+- [ ] **LEGAL-02**: Existem páginas públicas de Aviso Legal (LSSI art. 10: nome, NIF, domicílio, e-mail), Privacidade, Termos, Cookies, DPA, Subprocessadores e Aviso ao prospect (GDPR art. 14), linkadas no rodapé da landing e do app. Os Termos dizem que o cliente é o responsável pelo contato que faz, que o uso é só profissional (B2B) e avisam do conteúdo do Google Maps com link aos termos do Google.
+- [ ] **LEGAL-03**: O cadastro exige aceite dos Termos e do DPA e a declaração de uso profissional; versão e data do aceite ficam gravadas no workspace, e uma versão nova pede novo aceite.
+- [ ] **LEGAL-04**: Um contato de suporte e de privacidade aparece na landing e dentro do app.
+- [ ] **LEGAL-05**: O cliente consegue excluir a própria conta: todos os dados do workspace no Convex são apagados e a assinatura no Stripe é cancelada (não só o usuário do Clerk).
+
+### Dados do Google conformes
+
+- [ ] **GPLC-01**: Lead vindo do Google persiste só o `place_id` (e latitude/longitude por no máximo 30 dias); nome, endereço, telefone, nota e site vindos do Google não são gravados.
+- [ ] **GPLC-02**: Ao ver um lead ou a lista de leads, os dados do Google aparecem buscados sob demanda, sem serem gravados, com o custo contado na cota do cliente e sem estourar o custo por cliente previsto no plano.
+- [ ] **GPLC-03**: O cliente confirma ou edita os dados do lead (nome, telefone, e-mail, endereço); só dado confirmado pelo cliente ou vindo do OpenStreetMap entra no preview público, na mensagem e no prompt da IA.
+- [ ] **GPLC-04**: Os leads já existentes com dados do Google são migrados para o modelo novo sem perder estágio, notas, histórico, site gerado nem dados confirmados.
+- [ ] **GPLC-05**: Toda tela que mostra conteúdo do Google exibe a atribuição do Google Maps, e conteúdo do Google nunca aparece junto de um mapa.
+
+### Remetente e envio pelo e-mail do cliente
+
+- [ ] **SEND-01**: O workspace tem um perfil de remetente (nome, empresa, endereço, e-mail de resposta), exigido antes da primeira mensagem; assinatura, rodapé de opt-out e prompt da IA usam esses dados, nunca os da Duda.
+- [ ] **SEND-02**: "Enviar" abre a mensagem pronta no e-mail do próprio cliente (Gmail, Outlook ou o app padrão) ou copia o texto; o Osprano não transmite e-mail de cliente pelo provedor dele.
+- [ ] **SEND-03**: Antes de abrir ou copiar, o servidor confere na hora `canContactByEmail`, supressão e mercado; o corpo sempre leva o rodapé de opt-out com link de descadastro e a fonte do dado (art. 14).
+- [ ] **SEND-04**: O cliente marca a mensagem como enviada e o lead vai para Abordado com o registro no Histórico.
+- [ ] **SEND-05**: A supressão é global: quem se descadastra pelo link de qualquer cliente não pode mais ser contatado por nenhum cliente.
 - [ ] **BASE-03**: A Noruega passa a ser mercado de ligação primeiro (fora de `LAUNCH_MARKETS`, `legalReview: "pending"`) até validação jurídica.
-- [ ] **BASE-04**: A conta tem tetos diários de envios, chamadas à IA e buscas de verificação; ao atingir um teto, a automação pausa e a usuária é avisada na tela.
 
-### Verificação de site e redes sociais (Fase 10)
+### Planos e custo por cliente
 
-- [ ] **VERIF-01**: Cada lead selecionado para automação é conferido na web (Serper.dev); se tiver site de verdade, sai do fluxo marcado como "já tem site", com o link encontrado como prova.
-- [ ] **VERIF-02**: A mesma conferência encontra Instagram e Facebook do negócio e a usuária vê os links no lead.
-- [ ] **VERIF-03**: A usuária tem uma mensagem pronta para copiar e enviar manualmente pela rede social do negócio.
+- [ ] **PLAN-01**: Existem os planos Solo (EUR 29), Pro (EUR 59) e Agência (EUR 149), com limites mensais de leads (150 / 500 / 1.500), gerações por IA (300 / 1.000 / 3.000) e verificações de site, definidos num único lugar do código e espelhados no Stripe.
+- [ ] **PLAN-02**: Toda geração por IA (mensagem, roteiro de ligação) reserva cota antes de chamar a Anthropic; sem cota, o botão fica bloqueado com aviso e link para o upgrade.
+- [ ] **PLAN-03**: Cada cliente tem teto diário de buscas no Google e de verificações; o app tem um teto global de segurança que pausa as buscas no Google e avisa a Duda antes de passar do orçamento.
+- [ ] **PLAN-04**: Um teste grátis único por pessoa (25 leads e 25 gerações) substitui o plano grátis permanente; criar outra conta ou workspace não renova o teste.
+- [ ] **PLAN-05**: A cota renova no ciclo de cobrança do Stripe, não numa janela solta de 30 dias.
+- [ ] **PLAN-06**: O uso e os limites aparecem no topo do app, com aviso em 80% e 100%.
+
+### Cobrança
+
+- [ ] **BILL-05**: O webhook do Stripe rejeita evento com timestamp fora de ±5 min e compara a assinatura em tempo constante.
+- [ ] **BILL-06**: Pagamento atrasado ou falho (`past_due`, `invoice.payment_failed`, `incomplete_expired`) mostra aviso no app, restringe o uso depois de um prazo de carência e volta ao normal quando o pagamento entra.
+- [ ] **BILL-07**: Não dá para assinar duas vezes; quem já assina troca ou cancela o plano pelo portal do Stripe.
+- [ ] **BILL-08**: O checkout calcula IVA (Stripe Tax), coleta o VAT ID e o nome da empresa e gera fatura válida; só empresa ou profissional pode assinar.
+- [ ] **BILL-09**: Depois do checkout há uma tela de sucesso; `APP_URL` ausente falha de forma visível em vez de cair em localhost; evento de assinatura sem workspace ou com preço desconhecido gera log de erro.
+- [ ] **BILL-10**: O fluxo de cobrança é verificado ponta a ponta em modo teste (assinar, trocar, cancelar, pagamento falho) e com um pagamento real reembolsado em produção.
+
+### Idioma
+
+- [ ] **I18N-01**: A landing, as páginas legais, o app logado e os e-mails do sistema existem em inglês e português; o idioma segue o navegador e pode ser trocado pelo usuário.
+- [ ] **I18N-02**: A mensagem ao prospect continua no idioma do mercado do lead, independente do idioma da interface.
+
+### Verificação de site e redes sociais
+
+- [ ] **VERIF-01**: Cada lead selecionado para preparação é conferido na web (Serper.dev); se tiver site de verdade, sai do fluxo marcado como "já tem site", com o link encontrado como prova.
+- [ ] **VERIF-02**: A mesma conferência encontra Instagram e Facebook do negócio e o cliente vê os links no lead.
+- [ ] **VERIF-03**: O cliente tem uma mensagem pronta para copiar e enviar manualmente pela rede social do negócio.
 - [ ] **VERIF-04**: A régua de "tem site" é a mesma do resto do produto (`classifyWebsite`: rede social e agregadores contam como sem site); o servidor não busca URL de terceiro sem validar o host.
 
-### Pipeline automático (Fase 12)
-
-- [ ] **PIPE-01**: A usuária seleciona um ou vários leads e aciona "Automatizar"; o app confere o site, gera o preview, escreve a mensagem e escolhe o canal sem outro clique.
-- [ ] **PIPE-02**: Cada lead em automação mostra a etapa atual e, se falhar, o erro e a opção de tentar de novo.
-- [ ] **PIPE-03**: O canal é escolhido pela regra do país: e-mail onde `canContactByEmail` permite; ligação em mercado opt-in com telefone; rede social quando for o único contato; "sem contato" quando não houver nenhum.
-- [ ] **PIPE-04**: Mensagem com aviso da IA (dado não confirmado sobre o negócio) nunca sai sozinha: vai para uma fila de revisão da usuária.
-
-### Envio automático (Fase 13)
-
-- [ ] **AUTO-01**: Em GB/NL/IE/SE, lead com canal e-mail que passa em todas as travas recebe o e-mail automaticamente, na hora, sem aprovação.
-- [ ] **AUTO-02**: O envio automático respeita um teto diário; o que excede sai no dia seguinte.
-- [ ] **AUTO-03**: A usuária liga e desliga todo o envio automático com um controle único.
-- [ ] **AUTO-04**: O envio automático sai por um provedor cuja política permite cold outreach B2B (escolhido na pesquisa da fase), não pela Resend.
-- [ ] **AUTO-05**: E-mail devolvido ou denunciado como spam marca o lead e suprime o endereço automaticamente (webhooks de entrega, sem mudança de DNS; puxa parte de GDPR-02).
-
-### Fila de ligação (Fase 11)
+### Fila de ligação
 
 - [ ] **CALL-01**: Leads de mercados de ligação primeiro aparecem num filtro "Ligar" no CRM, com telefone, roteiro e redes sociais.
-- [ ] **CALL-02**: A usuária registra o resultado da ligação: vai fechar (avança o lead), não vai (pede motivo), pediu por e-mail (registra consentimento e libera o envio), não atendeu (reagenda).
+- [ ] **CALL-02**: O cliente registra o resultado da ligação: vai fechar (avança o lead), não vai (pede motivo), pediu por e-mail (registra consentimento e libera o envio), não atendeu (reagenda).
 - [ ] **CALL-03**: Em lead da Alemanha, o card pede o motivo concreto da ligação (consentimento presumido, UWG §7) antes de liberar o roteiro.
 
-### Follow-up automático (Fase 14)
+### Preparação automática (sem envio)
 
-- [ ] **FUP-01**: Lead que recebeu e-mail e não foi marcado "respondeu" recebe um único follow-up automático após 4 dias, só onde e-mail é permitido.
-- [ ] **FUP-02**: O follow-up é cancelado se o lead respondeu, devolveu, denunciou, se descadastrou, mudou de etapa ou foi perdido; todas as travas são conferidas de novo na hora do envio.
+- [ ] **PIPE-01**: O cliente seleciona um ou vários leads e aciona "Preparar"; o app confere o site, gera o preview, escreve a mensagem e escolhe o canal sem outro clique, reservando cota em cada etapa.
+- [ ] **PIPE-02**: Cada lead em preparação mostra a etapa atual e, se falhar, o erro e a opção de tentar de novo.
+- [ ] **PIPE-03**: O canal é escolhido pela regra do país: e-mail onde `canContactByEmail` permite; ligação em mercado opt-in com telefone; rede social quando for o único contato; "sem contato" quando não houver nenhum.
+- [ ] **PIPE-04**: Tudo que a preparação produz cai numa fila de revisão; nada é enviado sem o clique do cliente (SEND-02), e mensagem com aviso da IA (dado não confirmado) vem destacada.
+
+### Primeiro uso e operação
+
+- [ ] **ONB-01**: No primeiro acesso, o cliente vê as boas-vindas com os passos (perfil do remetente, primeira busca, primeiro site, primeira mensagem), e o checklist some quando termina.
+- [ ] **ONB-02**: Cada tela vazia explica o que fazer e tem o botão da próxima ação.
+- [ ] **OPS-01**: Erros do Next e do Convex em produção chegam à Duda com alerta, sem PII de prospect no log.
+- [ ] **OPS-02**: A Duda tem uma visão interna dos clientes (plano, uso, status, último acesso) e consegue suspender uma conta abusiva, que passa a ver uma tela de conta suspensa.
+
+### Escala
+
+- [ ] **SCAL-01**: Paginação/take nas queries `.collect()` (`leads.list/stats/analytics`, `previews.listSites`, `outreach.outbox`, `isEmailSuppressed`)
+- [ ] **SCAL-02**: Quota aplicada também em `leads.create` (criação manual)
+- [ ] **SCAL-03**: Rate-limit/dedupe em `previews.recordOpen`; confirmar que `getBySlug` não devolve `token`
 
 ## v2 Requirements
 
-Fase 2 — "antes de escalar". Rastreados, fora do roadmap atual.
+Depois do lançamento. Rastreados, fora do roadmap atual.
 
-### Robustez & Escala
+### Envio automático e follow-up (adiados em 2026-10-12, decisão A)
 
-- **SCAL-01**: Paginação/take nas queries `.collect()` (`leads.list/stats/analytics`, `previews.listSites`, `outreach.outbox`)
-- **SCAL-02**: Quota aplicada também em `leads.create` (criação manual)
-- **SCAL-03**: Rate-limit/dedupe em `previews.recordOpen`; remover `token` da resposta de `getBySlug`
-
-### Dados & GDPR
-
-- **GDPR-01**: Cron de purge/refresh 30 dias (ToS Google Places) + mutation de deleção de lead (Art. 17)
-- **GDPR-02**: Webhooks Resend de bounce/inbound → `bounced` real e `replied` automático + supressão automática (a parte de devolução/denúncia entra na v1.3 como AUTO-05; `replied` automático via inbound/MX segue aqui)
-
-### Automação (depois da v1.3)
-
-- **AUTO-06**: Detecção automática de resposta (inbound com MX no domínio da usuária) marcando `replied` sozinho
+- **AUTO-01**: Em GB/NL/IE/SE, lead com canal e-mail que passa em todas as travas recebe o e-mail automaticamente, sem aprovação.
+- **AUTO-02**: O envio automático respeita um teto diário; o excedente sai no dia seguinte.
+- **AUTO-03**: O cliente liga e desliga todo o envio automático com um controle único.
+- **AUTO-04**: O envio sai pelo domínio verificado do cliente, por provedor cuja política permite cold outreach B2B (não a Resend), com parecer jurídico antes.
+- **AUTO-05**: E-mail devolvido ou denunciado como spam marca o lead e suprime o endereço automaticamente.
+- **BASE-02**: O mesmo e-mail nunca é enviado duas vezes, mesmo com retry ou execução concorrente.
+- **FUP-01**: Um follow-up automático após 4 dias, só onde e-mail é permitido.
+- **FUP-02**: O follow-up é cancelado se qualquer trava disparar, conferida de novo na hora do envio.
 - **FUP-03**: Sequência com mais de um follow-up
-- **PIPE-05**: Descoberta de leads agendada, sem a usuária escolher
+- **AUTO-06**: Detecção automática de resposta marcando `replied` sozinho
+- **PIPE-05**: Descoberta de leads agendada, sem o cliente escolher
+- **SEND-06**: Envio pelo Gmail/Outlook do cliente via OAuth (escopo restrito do Gmail exige avaliação de segurança do Google)
 
-### Billing
+### Conta e operação
 
-- **BILL-04**: Gating de features por plano (outreach IA só Pro+, export CSV, mercados/categorias)
-- **BILL-05**: Webhook Stripe com tolerância de timestamp (±5 min) e comparação constant-time
+- **TEAM-01**: Mais de uma pessoa no mesmo workspace (Clerk Organizations; hoje é um login por conta)
+- **DATA-01**: Exportação dos dados do workspace (GDPR art. 20)
+- **OPS-03**: E-mails transacionais próprios (boas-vindas, 80%/100% da cota); recibo e falha de pagamento ficam com os e-mails nativos do Stripe
+- **BILL-11**: Plano anual com desconto
+
+### Itens absorvidos pela v1.3
+
+- GDPR-01 (purge 30 dias + deleção) virou GPLC-01..04 e LEGAL-05; BASE-01 virou SEND-03; BASE-04 virou PLAN-02/03; BILL-04 (gating) virou PLAN-01..04; GDPR-02 (webhooks Resend) só volta com AUTO-05.
+
 
 ## Out of Scope
-
 | Feature | Reason |
 |---------|--------|
 | Webhook inbound/bounce do Resend nesta fase | Decisão da usuária: "respondeu" manual destrava o lançamento; automação na Fase 2 |
@@ -173,6 +218,9 @@ Fase 2 — "antes de escalar". Rastreados, fora do roadmap atual.
 | Raspagem de Google Maps ou de redes sociais | Viola ToS do Google e da Meta; descoberta de redes sociais é via busca web (v1.3) |
 | Discador automático / IA respondendo o prospect | Fora do posicionamento; a conversa depois da resposta é da usuária |
 | Warmup multi-caixa estilo Instantly | Infra desproporcional para volume solo |
+| Guardar nome/endereço/telefone/nota do Google | Termos EEA do Google Maps (3.3.2) proíbem; decisão de 2026-10-12: só `place_id` |
+| Chave própria do cliente (BYOK) para Google/Anthropic | Complexidade e suporte; reavaliar só para o plano Agência |
+| Venda para consumidor final (B2C) | Só empresas e profissionais: evita direito de desistência e simplifica IVA |
 
 ## Traceability
 
@@ -223,33 +271,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BASE-02 | Phase 9 | Pending |
 | BASE-03 | Phase 9 | Pending |
 | BASE-04 | Phase 9 | Pending |
-| VERIF-01 | Phase 10 | Pending |
-| VERIF-02 | Phase 10 | Pending |
-| VERIF-03 | Phase 10 | Pending |
-| VERIF-04 | Phase 10 | Pending |
-| PIPE-01 | Phase 12 | Pending |
-| PIPE-02 | Phase 12 | Pending |
-| PIPE-03 | Phase 12 | Pending |
-| PIPE-04 | Phase 12 | Pending |
-| AUTO-01 | Phase 13 | Pending |
-| AUTO-02 | Phase 13 | Pending |
-| AUTO-03 | Phase 13 | Pending |
-| AUTO-04 | Phase 13 | Pending |
-| AUTO-05 | Phase 13 | Pending |
-| CALL-01 | Phase 11 | Pending |
-| CALL-02 | Phase 11 | Pending |
-| CALL-03 | Phase 11 | Pending |
-| FUP-01 | Phase 14 | Pending |
-| FUP-02 | Phase 14 | Pending |
 
 **Coverage:**
 - v1 requirements: 18 total (12 do milestone de produção + 6 do modo opt-in)
 - v1.1 requirements: 12 total (5 do redesenho + 7 do CRM)
 - v1.2 requirements: 9 total (2 da descoberta via OpenStreetMap + 7 dos modelos de site)
-- v1.3 requirements: 22 total (4 base + 4 verificação + 4 pipeline + 5 envio + 3 ligação + 2 follow-up), mapeados às Fases 9-14
+- v1.3 requirements: pendente de mapeamento (milestone redefinido em 2026-10-12)
 - Mapped to phases: 61 (see ROADMAP.md)
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-07-11*
-*Last updated: 2026-09-26: roadmap do milestone v1.3 criado (Fases 9-14), 22/22 requisitos mapeados; antes, definidos os requisitos do milestone v1.3; antes, 2026-09-18: milestone v1.2 (Fases 7 e 8) concluído; 18/18 requisitos v1, 12/12 v1.1 e 9/9 v1.2 completos*
+*Last updated: 2026-10-12: requisitos do v1.3 redefinidos para "Pronto pra vender" (48 requisitos); antes, 2026-09-26: roadmap do milestone v1.3 criado (Fases 9-14), 22/22 requisitos mapeados; antes, definidos os requisitos do milestone v1.3; antes, 2026-09-18: milestone v1.2 (Fases 7 e 8) concluído; 18/18 requisitos v1, 12/12 v1.1 e 9/9 v1.2 completos*
