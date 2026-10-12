@@ -267,19 +267,63 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SITE-05 | Phase 8 | Complete |
 | SITE-06 | Phase 8 | Complete |
 | SITE-07 | Phase 8 | Complete |
-| BASE-01 | Phase 9 | Pending |
-| BASE-02 | Phase 9 | Pending |
-| BASE-03 | Phase 9 | Pending |
-| BASE-04 | Phase 9 | Pending |
+| LEGAL-01 | Phase 9 | Pending |
+| LEGAL-02 | Phase 9 | Pending |
+| LEGAL-03 | Phase 9 | Pending |
+| LEGAL-04 | Phase 9 | Pending |
+| LEGAL-05 | Phase 9 | Pending |
+| GPLC-01 | Phase 10 | Pending |
+| GPLC-02 | Phase 10 | Pending |
+| GPLC-03 | Phase 10 | Pending |
+| GPLC-04 | Phase 10 | Pending |
+| GPLC-05 | Phase 10 | Pending |
+| SCAL-01 | Phase 10 | Pending |
+| BILL-05 | Phase 11 | Pending |
+| BILL-06 | Phase 11 | Pending |
+| BILL-07 | Phase 11 | Pending |
+| BILL-08 | Phase 11 | Pending |
+| BILL-09 | Phase 11 | Pending |
+| PLAN-01 | Phase 12 | Pending |
+| PLAN-02 | Phase 12 | Pending |
+| PLAN-03 | Phase 12 | Pending |
+| PLAN-04 | Phase 12 | Pending |
+| PLAN-05 | Phase 12 | Pending |
+| PLAN-06 | Phase 12 | Pending |
+| SCAL-02 | Phase 12 | Pending |
+| SEND-01 | Phase 13 | Pending |
+| SEND-02 | Phase 13 | Pending |
+| SEND-03 | Phase 13 | Pending |
+| SEND-04 | Phase 13 | Pending |
+| SEND-05 | Phase 13 | Pending |
+| BASE-03 | Phase 13 | Pending |
+| VERIF-01 | Phase 14 | Pending |
+| VERIF-02 | Phase 14 | Pending |
+| VERIF-03 | Phase 14 | Pending |
+| VERIF-04 | Phase 14 | Pending |
+| CALL-01 | Phase 14 | Pending |
+| CALL-02 | Phase 14 | Pending |
+| CALL-03 | Phase 14 | Pending |
+| PIPE-01 | Phase 14 | Pending |
+| PIPE-02 | Phase 14 | Pending |
+| PIPE-03 | Phase 14 | Pending |
+| PIPE-04 | Phase 14 | Pending |
+| ONB-01 | Phase 15 | Pending |
+| ONB-02 | Phase 15 | Pending |
+| OPS-01 | Phase 15 | Pending |
+| OPS-02 | Phase 15 | Pending |
+| SCAL-03 | Phase 15 | Pending |
+| I18N-01 | Phase 15 | Pending |
+| I18N-02 | Phase 15 | Pending |
+| BILL-10 | Phase 16 | Pending |
 
 **Coverage:**
 - v1 requirements: 18 total (12 do milestone de produção + 6 do modo opt-in)
 - v1.1 requirements: 12 total (5 do redesenho + 7 do CRM)
 - v1.2 requirements: 9 total (2 da descoberta via OpenStreetMap + 7 dos modelos de site)
-- v1.3 requirements: pendente de mapeamento (milestone redefinido em 2026-10-12)
-- Mapped to phases: 61 (see ROADMAP.md)
+- v1.3 requirements: 48 total (Fases 9-16: jurídico, Google conforme, cobrança, planos, envio, prospecção assistida, operação/idioma, portão de lançamento)
+- Mapped to phases: 87 (39 de v1 a v1.2 + 48 de v1.3; see ROADMAP.md)
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-07-11*
-*Last updated: 2026-10-12: requisitos do v1.3 redefinidos para "Pronto pra vender" (48 requisitos); antes, 2026-09-26: roadmap do milestone v1.3 criado (Fases 9-14), 22/22 requisitos mapeados; antes, definidos os requisitos do milestone v1.3; antes, 2026-09-18: milestone v1.2 (Fases 7 e 8) concluído; 18/18 requisitos v1, 12/12 v1.1 e 9/9 v1.2 completos*
+*Last updated: 2026-10-12: roadmap do v1.3 criado (Fases 9-16), 48/48 mapeados; antes, 2026-10-12: requisitos do v1.3 redefinidos para "Pronto pra vender" (48 requisitos); antes, 2026-09-26: roadmap do milestone v1.3 criado (Fases 9-14), 22/22 requisitos mapeados; antes, definidos os requisitos do milestone v1.3; antes, 2026-09-18: milestone v1.2 (Fases 7 e 8) concluído; 18/18 requisitos v1, 12/12 v1.1 e 9/9 v1.2 completos*

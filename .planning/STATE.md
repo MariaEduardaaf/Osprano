@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Pronto pra vender
-status: defining-requirements
-stopped_at: Milestone v1.3 redefinido como "Pronto pra vender" (2026-10-12); pesquisa comercial e roadmap em andamento.
+status: ready-to-plan
+stopped_at: Roadmap do milestone v1.3 "Pronto pra vender" criado (Fases 9-16, 48/48 requisitos mapeados); Fase 9 pronta para planejar.
 last_updated: "2026-10-12T00:00:00.000Z"
 progress:
-  total_phases: 14
+  total_phases: 16
   completed_phases: 8
   total_plans: 22
   completed_plans: 22
@@ -23,18 +23,18 @@ See: .planning/PROJECT.md (updated 2026-10-12)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 9 de 16 (Honestidade e superfície jurídica), pronta para planejar
 Plan: —
-Status: Defining requirements
-Last activity: 2026-10-12 — Milestone v1.3 redefinido como "Pronto pra vender" (substitui "Automação da prospecção", Fases 9-14 nunca iniciadas)
+Status: Ready to plan
+Last activity: 2026-10-12 — Roadmap do v1.3 "Pronto pra vender" criado (Fases 9-16; substitui "Automação da prospecção", Fases 9-14 nunca iniciadas)
 
 Contexto de produção em 2026-09-26: Google Places ligada em prod (projeto GCP
 `soprano-503222`, faturamento "Pagamento do Firebase", cota SearchText 30/dia,
-`GOOGLE_PLACES_API_KEY` no Convex prod). `ANTHROPIC_API_KEY` ainda ausente em prod
-(bloqueia a Fase 12). Fase 10 precisa de conta/chave Serper.dev da usuária; Fase 13
-precisa da decisão do provedor de envio automático (Resend proíbe cold outreach na
-própria AUP). O backlog v2 (SCAL-01..03, GDPR-01/02, BILL-04/05, AUTO-06, FUP-03,
-PIPE-05) segue em REQUIREMENTS.md.
+`GOOGLE_PLACES_API_KEY` no Convex prod). Pendências externas da Duda por fase: NIF,
+advogado e caixa de suporte (Fase 9); Stripe Tax, preços e alta de autónoma (Fases 11 e
+16); `ANTHROPIC_API_KEY` em prod (Fase 12); conta/chave Serper.dev (Fase 14);
+dependências novas de monitor de erros e i18n (Fase 15). Envio automático e follow-up
+estão no backlog v2 (AUTO-*, FUP-*).
 
 ## Performance Metrics
 
@@ -74,7 +74,8 @@ PIPE-05) segue em REQUIREMENTS.md.
 - Phase 4 added: Modo opt-in (ligação-primeiro) para mercados opt-in (ES/IT/PT/DE/DK/CH) — aba Ligação primeiro, script de IA, consentimento destrava email (OPTIN-01..06)
 - Milestone v1.1 (2026-09-16), fora do GSD: Phase 5 Redesenho vidro sobre névoa (UX-01..05) e Phase 6 CRM fluxo do dia e informação do lead (CRM-01..07), ambas via superpowers (spec + plano em `docs/superpowers/`)
 - Milestone v1.2 (2026-09-18), fora do GSD: Phase 7 Descoberta via OpenStreetMap e "Ver o que ele tem" (DISC-01/02, commits diretos, sem spec/plano) e Phase 8 Modelos de site (SITE-01..07, workflow superpowers: spec + adendo, planos A/B em arquivo, C inline)
-- Milestone v1.3 (2026-09-26), roadmap criado via GSD a partir da pesquisa em `.planning/research/SUMMARY.md`: Phase 9 Base de compliance compartilhada (BASE-01..04), Phase 10 Verificação de site e redes sociais (VERIF-01..04), Phase 11 Fila "Ligar" no CRM (CALL-01..03), Phase 12 Pipeline automático em modo rascunho (PIPE-01..04), Phase 13 Envio automático + teto diário (AUTO-01..05), Phase 14 Follow-up automático (FUP-01..02). Ordem por risco crescente, não por valor percebido (ver ROADMAP.md).
+- Milestone v1.3 REDEFINIDO (2026-10-12) como "Pronto pra vender": Fases 9-16 (9 Honestidade e jurídico, 10 Dados do Google conformes, 11 Cobrança endurecida, 12 Planos e custo, 13 Remetente e envio pelo e-mail do cliente, 14 Prospecção assistida, 15 Primeiro uso/operação/idioma, 16 Portão de lançamento). A entrada abaixo (Fases 9-14 de 2026-09-26) está substituída e nunca começou.
+- (substituído) Milestone v1.3 (2026-09-26), roadmap criado via GSD a partir da pesquisa em `.planning/research/SUMMARY.md`: Phase 9 Base de compliance compartilhada (BASE-01..04), Phase 10 Verificação de site e redes sociais (VERIF-01..04), Phase 11 Fila "Ligar" no CRM (CALL-01..03), Phase 12 Pipeline automático em modo rascunho (PIPE-01..04), Phase 13 Envio automático + teto diário (AUTO-01..05), Phase 14 Follow-up automático (FUP-01..02). Ordem por risco crescente, não por valor percebido (ver ROADMAP.md).
 
 ### Decisions
 
@@ -151,8 +152,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-26
-Stopped at: Roadmap do milestone v1.3 criado (Fases 9-14 em `.planning/ROADMAP.md`), traceability de `.planning/REQUIREMENTS.md` atualizada (22/22 requisitos mapeados), STATE.md atualizado; branch `main`, nada commitado ainda (aguardando aprovação da Duda)
+Last session: 2026-10-12
+Stopped at: Roadmap do milestone v1.3 "Pronto pra vender" criado (Fases 9-16 em `.planning/ROADMAP.md`), traceability atualizada (48/48 mapeados); aguardando aprovação da Duda
 Resume file: próximo passo é `/gsd:plan-phase 9`; docs/CHECKLIST-MODO-REAL.md (seção 3.0, seção 9 e seção 10) seguem pendentes como pendência operacional separada
 
 ## Pendências operacionais (não são código)

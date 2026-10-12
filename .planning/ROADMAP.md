@@ -1,4 +1,4 @@
-# Roadmap: Osprano — Pronto para Produção (Fase 1: Bloqueadores)
+# Roadmap: Osprano
 
 ## Overview
 
@@ -18,12 +18,14 @@ Este milestone leva o Osprano — SaaS de prospecção e venda de sites para o m
 - [x] **Phase 6: CRM: fluxo do dia e informação do lead** - Próxima ação por lead, faixa Hoje, leads parados, Perdido com motivo, contato e valores, Histórico com notas (milestone v1.1, completed 2026-09-16)
 - [x] **Phase 7: Descoberta via OpenStreetMap e "Ver o que ele tem"** - Busca também no OpenStreetMap/Overpass (grátis, sem chave) com fallback de espelho e seletor de fonte; quota cobra só o lead realmente inserido mesmo em busca repetida; botão "Ver o que ele tem" ao lado do preview (milestone v1.2, completed 2026-09-17)
 - [x] **Phase 8: Modelos de site** - 4 modelos por segmento com 3 paletas cada, editor completo com upload de fotos e prévia ao vivo, preview e site publicado renderizando o modelo salvo, correções do UAT final (milestone v1.2, completed 2026-09-18)
-- [ ] **Phase 9: Base de compliance compartilhada** - Função única de envio, trava atômica anti-duplicidade, Noruega em validação jurídica, tetos diários (milestone v1.3)
-- [ ] **Phase 10: Verificação de site e redes sociais** - Confere na web se o lead já tem site de verdade e descobre Instagram/Facebook do negócio (milestone v1.3)
-- [ ] **Phase 11: Fila "Ligar" no CRM** - Leads de mercado opt-in num filtro próprio, com roteiro, redes sociais e registro do resultado da ligação (milestone v1.3)
-- [ ] **Phase 12: Pipeline automático em modo rascunho** - Depois da seleção, o app confere site, gera preview, escreve mensagem e escolhe canal sozinho, sem enviar de verdade ainda (milestone v1.3)
-- [ ] **Phase 13: Envio automático + teto diário** - Nos mercados opt-out, o e-mail sai sozinho respeitando teto diário e todas as travas de compliance (milestone v1.3)
-- [ ] **Phase 14: Follow-up automático** - Um follow-up automático por e-mail onde for permitido, cancelado se qualquer trava disparar (milestone v1.3)
+- [ ] **Phase 9: Honestidade e superfície jurídica** - Landing só com o que o produto faz, páginas legais, aceite no cadastro, suporte e exclusão de conta (milestone v1.3)
+- [ ] **Phase 10: Dados do Google conformes** - Só `place_id` persistido, dados do Google sob demanda com atribuição, dado confirmado pelo cliente alimenta preview e IA (milestone v1.3)
+- [ ] **Phase 11: Cobrança endurecida** - Webhook seguro, pagamento falho, assinatura única, IVA e fatura, sem falha silenciosa (milestone v1.3)
+- [ ] **Phase 12: Planos e custo por cliente** - Solo/Pro/Agência com limites, cota de IA, teste grátis único, tetos diários e global (milestone v1.3)
+- [ ] **Phase 13: Remetente e envio pelo e-mail do cliente** - Perfil de remetente, "Enviar" abre o e-mail do cliente, supressão global, Noruega em validação (milestone v1.3)
+- [ ] **Phase 14: Prospecção assistida: verificação, ligação e preparação** - Confere site e redes sociais, fila "Ligar", "Preparar" gera tudo numa fila de revisão, sem envio (milestone v1.3)
+- [ ] **Phase 15: Primeiro uso, operação e idioma** - Onboarding, monitor de erros, painel interno, inglês e português (milestone v1.3)
+- [ ] **Phase 16: Portão de lançamento: cobrança ponta a ponta** - Fluxo de dinheiro provado em teste e com pagamento real reembolsado (milestone v1.3)
 
 ## Phase Details
 
@@ -81,7 +83,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 13 → 14
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 13 → 14 → 15 → 16
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -93,12 +95,14 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 6. CRM: fluxo do dia e informação do lead | 1/1 | Complete    | 2026-09-16 |
 | 7. Descoberta via OpenStreetMap e "Ver o que ele tem" | n/d (commits diretos) | Complete    | 2026-09-17 |
 | 8. Modelos de site | 3/3 | Complete    | 2026-09-18 |
-| 9. Base de compliance compartilhada | 0/TBD | Not started | - |
-| 10. Verificação de site e redes sociais | 0/TBD | Not started | - |
-| 11. Fila "Ligar" no CRM | 0/TBD | Not started | - |
-| 12. Pipeline automático em modo rascunho | 0/TBD | Not started | - |
-| 13. Envio automático + teto diário | 0/TBD | Not started | - |
-| 14. Follow-up automático | 0/TBD | Not started | - |
+| 9. Honestidade e superfície jurídica | 0/TBD | Not started | - |
+| 10. Dados do Google conformes | 0/TBD | Not started | - |
+| 11. Cobrança endurecida | 0/TBD | Not started | - |
+| 12. Planos e custo por cliente | 0/TBD | Not started | - |
+| 13. Remetente e envio pelo e-mail do cliente | 0/TBD | Not started | - |
+| 14. Prospecção assistida | 0/TBD | Not started | - |
+| 15. Primeiro uso, operação e idioma | 0/TBD | Not started | - |
+| 16. Portão de lançamento | 0/TBD | Not started | - |
 
 ### Phase 4: Modo opt-in (ligação-primeiro) para mercados onde cold email é ilegal
 
@@ -202,85 +206,118 @@ Plans:
 - [x] `docs/superpowers/plans/2026-09-18-modelos-de-site-B.md` (plano B): editor completo com upload de fotos; merge `6834847`; screenshots do editor em `docs/redesign/editor-*.png`
 - [x] Plano C (inline, sem arquivo próprio): resumo da aba Site, cards, página Sites, UAT em navegador real; merge `6873874`; correções pós-UAT (`1a84905`, `6d754ec`, `38138e3`, `8391343`), merge final `07965dc`
 
-## Milestone v1.3: Automação da prospecção (2026-09-26)
+## Milestone v1.3: Pronto pra vender (2026-10-12)
 
-Escopo definido em `.planning/REQUIREMENTS.md` ("v1.3 Requirements") a partir do fluxo que a Duda descreveu no chat (ver `.planning/PROJECT.md`, "Current Milestone"), com pesquisa dedicada em `.planning/research/SUMMARY.md`. A ordem das Fases 9 a 14 segue risco crescente, não valor percebido: primeiro a fundação de compliance compartilhada (refactor puro, sem mudança de comportamento visível), depois as duas features de baixo risco e alto valor que reaproveitam peças já auditadas (verificação de site, fila de ligação), depois o pipeline em modo rascunho (sem enviar nada de verdade), e só por último as duas peças irreversíveis por natureza, envio automático e follow-up automático, porque um e-mail automático já enviado não pode ser desfeito. Três decisões de produto registradas na pesquisa bloqueiam o planejamento detalhado de fases específicas: a Fase 10 precisa de uma conta e chave Serper.dev da usuária, a Fase 12 precisa da `ANTHROPIC_API_KEY` em produção, e a Fase 13 precisa da decisão do provedor de envio automático (a política de uso aceitável da Resend proíbe cold outreach). Planejamento via GSD (`/gsd:plan-phase`), não superpowers.
+Substitui o milestone "Automação da prospecção" de 2026-09-26, cujas Fases 9-14 nunca começaram (o envio automático, o follow-up e a base de envio ficaram no backlog v2 como AUTO-*, FUP-*, BASE-02). Objetivo: um desconhecido acha o Osprano, assina, configura e prospecta sozinho, com custo por cliente que cabe no preço e sem risco legal para a Duda como operadora. Três decisões da Duda em 2026-10-12 moldam a ordem: lançar **sem envio automático** (o app prepara tudo e o cliente envia do próprio e-mail), dados do Google **conformes aos termos EEA** (só `place_id` é persistido) e público **inglês + português**.
 
-### Phase 9: Base de compliance compartilhada
+A ordem segue o que bloqueia receber dinheiro e o que muda o modelo de dados. Primeiro a superfície jurídica e a honestidade da landing (Fase 9), depois o modelo de lead do Google (Fase 10), porque verificação, preparação e envio constroem em cima dele. Cobrança endurecida (Fase 11) e planos com limites de custo (Fase 12) vêm antes de qualquer cliente pagar. O perfil de remetente e o envio pelo e-mail do cliente (Fase 13) precedem a preparação automática (Fase 14), que depende de verificação, envio e planos. Onboarding, operação e idioma ficam por último entre as funcionalidades (Fase 15), para não traduzir a mesma tela duas vezes, e a verificação de cobrança ponta a ponta fecha o milestone como portão de lançamento (Fase 16). Pesquisa em `.planning/research/commercial/` (COST-PRICING, LEGAL, LAUNCH-READINESS) e, para verificação, ligação e preparação, `.planning/research/SUMMARY.md`. Planejamento via GSD (`/gsd:plan-phase`).
 
-**Goal**: Existe uma única função server-side de compliance para envio de email (`canContactByEmail`, supressão, rodapé de opt-out, header `List-Unsubscribe`), uma trava atômica contra envio duplicado, a Noruega tratada como mercado de ligação primeiro até validação jurídica, e tetos diários de envio, IA e busca de verificação visíveis na tela.
+### Phase 9: Honestidade e superfície jurídica
+
+**Goal**: A landing diz só o que o produto faz, as páginas legais existem e estão linkadas, o cadastro registra o aceite, o suporte é achável e o cliente consegue apagar a própria conta com tudo.
 **Depends on**: Phase 8
-**Requirements**: BASE-01, BASE-02, BASE-03, BASE-04
+**Requirements**: LEGAL-01, LEGAL-02, LEGAL-03, LEGAL-04, LEGAL-05
 **Success Criteria** (what must be TRUE):
-  1. Uma única função server-side de compliance (`canContactByEmail`, supressão, rodapé de opt-out, header `List-Unsubscribe`) é chamada tanto pelo envio manual quanto por qualquer novo caminho automático, sempre no momento do envio, nunca a partir de um campo cacheado
-  2. Duas tentativas de enviar o mesmo email (retry ou execução concorrente) resultam num único envio de verdade: a segunda tentativa é recusada por uma trava atômica antes da chamada ao provedor
-  3. A Noruega aparece com o aviso "validação jurídica pendente" e sai da lista de mercados de envio imediato sem aprovação, ao lado dos demais mercados de ligação primeiro
-  4. A tela mostra os tetos diários de envio automático, chamadas de IA e buscas de verificação, e o quanto já foi consumido hoje pelo workspace; ultrapassar um teto pausa aquele tipo de automação com aviso visível
+  1. A landing não tem depoimento inventado, nem "notificado quando abrem", nem white-label/domínio próprio, nem toggle anual sem preço; os planos exibidos são os planos reais
+  2. Aviso Legal (nome, NIF, domicílio, e-mail), Privacidade, Termos, Cookies, DPA, Subprocessadores e Aviso ao prospect abrem por URL pública e estão linkados no rodapé da landing e do app; os Termos dizem que o cliente responde pelo contato que faz, que o uso é só B2B e linkam os termos do Google Maps
+  3. O cadastro só conclui com aceite de Termos e DPA e declaração de uso profissional; a versão e a data do aceite aparecem gravadas no workspace, e subir a versão dos documentos pede novo aceite no próximo acesso
+  4. Um e-mail de suporte e privacidade aparece na landing e dentro do app
+  5. Em Ajustes, o cliente exclui a conta: os dados do workspace somem do Convex, a assinatura é cancelada no Stripe e o login do Clerk é removido
 **Plans**: TBD
-**Research flag**: Não precisa de `/gsd:research-phase`, é refactor puro sobre código já mapeado (extração de `sendEmailForLead`, padrão de trava atômica e schema aditivo já documentados na pesquisa).
+**Depende de você**: NIF e domicílio para o Aviso Legal; revisão de advogado dos Termos, Privacidade e DPA antes de cobrar (o texto é rascunho técnico, não parecer); caixa de e-mail de suporte/privacidade criada.
 
-### Phase 10: Verificação de site e redes sociais
+### Phase 10: Dados do Google conformes
 
-**Goal**: Antes de virar prospect de automação, cada lead selecionado é conferido de verdade na web: se já tiver site, sai do fluxo com o link como prova; se tiver Instagram ou Facebook, a usuária vê os links e uma mensagem pronta para copiar.
+**Goal**: Lead vindo do Google guarda só o `place_id`; os dados do Google aparecem buscados na hora, com atribuição e sem estourar o custo; só dado confirmado pelo cliente (ou do OpenStreetMap) vai para o público e para a IA.
 **Depends on**: Phase 9
-**Requirements**: VERIF-01, VERIF-02, VERIF-03, VERIF-04
+**Requirements**: GPLC-01, GPLC-02, GPLC-03, GPLC-04, GPLC-05, SCAL-01
 **Success Criteria** (what must be TRUE):
-  1. Ao selecionar um lead para automação, o app confere na web (Serper.dev) se ele tem site de verdade; se tiver, o lead sai do fluxo marcado "já tem site" com o link encontrado como prova
-  2. A mesma checagem encontra Instagram e/ou Facebook do negócio quando existem, e a usuária vê os links no lead
-  3. A usuária tem uma mensagem pronta para copiar e enviar manualmente pela rede social do negócio
-  4. A régua de "tem site" é a mesma do resto do produto (`classifyWebsite`: rede social e agregador contam como sem site) e o servidor nunca busca uma URL de terceiro sem validar o host antes
+  1. Um lead novo vindo do Google fica no banco só com `place_id` (e latitude/longitude por no máximo 30 dias); nome, endereço, telefone, nota e site do Google não aparecem gravados
+  2. Ao abrir a lista de leads ou um lead, os dados do Google aparecem buscados sob demanda, cada busca é contada na cota do cliente, e a lista é paginada, sem consulta que leia a tabela inteira
+  3. O cliente confirma ou edita nome, telefone, e-mail e endereço; o preview público, a mensagem e o prompt da IA usam só dado confirmado ou do OpenStreetMap
+  4. Depois da migração, leads antigos mantêm estágio, notas, histórico, site gerado e dados confirmados, e não sobra dado do Google gravado neles
+  5. Toda tela com conteúdo do Google mostra a atribuição do Google Maps, e esse conteúdo nunca aparece ao lado de um mapa
 **Plans**: TBD
-**Research flag**: Sim, rodar `/gsd:research-phase` antes de planejar (mecanismo de busca web é serviço externo novo e a superfície de SSRF é nova no codebase; decidir Serper.dev vs. cota do Places com números reais de volume).
-**Bloqueio**: precisa de conta e chave da Serper.dev da usuária antes de codar.
+**Depende de você**: confirmar a regra dos 30 dias de latitude/longitude e rodar a migração dos leads reais em produção depois de ver o resultado num ensaio (backup antes).
 
-### Phase 11: Fila "Ligar" no CRM
+### Phase 11: Cobrança endurecida
 
-**Goal**: Leads de mercado de ligação primeiro aparecem num filtro próprio no CRM, com telefone, roteiro e redes sociais à mão, e o resultado de cada ligação decide o próximo passo do lead.
+**Goal**: O Stripe é a fonte de verdade do estado da assinatura: webhook seguro, pagamento falho tratado, assinatura única, imposto e fatura corretos, e nenhuma falha silenciosa.
 **Depends on**: Phase 9
-**Requirements**: CALL-01, CALL-02, CALL-03
+**Requirements**: BILL-05, BILL-06, BILL-07, BILL-08, BILL-09
 **Success Criteria** (what must be TRUE):
-  1. Leads de mercados de ligação primeiro aparecem no filtro "Ligar" no CRM, com telefone, roteiro e links de redes sociais visíveis
-  2. A usuária registra o resultado da ligação: vai fechar avança o lead, não vai pede motivo, pediu por e-mail registra consentimento e libera o envio, não atendeu reagenda
-  3. Em lead da Alemanha, o card pede o motivo concreto da ligação (consentimento presumido, UWG §7) antes de liberar o roteiro
+  1. O webhook rejeita evento com timestamp fora de ±5 min ou assinatura inválida (comparação em tempo constante), provado por teste
+  2. Com pagamento atrasado ou falho, o app mostra aviso, restringe o uso depois do prazo de carência e volta ao normal quando o pagamento entra
+  3. Quem já assina não consegue abrir um segundo checkout; troca ou cancela o plano pelo portal do Stripe
+  4. O checkout calcula IVA, coleta VAT ID e nome da empresa, gera fatura válida, e recusa pessoa física
+  5. Depois do checkout há uma tela de sucesso; `APP_URL` ausente falha de forma visível (nunca cai em localhost); evento sem workspace ou com preço desconhecido deixa log de erro
 **Plans**: TBD
-**Research flag**: Não precisa de `/gsd:research-phase`, reaproveita `markLost` e `recordContactOptIn` já existentes e auditados; baixa complexidade nova.
+**Depende de você**: Stripe Tax ativado e configurado (registro de IVA/OSS), produtos e preços criados no Stripe, e a alta de autónoma ativa (bloqueia a fatura real).
 
-### Phase 12: Pipeline automático em modo rascunho, sem envio
+### Phase 12: Planos e custo por cliente
 
-**Goal**: Depois que a usuária seleciona um ou vários leads e aciona "Automatizar", o app confere o site, gera o preview, escreve a mensagem e escolhe o canal sozinho, mas ainda não envia nada de verdade; o pipeline sai comprovado estável antes de a última trava (envio automático) ser destravada.
+**Goal**: Os três planos existem com limites reais, cada chamada que custa dinheiro reserva cota antes, o teste grátis não renova e a Duda tem teto de gasto.
 **Depends on**: Phase 10, Phase 11
-**Requirements**: PIPE-01, PIPE-02, PIPE-03, PIPE-04
+**Requirements**: PLAN-01, PLAN-02, PLAN-03, PLAN-04, PLAN-05, PLAN-06, SCAL-02
 **Success Criteria** (what must be TRUE):
-  1. A usuária seleciona um ou vários leads e aciona "Automatizar"; sem outro clique, o app confere o site, gera o preview, escreve a mensagem e escolhe o canal
-  2. Cada lead em automação mostra a etapa atual e, se falhar, o erro e a opção de tentar de novo
-  3. O canal escolhido segue a regra do país: e-mail onde `canContactByEmail` permite, ligação em mercado opt-in com telefone, rede social quando for o único contato, "sem contato" quando não há nenhum
-  4. Mensagem com aviso da IA (dado não confirmado sobre o negócio) nunca sai sozinha, mesmo em mercado opt-out: vai para uma fila de revisão da usuária
+  1. Solo (EUR 29), Pro (EUR 59) e Agência (EUR 149) aparecem com limites de leads, gerações por IA e verificações definidos num único lugar do código, e iguais aos preços do Stripe
+  2. Gerar mensagem ou roteiro de ligação sem cota deixa o botão bloqueado, com aviso e link de upgrade; a cota é reservada antes de chamar a Anthropic; criar lead manual também consome cota
+  3. Quem se cadastra recebe um teste único de 25 leads e 25 gerações; criar outra conta ou workspace com a mesma pessoa não dá novo teste
+  4. A cota renova no ciclo de cobrança do Stripe; o uso e os limites aparecem no topo do app com aviso em 80% e 100%
+  5. Cada cliente tem teto diário de buscas no Google e de verificações; passar do teto global de segurança pausa as buscas no Google e avisa a Duda
 **Plans**: TBD
-**Research flag**: Não precisa de `/gsd:research-phase`, a orquestração usa só `scheduler.runAfter` e `cronJobs` nativos do Convex, já documentados com exemplo de código.
-**Bloqueio**: precisa de `ANTHROPIC_API_KEY` configurada em produção antes de codar a geração de mensagem (hoje ausente).
+**Depende de você**: `ANTHROPIC_API_KEY` em produção (e rotação da chave exposta em 2026-09-16); orçamento mensal máximo para o teto global; os três preços criados no Stripe (vêm da Fase 11).
 
-### Phase 13: Envio automático imediato (mercados opt-out) + teto diário
+### Phase 13: Remetente e envio pelo e-mail do cliente
 
-**Goal**: Nos mercados opt-out (GB/NL/IE/SE), o e-mail gerado pelo pipeline sai sozinho na hora, sem aprovação da usuária, respeitando um teto diário, um provedor apto a cold outreach B2B e um controle único para ligar/desligar tudo.
-**Depends on**: Phase 9, Phase 12
-**Requirements**: AUTO-01, AUTO-02, AUTO-03, AUTO-04, AUTO-05
+**Goal**: A mensagem sai com a identidade do cliente, não a da Duda, e o envio é um clique que abre o e-mail do próprio cliente depois de o servidor conferir as travas, sem o Osprano transmitir e-mail.
+**Depends on**: Phase 10
+**Requirements**: SEND-01, SEND-02, SEND-03, SEND-04, SEND-05, BASE-03
 **Success Criteria** (what must be TRUE):
-  1. Em GB/NL/IE/SE, lead com canal e-mail que passa em todas as travas recebe o e-mail automaticamente, na hora, sem aprovação da usuária
-  2. O envio automático respeita um teto diário por workspace; o que passa do teto sai só no dia seguinte
-  3. A usuária liga e desliga todo o envio automático com um único controle na tela
-  4. O envio sai por um provedor cuja política aceita cold outreach B2B (decidido na pesquisa desta fase), não pela Resend
-  5. Um e-mail devolvido ou denunciado como spam marca o lead e suprime o endereço automaticamente, via webhook de entrega do provedor, sem exigir mudança de DNS
+  1. Sem perfil de remetente (nome, empresa, endereço, e-mail de resposta) o cliente não gera nem envia mensagem; assinatura, rodapé e prompt da IA usam os dados dele
+  2. "Enviar" abre a mensagem pronta no Gmail, Outlook ou app padrão, ou copia o texto; nenhum e-mail do cliente passa por provedor do Osprano
+  3. Antes de abrir ou copiar, o servidor confere `canContactByEmail`, supressão e mercado na hora, e o corpo leva sempre o rodapé de opt-out com link de descadastro e a fonte do dado
+  4. Marcar como enviada move o lead para Abordado e registra no Histórico
+  5. Quem se descadastra pelo link de um cliente fica suprimido para todos os clientes; a Noruega aparece como mercado de ligação primeiro com "validação jurídica pendente"
 **Plans**: TBD
-**Research flag**: Sim, rodar `/gsd:research-phase` antes de planejar (decisão do provedor de envio é gap explícito da pesquisa anterior, além de SPF/DKIM/DMARC do domínio de envio e auditoria retroativa da heurística `isEmailable` antes de tirar humano do loop).
-**Bloqueio**: precisa da decisão do provedor de envio automático (a Resend proíbe cold outreach na própria AUP); não começar a codar antes dessa decisão.
+**Depende de você**: nada externo; a Noruega só sai de "pendente" com validação jurídica sua.
 
-### Phase 14: Follow-up automático por email
+### Phase 14: Prospecção assistida: verificação, ligação e preparação
 
-**Goal**: Lead que recebeu e-mail automático e não respondeu recebe um único follow-up automático após 4 dias, cancelado na hora se qualquer trava de compliance disparar entre o envio original e o follow-up.
-**Depends on**: Phase 13
-**Requirements**: FUP-01, FUP-02
+**Goal**: O cliente seleciona leads e o app confere o site, acha redes sociais, gera o preview, escreve a mensagem e escolhe o canal, deixando tudo numa fila de revisão; nada sai sem o clique dele.
+**Depends on**: Phase 10, Phase 12, Phase 13
+**Requirements**: VERIF-01, VERIF-02, VERIF-03, VERIF-04, CALL-01, CALL-02, CALL-03, PIPE-01, PIPE-02, PIPE-03, PIPE-04
 **Success Criteria** (what must be TRUE):
-  1. Lead que recebeu e-mail automático e não foi marcado "respondeu" recebe um único follow-up automático após 4 dias, só em mercado onde e-mail é permitido
-  2. O follow-up é cancelado se o lead respondeu, devolveu, denunciou, se descadastrou, mudou de etapa ou foi perdido; todas as travas são conferidas de novo no momento do envio, nunca a partir de um campo cacheado
+  1. Leads selecionados são conferidos na web: quem tem site de verdade sai do fluxo como "já tem site" com o link como prova; Instagram e Facebook encontrados aparecem no lead, com mensagem pronta para copiar
+  2. A régua de "tem site" é a mesma do resto do produto (`classifyWebsite`) e o servidor nunca busca URL de terceiro sem validar o host
+  3. O filtro "Ligar" no CRM lista leads de mercados de ligação primeiro com telefone, roteiro e redes sociais; o resultado da ligação (vai fechar, não vai com motivo, pediu e-mail com consentimento, não atendeu reagenda) decide o próximo passo; na Alemanha o card pede o motivo concreto antes do roteiro
+  4. "Preparar" em um ou vários leads confere o site, gera o preview, escreve a mensagem e escolhe o canal pela regra do país, reservando cota em cada etapa; cada lead mostra a etapa atual e, se falhar, o erro e "tentar de novo"
+  5. Tudo cai numa fila de revisão; mensagem com aviso da IA (dado não confirmado) vem destacada; nada é enviado sem o clique do cliente
 **Plans**: TBD
-**Research flag**: Sim, rodar `/gsd:research-phase` antes de planejar (escopo do webhook de bounce/denúncia do provedor de envio escolhido na Fase 13, e o formato de verificação de assinatura, que difere do padrão Stripe já usado).
+**Research flag**: rodar `/gsd:research-phase` para a parte de verificação (busca web é serviço externo novo e a superfície de SSRF é nova).
+**Depende de você**: conta e chave Serper.dev (VERIF); `ANTHROPIC_API_KEY` em produção (PIPE, já pedida na Fase 12).
+
+### Phase 15: Primeiro uso, operação e idioma
+
+**Goal**: Quem chega sabe o que fazer, a Duda enxerga erros e clientes e consegue suspender abuso, e o produto inteiro funciona em inglês e português.
+**Depends on**: Phase 13, Phase 14
+**Requirements**: ONB-01, ONB-02, OPS-01, OPS-02, SCAL-03, I18N-01, I18N-02
+**Success Criteria** (what must be TRUE):
+  1. No primeiro acesso o cliente vê as boas-vindas com os passos (perfil do remetente, primeira busca, primeiro site, primeira mensagem), o checklist some ao terminar, e cada tela vazia explica o que fazer com o botão da próxima ação
+  2. Erro do Next ou do Convex em produção chega à Duda com alerta, sem PII de prospect no log
+  3. A Duda tem uma visão interna dos clientes (plano, uso, status, último acesso) e suspende uma conta abusiva, que passa a ver a tela de conta suspensa
+  4. Abrir o mesmo preview repetidamente não infla a contagem de aberturas (rate-limit/dedupe) e `getBySlug` não devolve o token
+  5. Landing, páginas legais, app logado e e-mails do sistema existem em inglês e português, seguem o navegador e podem ser trocados; a mensagem ao prospect continua no idioma do mercado do lead
+**Plans**: TBD
+**Depende de você**: aprovação de dependência nova para monitor de erros (OPS-01) e para biblioteca de i18n (I18N-01); conta no serviço de monitoramento escolhido; revisão do texto em inglês das páginas legais pelo advogado.
+
+### Phase 16: Portão de lançamento: cobrança ponta a ponta
+
+**Goal**: Antes de abrir para clientes, o fluxo de dinheiro inteiro é provado em teste e em produção com um pagamento real reembolsado.
+**Depends on**: Phase 15 (e todas as anteriores)
+**Requirements**: BILL-10
+**Success Criteria** (what must be TRUE):
+  1. Em modo teste do Stripe, assinar, trocar de plano, cancelar e falhar um pagamento levam o workspace ao estado certo, com o webhook processando cada evento
+  2. Em produção (modo live), um pagamento real é feito, gera fatura com IVA e VAT ID corretos, o plano muda no app, e o valor é reembolsado
+**Plans**: TBD
+**Depende de você**: Stripe em modo live com preços e Stripe Tax ativos, alta de autónoma concluída, e um cartão para o pagamento real de teste.
