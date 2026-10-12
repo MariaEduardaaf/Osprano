@@ -651,6 +651,7 @@ export const PIPELINE_STAGES: { id: Stage; label: string }[] = [
 // ---------------------------------------------------------------------------
 
 export type Plan = "free" | "pro" | "agency";
+export type UsageKind = "leads" | "sites" | "details";
 
 export interface PlanDef {
   id: Plan;
@@ -658,6 +659,7 @@ export interface PlanDef {
   price: number; // EUR / month
   leadsPerMonth: number;
   sitesPerMonth: number;
+  detailsPerMonth: number; // consultas ao Google Places (Place Details) por mês; Fase 12 recalibra
   features: string[];
 }
 
@@ -668,6 +670,7 @@ export const PLANS: Record<Plan, PlanDef> = {
     price: 0,
     leadsPerMonth: 60,
     sitesPerMonth: 2,
+    detailsPerMonth: 25,
     features: ["60 leads/mês", "2 sites/mês", "Digital Presence Score", "Preview rastreado"],
   },
   pro: {
@@ -676,6 +679,7 @@ export const PLANS: Record<Plan, PlanDef> = {
     price: 49,
     leadsPerMonth: 2000,
     sitesPerMonth: 50,
+    detailsPerMonth: 300,
     features: ["2.000 leads/mês", "50 sites/mês", "Todos os mercados", "Abordagem escrita por IA"],
   },
   agency: {
@@ -684,11 +688,13 @@ export const PLANS: Record<Plan, PlanDef> = {
     price: 149,
     leadsPerMonth: 10000,
     sitesPerMonth: 500,
+    detailsPerMonth: 400,
     features: ["10.000 leads/mês", "500 sites/mês", "Tudo do Pro"],
   },
 };
 
-export function planLimit(plan: Plan, kind: "leads" | "sites"): number {
+export function planLimit(plan: Plan, kind: UsageKind): number {
+  if (kind === "details") return PLANS[plan].detailsPerMonth;
   return kind === "leads" ? PLANS[plan].leadsPerMonth : PLANS[plan].sitesPerMonth;
 }
 

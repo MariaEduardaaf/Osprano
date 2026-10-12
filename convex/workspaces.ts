@@ -18,7 +18,12 @@ export const current = query({
       plan,
       leadsUsed: ws?.leadsUsed ?? 0,
       sitesUsed: ws?.sitesUsed ?? 0,
-      limits: { leads: PLANS[plan].leadsPerMonth, sites: PLANS[plan].sitesPerMonth },
+      detailsUsed: ws?.detailsUsed ?? 0,
+      limits: {
+        leads: PLANS[plan].leadsPerMonth,
+        sites: PLANS[plan].sitesPerMonth,
+        details: PLANS[plan].detailsPerMonth,
+      },
       subscriptionStatus: ws?.subscriptionStatus ?? null,
       acceptedVersion: ws?.termsVersion ?? null,
       acceptedAt: ws?.termsAcceptedAt ?? null,
@@ -41,7 +46,7 @@ export const acceptTerms = mutation({
 export const reserve = internalMutation({
   args: {
     orgId: v.string(),
-    kind: v.union(v.literal("leads"), v.literal("sites")),
+    kind: v.union(v.literal("leads"), v.literal("sites"), v.literal("details")),
     count: v.number(),
   },
   handler: async (ctx, args) => {
@@ -53,7 +58,7 @@ export const reserve = internalMutation({
 export const refund = internalMutation({
   args: {
     orgId: v.string(),
-    kind: v.union(v.literal("leads"), v.literal("sites")),
+    kind: v.union(v.literal("leads"), v.literal("sites"), v.literal("details")),
     count: v.number(),
   },
   handler: async (ctx, args) => {
