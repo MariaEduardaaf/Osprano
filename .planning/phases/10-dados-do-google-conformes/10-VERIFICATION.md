@@ -90,3 +90,18 @@ O código cumpre as cinco verdades de conformidade e a paginação. O que impede
 
 _Verificado: 2026-10-12_
 _Verificador: Claude (gsd-verifier)_
+
+## Conferência no navegador (2026-10-12, deployment DEV)
+
+Conta de teste do Clerk dev, aceite dos termos, leads de fixture semeados na org de teste com `seedDevFixtures` e migrados com `migrateAll` (dev).
+
+| Item | Resultado |
+|------|-----------|
+| CRM sem dado do Google | ✓ leads do Google não confirmados aparecem como "Negócio do Google · categoria · cidade"; confirmados/OSM/manual com nome |
+| Gaveta do lead | ✓ cartão "Google Maps · ao vivo, não salvo"; formulário "Dados do negócio" vazio com "Onde você confirmou?" obrigatório (sem opção de copiar do Google); botão travado sem origem |
+| Confirmação | ✓ salva nome/telefone digitados com `confirmation.via = "call"`; o nome passa a aparecer no CRM; nenhum campo do Google gravado nos outros leads |
+| Estorno de cota | ✓ consulta com place_id de fixture inexistente devolveu "Lead não encontrado" e `detailsUsed` ficou 0 |
+| Mudar estágio no CRM (listCrm) | ✓ lead confirmado foi para Abordado e a coluna atualizou |
+| Busca real no Google | ⚠ 3 buscas (padaria Bristol, manicure Bristol, barbearia Londres) mostraram sempre "Encontrados 3 · 3 descartados (já têm site)", inclusive com máximo 15/20; não deu para ver um lead real do Google com dados ao vivo. Não investigado a fundo (os logs do dev não mostraram as chamadas); conferir na primeira busca real em produção se a contagem varia |
+| Botão "Carregar dados do Google desta página" | ✗ não testado (precisa de lead real do Google na lista) |
+| Limpeza | ✓ conta de teste apagada pela própria tela de exclusão; 0 linhas da org |
