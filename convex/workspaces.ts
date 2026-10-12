@@ -1,7 +1,8 @@
-import { query, internalMutation, internalQuery } from "./_generated/server";
+import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
-import { requireOrgId } from "./model/tenant";
-import { getWorkspace, ensureWorkspace, reserveUsage, refundUsage } from "./model/workspace";
+import { requireOrgId, isDemoEnabled } from "./model/tenant";
+import { getWorkspace, ensureWorkspace, reserveUsage, refundUsage, acceptTermsFor } from "./model/workspace";
+import { LEGAL_VERSION, isAccepted } from "./lib/legal";
 import { PLANS } from "./lib/domain";
 
 const planV = v.union(v.literal("free"), v.literal("pro"), v.literal("agency"));
@@ -19,7 +20,20 @@ export const current = query({
       sitesUsed: ws?.sitesUsed ?? 0,
       limits: { leads: PLANS[plan].leadsPerMonth, sites: PLANS[plan].sitesPerMonth },
       subscriptionStatus: ws?.subscriptionStatus ?? null,
+      acceptedVersion: ws?.termsVersion ?? null,
+      acceptedAt: ws?.termsAcceptedAt ?? null,
+      requiredVersion: LEGAL_VERSION,
+      acceptanceOk: (orgId === "demo" && isDemoEnabled()) || isAccepted(ws),
     };
+  },
+});
+
+/** Registra o aceite de Termos + DPA + uso profissional (só a versão vigente). */
+export const acceptTerms = mutation({
+  args: { version: v.string(), professionalUse: v.literal(true) },
+  handler: async (ctx, { version }) => {
+    const orgId = await requireOrgId(ctx);
+    await acceptTermsFor(ctx, orgId, version);
   },
 });
 
