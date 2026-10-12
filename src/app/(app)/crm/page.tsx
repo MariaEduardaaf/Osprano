@@ -26,6 +26,7 @@ import { OsmAttribution } from "@/components/osm-attribution";
 import { useNow } from "@/lib/use-now";
 import {
   PIPELINE_STAGES,
+  CRM_LIMIT,
   canContactByEmail,
   nextActionOf,
   actionStatus,
@@ -75,7 +76,7 @@ const FILTERS: { id: string; label: string; fn: (l: Doc<"leads">, now: number) =
 ];
 
 export default function CrmPage() {
-  const leads = useQuery(api.leads.list, {});
+  const leads = useQuery(api.leads.listCrm, {});
   const now = useNow(); // "hoje" é o dia civil do navegador, atualizado a cada 60 s
   const [filter, setFilter] = useState("all");
   const [q, setQ] = useState("");
@@ -90,10 +91,10 @@ export default function CrmPage() {
 
   // optimistic move: the card jumps immediately, before the server acks
   const setStage = useMutation(api.leads.setStage).withOptimisticUpdate((store, { id, stage }) => {
-    const cur = store.getQuery(api.leads.list, {});
+    const cur = store.getQuery(api.leads.listCrm, {});
     if (!cur) return;
     store.setQuery(
-      api.leads.list,
+      api.leads.listCrm,
       {},
       cur.map((l) => (l._id === id ? { ...l, stage, stageUpdatedAt: Date.now() } : l)),
     );
@@ -113,8 +114,8 @@ export default function CrmPage() {
   const active = FILTERS.find((f) => f.id === filter) ?? FILTERS[0];
   const needle = q.trim().toLowerCase();
   const cmp = (SORTS.find((s) => s.id === sort) ?? SORTS[0]).cmp;
-  // descoberta (saved=false) fica só na tela de Leads
-  const crmLeads = (leads ?? []).filter((l) => l.saved !== false);
+  // listCrm já exclui a descoberta (saved=false)
+  const crmLeads = leads ?? [];
   // A faixa Hoje sai de crmLeads, ANTES de busca, filtro e ordenação: filtrar o Kanban não a muda.
   const todayItems: TodayItem[] = crmLeads
     .flatMap((lead) => {
@@ -134,7 +135,9 @@ export default function CrmPage() {
     .slice()
     .sort(cmp);
 
-  const openLead = openId ? crmLeads.find((l) => l._id === openId) ?? null : null;
+  const loadedOpen = openId ? crmLeads.find((l) => l._id === openId) ?? null : null;
+  const fetchedOpen = useQuery(api.leads.get, openId && !loadedOpen ? { id: openId } : "skip");
+  const openLead = loadedOpen ?? fetchedOpen ?? null;
   const lostLead = lostFor ? crmLeads.find((l) => l._id === lostFor) ?? null : null;
   const openLeadDetail = (id: Id<"leads">, opts?: { focusNextAction?: boolean }) => {
     setOpenId(id);
@@ -222,6 +225,12 @@ export default function CrmPage() {
           </span>
         )}
       </div>
+
+      {leads && leads.length >= CRM_LIMIT && (
+        <p className="mb-3 text-xs text-muted">
+          Mostrando os {CRM_LIMIT.toLocaleString("pt-BR")} leads mais recentes do CRM.
+        </p>
+      )}
 
       {leads === undefined ? (
         <p className="text-sm text-faint">Carregando…</p>
