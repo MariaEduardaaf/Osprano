@@ -2,7 +2,7 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Pronto pra vender
-status: ready-to-plan
+status: awaiting-production-gate
 stopped_at: Roadmap do milestone v1.3 "Pronto pra vender" criado (Fases 9-16, 48/48 requisitos mapeados); Fase 9 pronta para planejar.
 last_updated: "2026-10-12T00:00:00.000Z"
 progress:
@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-10-12)
 
 ## Current Position
 
-Phase: 10 de 16 (Dados do Google conformes), pronta para planejar. Fase 9 concluída em 2026-10-12 (código + conferência no dev; cancelamento Stripe fica para Fase 11/16)
-Plan: —
-Status: Ready to plan
+Phase: 10 de 16 (Dados do Google conformes): código completo e conferido no dev (planos 10-01..10-11; 468 testes, tsc, eslint, next build; ensaio da migração no dev idempotente)
+Plan: 12 of 12, portão de produção (backup, deploy, migração dos leads reais) aguardando decisão da Duda
+Status: Awaiting production decision
 Last activity: 2026-10-12 — Roadmap do v1.3 "Pronto pra vender" criado (Fases 9-16; substitui "Automação da prospecção", Fases 9-14 nunca iniciadas)
 
 Contexto de produção em 2026-09-26: Google Places ligada em prod (projeto GCP
