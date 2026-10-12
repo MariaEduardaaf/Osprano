@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useAction, useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, usePaginatedQuery, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import {
@@ -13,12 +13,15 @@ import {
   canContactByEmail,
   leadCategoryMatchesSearch,
 } from "@convex/lib/domain";
+import { isGoogleLead } from "@convex/lib/googleData";
+import { DETAILS_BATCH_MAX } from "@convex/lib/placesFields";
 import { MdOutlineSearch, MdOutlineSend, MdOutlineGavel, MdOutlineFilterAltOff } from "react-icons/md";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { LeadCard } from "@/components/lead-card";
 import { GeneratePreviewButton } from "@/components/generate-preview-button";
 import { OsmAttribution } from "@/components/osm-attribution";
 import { errorMessage } from "@/lib/errors";
+import { rememberGooglePlaces, useGooglePlaceMap, useLoadGooglePlaces } from "@/lib/use-google-places";
 
 /** OPTIN-02: cada aba controla o select de países, o filtro da lista e a variante do card. */
 const TABS = [
@@ -51,7 +54,15 @@ export default function LeadsPage() {
   const searchPlaces = useAction(api.places.search);
   const searchOsm = useAction(api.osm.search);
   const saveMany = useMutation(api.leads.saveMany);
-  const leads = useQuery(api.leads.list, {});
+  const { results, status, loadMore } = usePaginatedQuery(
+    api.leads.listForDiscovery,
+    { countryCode: showAll ? undefined : country, regime: tab },
+    { initialNumItems: 24 },
+  );
+  const googleMap = useGooglePlaceMap();
+  const loadMany = useLoadGooglePlaces();
+  const ws = useQuery(api.workspaces.current);
+  const loaded = status !== "LoadingFirstPage";
 
   const markets = tab === "call" ? OPT_IN_MARKETS : LAUNCH_MARKETS;
   // OPTIN-06: o aviso jurídico é DERIVADO só do estado do mercado selecionado
@@ -60,15 +71,16 @@ export default function LeadsPage() {
   // mercado "pending" que entrasse em LAUNCH_MARKETS teria o aviso suprimido justo na aba de email.
   const legalReviewMarket =
     MARKETS[country]?.legalReview === "pending" ? MARKETS[country] : null;
-  // Filtro client-side por regime — sem query nova (leads.list já traz todos os leads da org).
-  const regimeLeads = (leads ?? []).filter((l) =>
+  // O servidor pagina por país/regime; o filtro de regime fica aqui também porque com país
+  // escolhido a query não filtra por regime (o país já pertence a um só).
+  const regimeLeads = results.filter((l) =>
     tab === "call" ? OPT_IN_MARKETS.includes(l.countryCode) : !OPT_IN_MARKETS.includes(l.countryCode),
   );
   // FILTRO-01: a lista segue o formulário de busca (país sempre; cidade e categoria só quando
   // preenchidas) pra não misturar cidades/categorias antigas com a busca atual. Categoria casa
   // solto (leadCategoryMatchesSearch): o Google Places às vezes devolve um primaryType diferente
   // do termo buscado. "Mostrar todos" desliga este filtro, sem tocar no regime da aba.
-  const shownLeads = showAll
+  const filtered = showAll
     ? regimeLeads
     : regimeLeads.filter((l) => {
         if (l.countryCode !== country) return false;
@@ -81,6 +93,11 @@ export default function LeadsPage() {
         if (category && !leadCategoryMatchesSearch(l.category, category)) return false;
         return true;
       });
+  const shownLeads = [...filtered].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  // Só a página carregada, até 24; nada de consulta por linha.
+  const missing = shownLeads
+    .filter((l) => isGoogleLead(l) && !l.confirmation && !googleMap.has(l._id))
+    .slice(0, DETAILS_BATCH_MAX);
   const allSelected = shownLeads.length > 0 && shownLeads.every((l) => selected.has(l._id));
   // ODbL: a atribuição aparece sempre que há dado do OSM na tela, não só com a fonte selecionada.
   const showOsmAttribution = source === "osm" || shownLeads.some((l) => l.source === "osm");
@@ -112,6 +129,23 @@ export default function LeadsPage() {
     setSelected(new Set());
   }
 
+  async function loadGoogleData() {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const r = await loadMany(missing.map((l) => l._id));
+      setMsg(
+        `${r.loaded} carregados do Google Maps` +
+          (r.gone > 0 ? ` · ${r.gone} não existem mais` : "") +
+          (r.failed > 0 ? ` · ${r.failed} falharam` : ""),
+      );
+    } catch (err) {
+      setMsg(errorMessage(err, "Falha ao carregar dados do Google"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function onSearch(e: React.FormEvent) {
     e.preventDefault();
     if (!category.trim() || !city.trim()) return;
@@ -131,7 +165,9 @@ export default function LeadsPage() {
         res = await searchOsm(params);
       } else {
         try {
-          res = await searchPlaces(params);
+          const placesRes = await searchPlaces(params);
+          rememberGooglePlaces(placesRes.shown);
+          res = placesRes;
         } catch (err) {
           // Sem chave do Google: cai pro OpenStreetMap em vez de deixar a usuária sem lead.
           if (!errorMessage(err, "").includes("GOOGLE_PLACES_API_KEY")) throw err;
@@ -150,7 +186,7 @@ export default function LeadsPage() {
       const droppedText =
         res.droppedWithSite > 0 ? ` · ${res.droppedWithSite} descartados (já têm site)` : "";
       setMsg(
-        `${prefix}${foundText} · adicionados ${res.inserted}${droppedText}. Pontuando em segundo plano…`,
+        `${prefix}${foundText} · adicionados ${res.inserted}${droppedText}.${usedOsm ? " Pontuando em segundo plano…" : ""}`,
       );
     } catch (err) {
       setMsg(errorMessage(err, "Falha na busca"));
@@ -310,7 +346,7 @@ export default function LeadsPage() {
         </div>
       )}
 
-      {leads !== undefined && shownLeads.length > 0 && (
+      {loaded && shownLeads.length > 0 && (
         <div className="mb-4 flex items-center gap-4 font-mono text-[11px] uppercase tracking-wider text-faint">
           <span className="text-foreground">{shownLeads.length} leads</span>
           {tab === "call" ? (
@@ -337,6 +373,24 @@ export default function LeadsPage() {
             />
             Selecionar todos
           </label>
+          {missing.length > 0 && (
+            <div className="flex flex-1 flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={loadGoogleData}
+                disabled={busy}
+                title="Busca nome e endereço no Google Maps. Cada negócio conta 1 consulta."
+                className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-muted transition-colors hover:border-border-strong hover:text-foreground disabled:opacity-40"
+              >
+                Carregar dados do Google desta página ({missing.length})
+              </button>
+              {ws && (
+                <span className="text-[11px] text-faint">
+                  Consultas ao Google este mês: {ws.detailsUsed} de {ws.limits.details}
+                </span>
+              )}
+            </div>
+          )}
           <button
             onClick={sendToCrm}
             disabled={selected.size === 0}
@@ -348,7 +402,7 @@ export default function LeadsPage() {
         </div>
       )}
 
-      {leads === undefined ? (
+      {!loaded ? (
         <p className="text-sm text-faint">Carregando…</p>
       ) : shownLeads.length === 0 ? (
         tab === "call" ? (
@@ -382,6 +436,19 @@ export default function LeadsPage() {
           })}
         </div>
       )}
+
+      {status === "CanLoadMore" && (
+        <div className="mt-5 flex justify-center">
+          <button
+            type="button"
+            onClick={() => loadMore(24)}
+            className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-muted transition-colors hover:border-border-strong hover:text-foreground"
+          >
+            Carregar mais
+          </button>
+        </div>
+      )}
+      {status === "LoadingMore" && <p className="mt-5 text-center text-sm text-faint">Carregando…</p>}
     </>
   );
 }
