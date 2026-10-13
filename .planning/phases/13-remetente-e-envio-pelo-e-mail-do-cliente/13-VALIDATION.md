@@ -51,6 +51,7 @@ created: 2026-10-13
 | 13-03-03 | 03 | 1 | BASE-03, SEND-03 | unit (puro) | `node --experimental-strip-types --test tests/domain.test.ts tests/outreach-lang.test.ts tests/landing-honesty.test.ts` | ✅ | ⬜ pending |
 | 13-04-01 | 04 | 2 | SEND-02, SEND-03, SEND-04 | estático (ordem dos portões) | `node --experimental-strip-types --test tests/send-path.test.ts && ./node_modules/.bin/tsc --noEmit -p convex` | ❌ W0 (criado na própria tarefa, TDD) | ⬜ pending |
 | 13-04-02 | 04 | 2 | SEND-01, SEND-02 | estático + unit | `node --experimental-strip-types --test tests/send-path.test.ts tests/env.test.ts tests/prospect-lang.test.ts tests/compliance.test.ts` | ✅ (após 13-04-01) | ⬜ pending |
+| 13-04-03 | 04 | 2 | SEND-02 (WhatsApp desligado) | estático (flag antes de fetch) | `node --experimental-strip-types --test tests/send-path.test.ts && ./node_modules/.bin/tsc --noEmit -p convex && ./node_modules/.bin/tsc --noEmit` | ✅ (após 13-04-01) | ⬜ pending |
 | 13-05-01 | 05 | 3 | SEND-01, SEND-02 | typecheck + lint | `./node_modules/.bin/tsc --noEmit && ./node_modules/.bin/eslint src/components/outreach-composer.tsx` | ✅ | ⬜ pending |
 | 13-05-02 | 05 | 3 | SEND-02, SEND-04 | full suite | full suite command | ✅ | ⬜ pending |
 | 13-06-01 | 06 | 4 | todos | full suite | full suite command | ✅ | ⬜ pending |
@@ -78,6 +79,8 @@ Limite conhecido: funções Convex com `requireOrgId` e `.filter()` (ex.: `email
 | Marquei como enviada aparece no Histórico e move para Abordado | SEND-04 | Fluxo de UI com dados reais | Plano 13-06, item 6 |
 | Noruega na aba Ligação primeiro com "validação jurídica pendente" | BASE-03 | Visual | Plano 13-06, item 8 |
 | Bloqueio sem perfil na tela | SEND-01 | Precisa de conta sem perfil | Plano 13-06, item 9 |
+| Follow-up de WhatsApp abre o WhatsApp da cliente (wa.me) e não envia pelo Osprano | SEND-02 | Depende do app/web do WhatsApp | Plano 13-06, item 10 |
+| Tamanho real das URLs de composição de um e-mail ES e DE versus `COMPOSE_URL_MAX` = 6000 | SEND-02 | Precisa de mensagem real gerada | Plano 13-06, item 11 |
 
 ---
 

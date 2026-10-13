@@ -314,7 +314,7 @@ Plans:
 - [ ] 13-01-PLAN.md: perfil de remetente: lib, schema, get/save, aba Remetente em Ajustes, assinatura do DM (wave 1)
 - [ ] 13-02-PLAN.md: rodapé final com fonte do dado, links Gmail/Outlook/mailto, prompt com nome e empresa do cliente (wave 1)
 - [ ] 13-03-PLAN.md: supressão global, purge preserva opt-out, Noruega em ligação primeiro (wave 1)
-- [ ] 13-04-PLAN.md: servidor: prepareSend, markSent só preparado, perfil obrigatório na IA, Resend de cliente desligado (wave 2)
+- [ ] 13-04-PLAN.md: servidor: prepareSend, markSent só preparado, perfil obrigatório na IA, Resend e WhatsApp de cliente desligados (wave 2)
 - [ ] 13-05-PLAN.md: composer: Enviar abre no e-mail da cliente, Copiar, Marquei como enviada (wave 3)
 - [ ] 13-06-PLAN.md: portões completos e conferência da Duda no navegador (wave 4, checkpoint)
 **Depende de você**: nada externo; a Noruega só sai de "pendente" com validação jurídica sua.
