@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/sidebar";
 import { AcceptanceGate } from "@/components/legal/acceptance-gate";
+import { UsageBar } from "@/components/usage-bar";
 import { LegalLinks } from "@/components/legal/legal-links";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -8,6 +9,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="app-shell flex h-dvh">
         <Sidebar />
         <main className="flex-1 overflow-auto p-6">
+          <UsageBar />
           <div className="animate-rise">{children}</div>
           <footer className="mt-12 border-t border-border pt-6">
             <LegalLinks inline />
