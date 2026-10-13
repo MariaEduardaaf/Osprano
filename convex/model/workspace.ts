@@ -1,6 +1,6 @@
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 import type { Doc } from "../_generated/dataModel";
-import { limitFor, type UsageKind } from "../lib/domain.ts";
+import { dailyLimitFor, dayKey, limitFor, planOf, PLANS, type DailyKind, type MonthlyKind, type UsageKind } from "../lib/domain.ts";
 import { userError } from "../lib/errors.ts";
 import { isAccepted, LEGAL_VERSION } from "../lib/legal.ts";
 import { isDemoEnabled } from "./tenant.ts";
@@ -31,11 +31,19 @@ export async function ensureWorkspace(ctx: MutationCtx, orgId: string): Promise<
   return ws;
 }
 
-/** Ensure the workspace exists and reset monthly usage if the period rolled over. */
+/** Ensure the workspace exists, reset daily counters on a new UTC day and, for paid plans,
+ *  monthly usage when the period rolled over. */
 export async function ensureFresh(ctx: MutationCtx, orgId: string): Promise<Doc<"workspaces">> {
   let ws = await ensureWorkspace(ctx, orgId);
-  if (Date.now() - ws.periodStart > MONTH_MS) {
-    await ctx.db.patch(ws._id, { leadsUsed: 0, sitesUsed: 0, detailsUsed: 0, periodStart: Date.now() });
+  const now = Date.now();
+  const patch: Partial<Doc<"workspaces">> = {};
+  if (ws.dayKey !== dayKey(now)) Object.assign(patch, { dayKey: dayKey(now), searchesToday: 0, verificationsToday: 0 });
+  // O teste não renova (PLAN-04): só planos pagos zeram na virada.
+  if (planOf(ws.plan) !== "trial" && now - ws.periodStart > MONTH_MS) {
+    Object.assign(patch, { leadsUsed: 0, sitesUsed: 0, detailsUsed: 0, aiUsed: 0, verificationsUsed: 0, periodStart: now });
+  }
+  if (Object.keys(patch).length) {
+    await ctx.db.patch(ws._id, patch);
     const fresh = await ctx.db.get(ws._id);
     if (fresh) ws = fresh;
   }
@@ -63,10 +71,39 @@ export async function acceptTermsFor(ctx: MutationCtx, orgId: string, version: s
   await ctx.db.patch(ws._id, { termsVersion: version, termsAcceptedAt: Date.now(), professionalUse: true });
 }
 
-const FIELD = { leads: "leadsUsed", sites: "sitesUsed", details: "detailsUsed" } as const;
-const usedOf = (ws: Doc<"workspaces">, kind: UsageKind) => ws[FIELD[kind]] ?? 0;
+const MONTH_FIELD = {
+  leads: "leadsUsed",
+  sites: "sitesUsed",
+  details: "detailsUsed",
+  ai: "aiUsed",
+  verifications: "verificationsUsed",
+} as const;
+const DAY_FIELD = { searches: "searchesToday", verifications: "verificationsToday" } as const;
+const UNIT: Record<UsageKind, string> = {
+  leads: "leads",
+  sites: "sites",
+  details: "consultas ao Google",
+  ai: "gerações por IA",
+  verifications: "verificações",
+  searches: "buscas no Google",
+};
 
-/** Reserve `count` units of usage; throws (with an upgrade hint) if over the plan limit. */
+const monthField = (kind: UsageKind) => (kind in MONTH_FIELD ? MONTH_FIELD[kind as MonthlyKind] : undefined);
+const dayField = (kind: UsageKind) => (kind in DAY_FIELD ? DAY_FIELD[kind as DailyKind] : undefined);
+
+function limitMessage(ws: Doc<"workspaces">, kind: UsageKind, limit: number, daily: boolean): string {
+  const plan = planOf(ws.plan);
+  if (plan === "trial" && ws.trialSpent === true) {
+    return "Você já usou o teste grátis em outra conta. Veja os planos em Planos.";
+  }
+  if (daily) {
+    return `Limite diário atingido (${limit} ${UNIT[kind]}/dia). Tente amanhã ou veja os planos em Planos.`;
+  }
+  if (plan === "trial") return `Seu teste grátis acabou (${limit} ${UNIT[kind]}). Veja os planos em Planos.`;
+  return `Limite do plano ${PLANS[plan].name} atingido (${limit} ${UNIT[kind]}/mês). Veja os planos em Planos.`;
+}
+
+/** Reserva `count` unidades (mensal e/ou diária conforme o tipo); lança se passar do limite. */
 export async function reserveUsage(
   ctx: MutationCtx,
   orgId: string,
@@ -78,13 +115,22 @@ export async function reserveUsage(
   }
   const ws = await ensureFresh(ctx, orgId);
   assertAccepted(ws, orgId);
-  const used = usedOf(ws, kind);
-  const limit = limitFor(ws, kind);
-  if (used + count > limit) {
-    const unit = kind === "details" ? "consultas ao Google" : kind;
-    throw userError(`Limite do plano ${ws.plan} atingido (${limit} ${unit}/mês). Faça upgrade em Planos.`);
+  const patch: Record<string, number> = {};
+  const mf = monthField(kind);
+  if (mf) {
+    const used = ws[mf] ?? 0;
+    const limit = limitFor(ws, kind as MonthlyKind);
+    if (used + count > limit) throw userError(limitMessage(ws, kind, limit, false));
+    patch[mf] = used + count;
   }
-  await ctx.db.patch(ws._id, { [FIELD[kind]]: used + count });
+  const df = dayField(kind);
+  if (df) {
+    const used = ws[df] ?? 0;
+    const limit = dailyLimitFor(ws, kind as DailyKind);
+    if (used + count > limit) throw userError(limitMessage(ws, kind, limit, true));
+    patch[df] = used + count;
+  }
+  await ctx.db.patch(ws._id, patch);
 }
 
 /** Estorna `count` unidades de uso; NUNCA deixa o contador negativo (clamp em 0). */
@@ -96,5 +142,9 @@ export async function refundUsage(
 ): Promise<void> {
   if (count <= 0) return;
   const ws = await ensureFresh(ctx, orgId);
-  await ctx.db.patch(ws._id, { [FIELD[kind]]: Math.max(0, usedOf(ws, kind) - count) });
+  const patch: Record<string, number> = {};
+  for (const f of [monthField(kind), dayField(kind)]) {
+    if (f) patch[f] = Math.max(0, (ws[f] ?? 0) - count);
+  }
+  await ctx.db.patch(ws._id, patch);
 }

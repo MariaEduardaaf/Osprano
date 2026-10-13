@@ -43,11 +43,12 @@ test("refund nunca fica negativo", async () => {
 });
 
 test("virada do mês zera tudo", async () => {
-  const { ctx, row } = setup({ leadsUsed: 5, sitesUsed: 1, detailsUsed: 9, periodStart: Date.now() - 31 * 864e5 });
+  const { ctx, row } = setup({ plan: "solo", leadsUsed: 5, sitesUsed: 1, detailsUsed: 9, aiUsed: 4, periodStart: Date.now() - 31 * 864e5 });
   await ensureFresh(ctx, "A");
   assert.equal(row().detailsUsed, 0);
   assert.equal(row().leadsUsed, 0);
   assert.equal(row().sitesUsed, 0);
+  assert.equal(row().aiUsed, 0);
 });
 
 test("count 0 lança", async () => {

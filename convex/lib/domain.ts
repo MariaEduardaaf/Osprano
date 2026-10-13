@@ -655,7 +655,7 @@ export type Plan = "trial" | "solo" | "pro" | "agency";
 export type StoredPlan = Plan | "free"; // "free" = legado, lido como "trial"
 export type MonthlyKind = "leads" | "sites" | "details" | "ai" | "verifications";
 export type DailyKind = "searches" | "verifications";
-export type UsageKind = "leads" | "sites" | "details";
+export type UsageKind = MonthlyKind | "searches";
 
 export interface PlanDef {
   id: Plan;
