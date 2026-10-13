@@ -289,7 +289,14 @@ Plans:
   3. Quem se cadastra recebe um teste único de 25 leads e 25 gerações; criar outra conta ou workspace com a mesma pessoa não dá novo teste
   4. O uso e os limites aparecem no topo do app com aviso em 80% e 100% (renovar no ciclo do Stripe fica na Fase 11)
   5. Cada cliente tem teto diário de buscas no Google e de verificações; passar do teto global de segurança pausa as buscas no Google e avisa a Duda
-**Plans**: TBD
+**Plans**: 6 plans
+Plans:
+- [ ] 12-01-PLAN.md — Catálogo de planos (teste + Solo/Pro/Agência), schema aditivo, query current e telas que exibem plano
+- [ ] 12-02-PLAN.md — Motor de cota (IA, verificações, buscas diárias, teste sem renovação) e teto global de US$ 30/mês
+- [ ] 12-03-PLAN.md — Teste único por pessoa (hash do e-mail, sobrevive ao purge) e comandos internos grantPlan/migrateFreeToTrial/budgetStatus
+- [ ] 12-04-PLAN.md — Ligar chamadas pagas: buscas e detalhes do Google, IA em draft/callScript, leads.create (SCAL-02)
+- [ ] 12-05-PLAN.md — Barra de uso no topo com avisos 80%/100% e botões de IA bloqueados sem cota
+- [ ] 12-06-PLAN.md — Gates, fumaça no Convex DEV, roteiro de produção e conferência visual
 **Depende de você**: `ANTHROPIC_API_KEY` em produção (e rotação da chave exposta em 2026-09-16); orçamento mensal máximo para o teto global; os três preços criados no Stripe (vêm da Fase 11).
 
 ### Phase 13: Remetente e envio pelo e-mail do cliente
@@ -303,7 +310,13 @@ Plans:
   3. Antes de abrir ou copiar, o servidor confere `canContactByEmail`, supressão e mercado na hora, e o corpo leva sempre o rodapé de opt-out com link de descadastro e a fonte do dado
   4. Marcar como enviada move o lead para Abordado e registra no Histórico
   5. Quem se descadastra pelo link de um cliente fica suprimido para todos os clientes; a Noruega aparece como mercado de ligação primeiro com "validação jurídica pendente"
-**Plans**: TBD
+**Plans**: 6 plans
+- [ ] 13-01-PLAN.md: perfil de remetente: lib, schema, get/save, aba Remetente em Ajustes, assinatura do DM (wave 1)
+- [ ] 13-02-PLAN.md: rodapé final com fonte do dado, links Gmail/Outlook/mailto, prompt com nome e empresa do cliente (wave 1)
+- [ ] 13-03-PLAN.md: supressão global, purge preserva opt-out, Noruega em ligação primeiro (wave 1)
+- [ ] 13-04-PLAN.md: servidor: prepareSend, markSent só preparado, perfil obrigatório na IA, Resend de cliente desligado (wave 2)
+- [ ] 13-05-PLAN.md: composer: Enviar abre no e-mail da cliente, Copiar, Marquei como enviada (wave 3)
+- [ ] 13-06-PLAN.md: portões completos e conferência da Duda no navegador (wave 4, checkpoint)
 **Depende de você**: nada externo; a Noruega só sai de "pendente" com validação jurídica sua.
 
 ### Phase 14: Prospecção assistida: verificação, ligação e preparação
