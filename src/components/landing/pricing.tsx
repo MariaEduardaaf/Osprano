@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { MdCheck } from "react-icons/md";
-import { PLANS } from "@convex/lib/domain";
+import { PAID_PLANS, PLANS } from "@convex/lib/domain";
 
 const DEMO = process.env.NEXT_PUBLIC_DEMO === "1";
 const CTA_HREF = DEMO ? "/dashboard" : "/sign-up";
@@ -9,7 +9,7 @@ export function Pricing() {
   return (
     <div>
       <div className="grid gap-4 md:grid-cols-3">
-        {Object.values(PLANS).map((plan) => {
+        {PAID_PLANS.map((plan) => {
           const featured = plan.id === "pro";
           return (
             <div
@@ -27,10 +27,8 @@ export function Pricing() {
               )}
               <h3 className="font-display text-xl font-bold">{plan.name}</h3>
               <div className="mt-3 flex items-baseline gap-1">
-                <span className="font-display text-4xl font-bold tabular-nums">
-                  {plan.price === 0 ? "Grátis" : `€${plan.price}`}
-                </span>
-                {plan.price !== 0 && <span className="text-sm text-muted">/mês</span>}
+                <span className="font-display text-4xl font-bold tabular-nums">€{plan.price}</span>
+                <span className="text-sm text-muted">/mês</span>
               </div>
               <Link
                 href={CTA_HREF}
@@ -40,7 +38,7 @@ export function Pricing() {
                     : "border border-border-strong hover:bg-surface-2"
                 }`}
               >
-                {plan.price === 0 ? "Começar grátis" : `Escolher ${plan.name}`}
+                Escolher {plan.name}
               </Link>
               <ul className="mt-6 space-y-2.5 text-sm text-ink-soft">
                 {plan.features.map((f) => (
@@ -54,6 +52,9 @@ export function Pricing() {
           );
         })}
       </div>
+      <p className="mt-6 text-center text-sm text-muted">
+        {`Teste grátis: ${PLANS.trial.leadsPerMonth} leads e ${PLANS.trial.aiPerMonth} gerações por IA, um teste grátis por e-mail, não renova, sem cartão.`}
+      </p>
     </div>
   );
 }

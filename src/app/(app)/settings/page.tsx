@@ -255,6 +255,7 @@ function PlanPanel() {
   const portal = useAction(api.billing.portal);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const when = ws?.isTrial ? "no teste" : "este mês";
 
   return (
     <div>
@@ -263,13 +264,13 @@ function PlanPanel() {
       <div className="mt-5 flex items-center justify-between rounded-xl border border-border bg-surface-2/40 p-4">
         <div>
           <div className="font-mono text-[10px] font-semibold uppercase tracking-wider text-faint">Plano atual</div>
-          <div className="mt-1 font-display text-xl font-bold capitalize">{ws?.plan ?? "—"}</div>
+          <div className="mt-1 font-display text-xl font-bold">{ws?.planName ?? "—"}</div>
         </div>
         <Link
           href="/plans"
           className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-fg shadow-[var(--shadow-sm)] transition-colors hover:bg-brand-hover"
         >
-          {ws && ws.plan !== "free" ? "Trocar plano" : "Fazer upgrade"}
+          {ws?.isTrial ? "Ver planos" : "Trocar plano"}
         </Link>
       </div>
 
@@ -277,7 +278,7 @@ function PlanPanel() {
         <div className="mt-5 space-y-4">
           <div>
             <div className="flex justify-between text-sm">
-              <span className="text-muted">Leads este mês</span>
+              <span className="text-muted">Leads {when}</span>
               <span className="tabular-nums text-foreground">
                 {ws.leadsUsed} / {ws.limits.leads}
               </span>
@@ -286,17 +287,35 @@ function PlanPanel() {
           </div>
           <div>
             <div className="flex justify-between text-sm">
-              <span className="text-muted">Sites este mês</span>
+              <span className="text-muted">Sites {when}</span>
               <span className="tabular-nums text-foreground">
                 {ws.sitesUsed} / {ws.limits.sites}
               </span>
             </div>
             <Bar used={ws.sitesUsed} limit={ws.limits.sites} />
           </div>
+          <div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted">Gerações por IA {when}</span>
+              <span className="tabular-nums text-foreground">
+                {ws.aiUsed} / {ws.limits.ai}
+              </span>
+            </div>
+            <Bar used={ws.aiUsed} limit={ws.limits.ai} />
+          </div>
+          <div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted">Consultas ao Google {when}</span>
+              <span className="tabular-nums text-foreground">
+                {ws.detailsUsed} / {ws.limits.details}
+              </span>
+            </div>
+            <Bar used={ws.detailsUsed} limit={ws.limits.details} />
+          </div>
         </div>
       )}
 
-      {ws && ws.plan !== "free" && (
+      {ws?.subscriptionStatus && (
         <div className="mt-6 border-t border-border pt-5">
           <div className="text-sm font-semibold">Assinatura</div>
           <p className="mt-1 text-sm text-muted">

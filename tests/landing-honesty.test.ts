@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
-import { PLANS } from "../convex/lib/domain.ts";
+import { PAID_PLANS, PLANS } from "../convex/lib/domain.ts";
 
 const FORBIDDEN: RegExp[] = [
   /TESTIMONIALS/,
@@ -45,10 +45,26 @@ test("PLANS: features do not promise missing things", () => {
 });
 
 test("PLANS: features cite the real limits", () => {
-  for (const p of Object.values(PLANS)) {
-    assert.ok(p.features.includes(`${p.leadsPerMonth.toLocaleString("pt-BR")} leads/mês`), `${p.id} leads`);
-    assert.ok(p.features.includes(`${p.sitesPerMonth.toLocaleString("pt-BR")} sites/mês`), `${p.id} sites`);
+  const t = PLANS.trial;
+  assert.ok(t.features.includes(`${t.leadsPerMonth} leads no teste`), "trial leads");
+  assert.ok(t.features.includes(`${t.aiPerMonth} gerações por IA no teste`), "trial ai");
+  for (const p of PAID_PLANS) {
+    const n = (x: number) => x.toLocaleString("pt-BR");
+    assert.ok(p.features.includes(`${n(p.leadsPerMonth)} leads/mês`), `${p.id} leads`);
+    assert.ok(p.features.includes(`${n(p.aiPerMonth)} gerações por IA/mês`), `${p.id} ai`);
+    assert.ok(p.features.includes(`${n(p.sitesPerMonth)} sites/mês`), `${p.id} sites`);
   }
+});
+
+test("pricing: só planos pagos e o teste vem de PLANS.trial", () => {
+  const src = readFileSync("src/components/landing/pricing.tsx", "utf8");
+  assert.match(src, /PAID_PLANS/);
+  assert.match(src, /PLANS\.trial/);
+  assert.doesNotMatch(src, /price === 0/);
+});
+
+test("plans page: sem checkout no beta", () => {
+  assert.doesNotMatch(readFileSync("src/app/(app)/plans/page.tsx", "utf8"), /createCheckout/);
 });
 
 test("sites page: no white-label promise", () => {

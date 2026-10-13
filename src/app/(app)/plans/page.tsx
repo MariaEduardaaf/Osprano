@@ -5,39 +5,25 @@ import { useAction, useQuery } from "convex/react";
 import { MdCheck } from "react-icons/md";
 import { api } from "@convex/_generated/api";
 import { PageHeader } from "@/components/ui";
-import { PLANS } from "@convex/lib/domain";
+import { PAID_PLANS, PLANS } from "@convex/lib/domain";
+import { LEGAL_IDENTITY } from "@convex/lib/legal";
 import { errorMessage } from "@/lib/errors";
 
 export default function PlansPage() {
   const ws = useQuery(api.workspaces.current);
-  const checkout = useAction(api.billing.createCheckout);
   const portal = useAction(api.billing.portal);
-  const [busy, setBusy] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  const current = ws?.plan ?? "free";
-
-  async function subscribe(plan: "pro" | "agency") {
-    setBusy(plan);
-    setErr(null);
-    try {
-      const { url } = await checkout({ plan });
-      window.location.assign(url);
-    } catch (e) {
-      setErr(errorMessage(e, "Falha"));
-      setBusy(null);
-    }
-  }
-
   async function manage() {
-    setBusy("portal");
+    setBusy(true);
     setErr(null);
     try {
       const { url } = await portal({});
       window.location.assign(url);
     } catch (e) {
       setErr(errorMessage(e, "Falha"));
-      setBusy(null);
+      setBusy(false);
     }
   }
 
@@ -46,13 +32,21 @@ export default function PlansPage() {
       <PageHeader
         eyebrow="Assinatura"
         title="Planos"
-        subtitle="Escale a operação — compliant by design em todos"
+        subtitle="Beta fechado: a troca de plano é feita pela equipe. Escolha um plano e fale com a gente."
       />
       {err && <p className="mb-4 text-sm text-hot">{err}</p>}
 
+      {ws?.isTrial && (
+        <div className="glass mb-4 rounded-[var(--radius)] p-4 text-sm">
+          {ws.trialSpent
+            ? "Seu teste grátis já foi usado em outra conta. Escolha um plano para continuar."
+            : `Você está no teste grátis: ${PLANS.trial.leadsPerMonth} leads e ${PLANS.trial.aiPerMonth} gerações por IA, um teste grátis por e-mail, não renova.`}
+        </div>
+      )}
+
       <div className="grid gap-4 md:grid-cols-3">
-        {Object.values(PLANS).map((plan) => {
-          const isCurrent = current === plan.id;
+        {PAID_PLANS.map((plan) => {
+          const isCurrent = ws?.plan === plan.id;
           const featured = plan.id === "pro";
           return (
             <div
@@ -84,24 +78,13 @@ export default function PlansPage() {
                   <div className="rounded-lg bg-surface-2 py-2 text-center text-sm font-semibold text-muted">
                     Plano atual
                   </div>
-                ) : plan.id === "free" ? (
-                  current !== "free" ? (
-                    <button
-                      onClick={manage}
-                      disabled={busy === "portal"}
-                      className="w-full rounded-lg border border-border py-2 text-sm font-semibold hover:bg-surface-2 disabled:opacity-50"
-                    >
-                      Gerenciar assinatura
-                    </button>
-                  ) : null
                 ) : (
-                  <button
-                    onClick={() => subscribe(plan.id as "pro" | "agency")}
-                    disabled={busy === plan.id}
-                    className="w-full rounded-lg bg-brand py-2 text-sm font-semibold text-brand-fg disabled:opacity-50"
+                  <a
+                    href={`mailto:${LEGAL_IDENTITY.supportEmail}?subject=${encodeURIComponent(`Quero o plano ${plan.name}`)}`}
+                    className="block w-full rounded-lg bg-brand py-2 text-center text-sm font-semibold text-brand-fg"
                   >
-                    {busy === plan.id ? "Abrindo…" : `Assinar ${plan.name}`}
-                  </button>
+                    Pedir este plano
+                  </a>
                 )}
               </div>
             </div>
@@ -109,10 +92,10 @@ export default function PlansPage() {
         })}
       </div>
 
-      {current !== "free" && (
+      {ws?.subscriptionStatus && (
         <button
           onClick={manage}
-          disabled={busy === "portal"}
+          disabled={busy}
           className="mt-6 text-sm font-medium text-muted hover:text-foreground hover:underline"
         >
           Gerenciar assinatura no portal Stripe →
