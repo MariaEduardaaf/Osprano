@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import { requireOrgId, isDemoEnabled } from "./model/tenant";
 import { getWorkspace, ensureWorkspace, reserveUsage, refundUsage, acceptTermsFor } from "./model/workspace";
 import { chargeBudget } from "./model/budget";
+import { claimTrial, trialKey } from "./model/plans";
 import { LEGAL_VERSION, isAccepted } from "./lib/legal";
 import { PLANS, planOf, limitFor, dailyLimitFor, dayKey } from "./lib/domain";
 
@@ -57,6 +58,9 @@ export const acceptTerms = mutation({
   handler: async (ctx, { version }) => {
     const orgId = await requireOrgId(ctx);
     await acceptTermsFor(ctx, orgId, version);
+    // PLAN-04: o teste grátis é da pessoa; demo (sem identidade) não reivindica.
+    const identity = await ctx.auth.getUserIdentity();
+    if (identity) await claimTrial(ctx, orgId, await trialKey({ email: identity.email, subject: identity.subject }));
   },
 });
 
@@ -119,7 +123,8 @@ export const applySubscription = internalMutation({
     if (!ws) return;
     const canceled = args.status === "canceled" || args.status === "unpaid";
     await ctx.db.patch(ws._id, {
-      plan: canceled ? "free" : (args.plan ?? ws.plan),
+      // Quem cancela volta ao teste já gasto (não ganha teste novo).
+      ...(canceled ? { plan: "trial" as const, trialSpent: true } : { plan: args.plan ?? ws.plan }),
       stripeSubscriptionId: args.subscriptionId ?? ws.stripeSubscriptionId,
       subscriptionStatus: args.status,
     });
