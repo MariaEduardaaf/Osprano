@@ -2,10 +2,20 @@ import { query, mutation, internalMutation, internalQuery } from "./_generated/s
 import { v } from "convex/values";
 import { requireOrgId, isDemoEnabled } from "./model/tenant";
 import { getWorkspace, ensureWorkspace, reserveUsage, refundUsage, acceptTermsFor } from "./model/workspace";
+import { chargeBudget } from "./model/budget";
 import { LEGAL_VERSION, isAccepted } from "./lib/legal";
 import { PLANS, planOf, limitFor, dailyLimitFor, dayKey } from "./lib/domain";
 
 const planV = v.union(v.literal("free"), v.literal("pro"), v.literal("agency"));
+
+const kindV = v.union(
+  v.literal("leads"),
+  v.literal("sites"),
+  v.literal("details"),
+  v.literal("ai"),
+  v.literal("verifications"),
+  v.literal("searches"),
+);
 
 /** Current plan + usage for the signed-in workspace (defaults to free). */
 export const current = query({
@@ -54,19 +64,23 @@ export const acceptTerms = mutation({
 export const reserve = internalMutation({
   args: {
     orgId: v.string(),
-    kind: v.union(v.literal("leads"), v.literal("sites"), v.literal("details")),
+    kind: kindV,
     count: v.number(),
+    usd: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     await reserveUsage(ctx, args.orgId, args.kind, args.count);
+    // Mesma mutation de propósito: se o orçamento recusar, a reserva do cliente é desfeita junto.
+    if (args.usd) await chargeBudget(ctx, args.usd);
   },
 });
 
-/** Refund usage previously reserved (called when discovery inserts fewer leads than reserved). */
+/** Refund usage previously reserved. Devolve só a cota do cliente, nunca o orçamento global
+ *  (conservador: superestima o gasto, nunca subestima). */
 export const refund = internalMutation({
   args: {
     orgId: v.string(),
-    kind: v.union(v.literal("leads"), v.literal("sites"), v.literal("details")),
+    kind: kindV,
     count: v.number(),
   },
   handler: async (ctx, args) => {
