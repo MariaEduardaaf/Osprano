@@ -270,11 +270,10 @@ function observationRules(): string {
 /**
  * Regra de OPT-OUT do email — o corpo NÃO escreve opt-out nenhum.
  *
- * O único opt-out que existe de fato é o rodapé injetado por CÓDIGO (`optOutFooter`,
- * convex/lib/compliance.ts), anexado nos dois pontos de escrita do email em
- * convex/outreach.ts (`withOptOutFooter` no rascunho e a mesma injeção no envio): link
- * único por lead, no idioma do prospect, que grava na tabela de supressão — mais os
- * headers `List-Unsubscribe` / one-click do envio.
+ * O único opt-out que existe de fato é o rodapé anexado por CÓDIGO em `outreach.prepareSend`
+ * (`composeOutgoingBody`, convex/lib/compliance.ts): link único por lead, no idioma do
+ * prospect, que grava na tabela de supressão. No envio pelo e-mail do cliente não há header
+ * List-Unsubscribe.
  *
  * A versão anterior desta regra mandava a IA `end with a one-line opt-out (e.g. reply
  * "stop" to not be contacted again)`, ou seja, prometia um SEGUNDO caminho de saída que

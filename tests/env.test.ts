@@ -4,7 +4,6 @@ import {
   isDevEnv,
   requireAppUrl,
   requireUnsubscribeBaseUrl,
-  requireSenderFrom,
   unsubscribeUrlFrom,
   hasUnsubscribeLink,
   draftLinkIssue,
@@ -95,23 +94,6 @@ test("hasUnsubscribeLink: casa pelo token, mesmo se a base mudou de forma", () =
   const body = "corpo\n\n—\nSent by Ana. Unsubscribe: https://x.convex.site/unsubscribe?token=t1";
   assert.equal(hasUnsubscribeLink(body, "t1"), true);
   assert.equal(hasUnsubscribeLink(body, "t2"), false);
-});
-
-/* --------------------------------------------------------- requireSenderFrom */
-
-test("requireSenderFrom: ausente fora de dev LANÇA (nada de identidade inventada)", () => {
-  assert.throws(() => requireSenderFrom(PROD), /RESEND_FROM não configurada/);
-});
-
-test("requireSenderFrom: em dev usa o placeholder, sem quebrar o fluxo local", () => {
-  assert.equal(requireSenderFrom(DEV), "Osprano");
-});
-
-test("requireSenderFrom: devolve o valor configurado", () => {
-  assert.equal(
-    requireSenderFrom({ ...PROD, RESEND_FROM: "Ana <ana@osprano.com>" }),
-    "Ana <ana@osprano.com>",
-  );
 });
 
 /* ------------------------------------------------------------ draftLinkIssue */

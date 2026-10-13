@@ -136,27 +136,6 @@ export function hasUnsubscribeLink(body: string, token: string): boolean {
 }
 
 /**
- * Identidade de quem envia, para o rodapé de compliance ("Enviado por ...").
- *
- * Mesmo critério: o valor é LIDO pelo prospect e é exigência legal de identificação do
- * remetente, então o antigo `RESEND_FROM ?? "Osprano"` afirmava uma identidade que ninguém
- * verificou (e que fica GRAVADA no rascunho, já que o rodapé é persistido no `upsertDraft`
- * e o `send` não reescreve um rodapé já presente). Fora de desenvolvimento, exigir —
- * `send` já exige RESEND_FROM de qualquer forma, então isso não bloqueia nenhum envio que
- * antes funcionava: só antecipa o erro para antes do rascunho.
- */
-export function requireSenderFrom(env: NodeJS.ProcessEnv = process.env): string {
-  const raw = env.RESEND_FROM?.trim();
-  if (raw) return raw;
-  if (isDevEnv(env)) return "Osprano";
-  throw userError(
-    "RESEND_FROM não configurada no deployment Convex. Ela identifica quem envia no rodapé " +
-      'de opt-out do prospect ("Enviado por ..."), e adivinhar esse nome seria afirmar uma ' +
-      `identidade não verificada. Formato: "Seu Nome <voce@dominio.com>". ${CONFIG_HINT}`,
-  );
-}
-
-/**
  * Último portão antes do `fetch` para o Resend: o corpo JÁ PERSISTIDO pode ter sido escrito
  * antes destas travas existirem (rascunhos gravados com `undefined/unsubscribe` continuam no
  * banco) ou num deployment de desenvolvimento. Reenviar um desses é exatamente o que estas

@@ -5,16 +5,16 @@ import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { requireOrgId } from "./model/tenant";
 import { withAiQuota } from "./model/aiQuota";
-import { assertAccepted } from "./model/workspace";
-import { writeEmail, writeCallScript, langForLead } from "./lib/outreachAi";
+import { assertAccepted, getWorkspace } from "./model/workspace";
+import { writeEmail, writeCallScript, langForLead, NAME_PLACEHOLDER } from "./lib/outreachAi";
+import { requireSender, senderFooterIdentity } from "./lib/sender";
 import type { OutreachWarning } from "./lib/outreachAi";
 import { CONFIRM_NAME_MESSAGE, leadLabel, shareableFacts, shareableLead } from "./lib/googleData";
 import { normalizeEmail, canContactByEmail, addDays } from "./lib/domain";
-import { optOutFooter, senderIdentityFrom, callerNameFrom } from "./lib/compliance";
+import { optOutFooter, senderIdentityFrom, stripOptOutFooter, composeOutgoingBody } from "./lib/compliance";
 import {
   requireAppUrl,
   requireUnsubscribeBaseUrl,
-  requireSenderFrom,
   unsubscribeUrlFrom,
   hasUnsubscribeLink,
   draftLinkIssue,
@@ -114,31 +114,10 @@ export const outbox = query({
   },
 });
 
-/**
- * Anexa o rodapé de opt-out se ainda não estiver presente (marcador = caminho + token, que
- * não muda se a base do CONVEX_SITE_URL for reconfigurada — ver `hasUnsubscribeLink`).
- *
- * A URL é montada ANTES do teste de idempotência de propósito: assim a validação de
- * ambiente roda em toda escrita, inclusive quando o rodapé já está lá.
- *
- * LANÇA quando CONVEX_SITE_URL/RESEND_FROM faltam (ver convex/lib/env.ts): o rodapé é
- * PERSISTIDO no rascunho, então um valor inventado aqui fica gravado e viaja para o
- * prospect. Falhar a escrita é o comportamento certo — antes nenhum rascunho do que um
- * rascunho com `undefined/unsubscribe` no rodapé de compliance.
- */
-function withOptOutFooter(body: string, lead: Doc<"leads"> | null, token: string): string {
-  const url = unsubscribeUrlFrom(token);
-  if (hasUnsubscribeLink(body, token)) return body; // idempotente
-  const sender = senderIdentityFrom(requireSenderFrom());
-  // País E cidade: na Suíça o idioma é regional (Genebra = francês). Sem lead → inglês.
-  const lang = lead ? langForLead(lead) : "English";
-  return `${body}${optOutFooter(lang, url, sender)}`;
-}
-
-/** Devolve o rascunho REALMENTE persistido (assunto + corpo já com o rodapé de opt-out), não
-    os argumentos recebidos: `draft` (convex/outreach.ts) repassa este retorno para o cliente,
-    e o textarea do composer só mostra o rodapé se ele vier daqui — não do `email.body` cru
-    da IA. Ver `src/components/outreach-composer.tsx`. */
+/** Devolve o rascunho REALMENTE persistido (assunto + corpo SEM rodapé), não os argumentos
+    recebidos. O rodapé (identidade do cliente, descadastro, fonte do dado) é montado só em
+    `prepareSend`, na hora de enviar: assim nunca fica desatualizado (perfil trocado) nem
+    carrega o rodapé antigo com o nome da Duda. */
 export const upsertDraft = internalMutation({
   args: {
     orgId: v.string(),
@@ -158,7 +137,7 @@ export const upsertDraft = internalMutation({
     }
     const existing = await emailRowForLead(ctx, args.leadId);
     const unsubscribeToken = existing?.unsubscribeToken ?? crypto.randomUUID().replace(/-/g, "");
-    const body = withOptOutFooter(args.body, lead, unsubscribeToken);
+    const body = stripOptOutFooter(args.body); // rodapé só em prepareSend
     if (existing) {
       await ctx.db.patch(existing._id, {
         subject: args.subject,
@@ -227,7 +206,9 @@ export const draft = action({
     { leadId },
   ): Promise<{ subject: string; body: string; warnings: OutreachWarning[] }> => {
     const orgId = await requireOrgId(ctx);
-    assertAccepted(await ctx.runQuery(internal.workspaces.getInternal, { orgId }), orgId);
+    const ws = await ctx.runQuery(internal.workspaces.getInternal, { orgId });
+    assertAccepted(ws, orgId);
+    const sender = requireSender(ws?.sender); // antes de cota e de IA: sem perfil não se gasta nada
     const lead = await ctx.runQuery(internal.leads.getInternal, { leadId });
     if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
     // Fase 10: a IA só recebe dado compartilhável (googleData.ts); lead do Google precisa de nome confirmado
@@ -246,29 +227,21 @@ export const draft = action({
     const key = process.env.ANTHROPIC_API_KEY;
     if (!key) throw userError("ANTHROPIC_API_KEY não configurada no deployment Convex.");
 
-    // PRÉ-CONDIÇÕES DE LINK, resolvidas ANTES da chamada de IA — de propósito.
-    // As duas variáveis produzem texto que o PROSPECT lê: o link da prévia (corpo) e o de
-    // opt-out (rodapé + header List-Unsubscribe). Checar aqui em cima resolve os dois lados
-    // do problema: (1) não gasta tokens da Anthropic para descobrir no fim que o email não
-    // pode sair, e (2) não deixa um rascunho pela metade — "gerar rascunho sem poder enviar"
-    // é tão ruim quanto falhar tarde, porque o rascunho é o artefato que a usuária copia e
-    // manda pelo email dela. CONVEX_SITE_URL só seria usada lá embaixo, no `upsertDraft`
-    // (que também a exige, colado na escrita); antecipar aqui é o que evita o desperdício.
+    // PRÉ-CONDIÇÕES DE LINK, resolvidas ANTES da chamada de IA: não gasta tokens num
+    // rascunho que não poderia ser enviado. O rascunho volta SEM rodapé; o rodapé (identidade
+    // do cliente, descadastro e fonte do dado) é montado só em `prepareSend`, que também
+    // exige CONVEX_SITE_URL. Não há header List-Unsubscribe no envio por mailto.
     const appUrl = requireAppUrl();
     requireUnsubscribeBaseUrl();
-    requireSenderFrom();
 
     const token = await ctx.runMutation(internal.previews.ensureForLead, { leadId });
-    // Mesma identidade do rodapé de opt-out (RESEND_FROM), agora também no CORPO: sem
-    // isso a IA inventava quem assina. Sem display name no RESEND_FROM → undefined, e o
-    // prompt emite o marcador `[seu nome]` em vez de um nome falso.
+    // Quem assina é o perfil de remetente do cliente (Ajustes > Remetente), nunca o RESEND_FROM.
     const email = await withAiQuota(ctx, orgId, () => writeEmail(key, safe, `${appUrl}/p/${token}`, {
-      callerName: callerNameFrom(process.env.RESEND_FROM),
+      callerName: sender.name,
+      company: sender.company,
     }));
 
-    // Devolve o que foi REALMENTE persistido (com o rodapé de opt-out), não `email` cru:
-    // `email.body` nunca viu `withOptOutFooter` (rodada só dentro de `upsertDraft`), e a
-    // usuária copia/envia exatamente o que está no textarea — que precisa ser este valor.
+    // Devolve o que foi persistido (sem rodapé; `prepareSend` o monta ao enviar).
     const persisted = await ctx.runMutation(internal.outreach.upsertDraft, {
       orgId,
       leadId,
@@ -292,7 +265,9 @@ export const callScript = action({
     { leadId },
   ): Promise<{ script: string; translation: string; warnings: OutreachWarning[] }> => {
     const orgId = await requireOrgId(ctx);
-    assertAccepted(await ctx.runQuery(internal.workspaces.getInternal, { orgId }), orgId);
+    const ws = await ctx.runQuery(internal.workspaces.getInternal, { orgId });
+    assertAccepted(ws, orgId);
+    const sender = requireSender(ws?.sender); // antes de cota e de IA
     const lead = await ctx.runQuery(internal.leads.getInternal, { leadId });
     if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
     // Fase 10: a IA só recebe dado compartilhável (googleData.ts); lead do Google precisa de nome confirmado
@@ -313,12 +288,11 @@ export const callScript = action({
     // pelo canal que o prospect autorizar.
     await ctx.runMutation(internal.previews.ensureForLead, { leadId });
 
-    // Quem liga se apresenta com o nome do RESEND_FROM (mesma fonte de verdade da
-    // identidade do email). Ausente/sem display name → o script sai com `[seu nome]`,
-    // que a usuária troca antes de discar. NUNCA um nome inventado pelo modelo: ela lê
-    // o script em voz alta num idioma que não fala e se apresentaria como outra pessoa.
+    // Quem liga se apresenta com o nome do perfil de remetente do cliente (Ajustes > Remetente),
+    // nunca o RESEND_FROM. NUNCA um nome inventado pelo modelo: ela lê o script em voz alta.
     const result = await withAiQuota(ctx, orgId, () => writeCallScript(key, safe, {
-      callerName: callerNameFrom(process.env.RESEND_FROM),
+      callerName: sender.name,
+      company: sender.company,
     }));
     await ctx.runMutation(internal.leads.setCallScript, {
       leadId,
@@ -329,11 +303,53 @@ export const callScript = action({
   },
 });
 
-/** Mark the outreach as sent (for the "I sent it myself" flow). Advances the lead.
-    OPTIN-04: este é o 3º caminho que produz "email enviado" (junto de draft/send) e por isso
-    passa pelo MESMO gate — sem ele, um lead de mercado opt-in sem consentimento ficaria com
-    status "sent" + evento "email_sent" registrados. `send` já checa antes de chamar esta
-    mutation, então a chamada interna continua passando. */
+/**
+ * SEND-02/SEND-03: prepara a mensagem para o cliente enviar do próprio e-mail. O servidor
+ * confere tudo na hora (perfil, dono, mercado/consentimento, e-mail, supressão) e devolve o
+ * texto exato que o cliente abre no Gmail/Outlook/app ou copia. NADA é transmitido pelo
+ * Osprano. Sem `List-Unsubscribe` (não dá por mailto): o descadastro vai no corpo.
+ */
+export const prepareSend = mutation({
+  args: { leadId: v.id("leads"), subject: v.string(), body: v.string() },
+  handler: async (ctx, { leadId, subject, body }): Promise<{ to: string; subject: string; body: string }> => {
+    const orgId = await requireOrgId(ctx);
+    const ws = await getWorkspace(ctx, orgId);
+    assertAccepted(ws, orgId);
+    const sender = requireSender(ws?.sender);
+    const lead = await ctx.db.get(leadId);
+    if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
+    if (!canContactByEmail(lead)) {
+      throw userError("Mercado opt-in: registre o consentimento do prospect antes de enviar email.");
+    }
+    if (!lead.email) throw userError("Lead sem e-mail: preencha em Informações > Contato.");
+    if (await isEmailSuppressed(ctx, { email: normalizeEmail(lead.email), orgId })) {
+      throw userError("Este contato pediu para não ser contatado (opt-out).");
+    }
+    const cleanSubject = subject.trim();
+    const text = stripOptOutFooter(body).trim();
+    if (!cleanSubject || !text) throw userError("Escreva o assunto e a mensagem antes de enviar.");
+    if (text.includes(NAME_PLACEHOLDER) || cleanSubject.includes(NAME_PLACEHOLDER)) {
+      throw userError(`Troque ${NAME_PLACEHOLDER} pelo seu nome antes de enviar.`);
+    }
+    const row = await emailRowForLead(ctx, leadId);
+    if (!row) throw userError("Escreva a abordagem primeiro.");
+    const unsubscribeToken = row.unsubscribeToken ?? crypto.randomUUID().replace(/-/g, "");
+    const finalBody = composeOutgoingBody(text, {
+      lang: langForLead(lead),
+      unsubscribeUrl: unsubscribeUrlFrom(unsubscribeToken),
+      identity: senderFooterIdentity(sender),
+      source: lead.source,
+    });
+    const issue = draftLinkIssue(finalBody);
+    if (issue) throw userError(issue);
+    await ctx.db.patch(row._id, { subject: cleanSubject, body: finalBody, unsubscribeToken });
+    return { to: lead.email, subject: cleanSubject, body: finalBody };
+  },
+});
+
+/** SEND-04: "Marquei como enviada". Só marca o que passou por `prepareSend` (corpo com o link
+    de descadastro do token da linha). Avança o lead para Abordado e registra email_sent.
+    Mesmos portões de mercado e supressão de `prepareSend`. */
 export const markSent = mutation({
   args: { leadId: v.id("leads") },
   handler: async (ctx, { leadId }) => {
@@ -343,10 +359,6 @@ export const markSent = mutation({
     if (!canContactByEmail(lead)) {
       throw userError("Mercado opt-in: registre o consentimento do prospect antes de enviar email.");
     }
-    // Mesma checagem de supressão de `draft`/`send`: sem ela, um prospect que pediu
-    // opt-out ainda podia ser registrado como "enviei eu mesmo". Como markSent é
-    // mutation (não action), chama o helper de ctx.db em vez de ctx.runQuery — mesma
-    // fonte de verdade da internalQuery `suppressions.isSuppressed`.
     if (lead.email) {
       const suppressed = await isEmailSuppressed(ctx, {
         email: normalizeEmail(lead.email),
@@ -354,9 +366,12 @@ export const markSent = mutation({
       });
       if (suppressed) throw userError("Este contato pediu para não ser contatado (opt-out).");
     }
-    const now = Date.now();
     const row = await emailRowForLead(ctx, leadId);
-    if (row) await ctx.db.patch(row._id, { status: "sent", sentAt: now });
+    if (!row?.body || !row.unsubscribeToken || !hasUnsubscribeLink(row.body, row.unsubscribeToken)) {
+      throw userError("Clique em Enviar para preparar a mensagem antes de marcar como enviada.");
+    }
+    const now = Date.now();
+    await ctx.db.patch(row._id, { status: "sent", sentAt: now });
     if (lead.stage === "base") {
       await ctx.db.patch(leadId, { stage: "approached", stageUpdatedAt: now });
     }
@@ -446,12 +461,9 @@ export const markReplied = mutation({
   },
 });
 
-/** OUTR-01: persiste o que o usuário editou no composer, antes de send/markSent/copy.
-    RE-INJETA o rodapé de opt-out via `withOptOutFooter` (idempotente: não duplica se o
-    corpo editado já termina com ele) — ao contrário do que o comentário antigo dizia, ESTA
-    é a única escrita que fica entre "o que a IA gerou" e "o que a usuária copia/manda", então
-    é aqui que a garantia de compliance precisa valer, não só no `send`. Devolve o par
-    normalizado para o composer atualizar o textarea e copiar/persistir o texto certo.
+/** OUTR-01: persiste o que o usuário editou no composer, antes de prepareSend.
+    Tira qualquer rodapé de opt-out que tenha vindo no texto (rascunho legado): o rodapé com
+    identidade do cliente e fonte do dado é montado só em `prepareSend`, na hora de enviar.
     OPTIN-04: mesmo gate de draft/send/markSent — persistir rascunho de email para um lead
     sem base legal não deve acontecer. Não quebra fluxo legítimo: só existe rascunho para
     editar se `draft` (já gateado) rodou antes. */
@@ -467,7 +479,7 @@ export const updateDraft = mutation({
     const row = await emailRowForLead(ctx, leadId);
     if (!row) throw userError("Nenhum rascunho encontrado para este lead.");
     const unsubscribeToken = row.unsubscribeToken ?? crypto.randomUUID().replace(/-/g, "");
-    const normalizedBody = withOptOutFooter(body, lead, unsubscribeToken);
+    const normalizedBody = stripOptOutFooter(body); // rodapé só em prepareSend
     await ctx.db.patch(row._id, {
       subject,
       body: normalizedBody,
@@ -495,10 +507,18 @@ export const suppress = mutation({
   },
 });
 
-/** Optional convenience: send via Resend (needs the lead's email + Resend config). */
+// SEND-02: o Osprano não transmite e-mail de cliente. A integração fica para o envio
+// automático (AUTO-*, v2), que antes de ligar precisa trocar a identidade do RESEND_FROM pelo
+// perfil de remetente e ter teto diário (M7).
+const CLIENT_SEND_VIA_RESEND = false;
+
+/** Envio via Resend (DESLIGADO por CLIENT_SEND_VIA_RESEND; nenhum botão o chama). */
 export const send = action({
   args: { leadId: v.id("leads") },
   handler: async (ctx, { leadId }): Promise<{ sent: boolean }> => {
+    if (!CLIENT_SEND_VIA_RESEND) {
+      throw userError("O envio pelo Osprano está desligado: use Enviar para abrir no seu e-mail.");
+    }
     const orgId = await requireOrgId(ctx);
     assertAccepted(await ctx.runQuery(internal.workspaces.getInternal, { orgId }), orgId);
     const lead = await ctx.runQuery(internal.leads.getInternal, { leadId });

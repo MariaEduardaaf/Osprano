@@ -15,7 +15,7 @@ import {
   signalObservations,
 } from "../convex/lib/outreachAi.ts";
 import type { Signals } from "../convex/lib/domain.ts";
-import { unsubscribePageHtml, optOutFooter, callerNameFrom } from "../convex/lib/compliance.ts";
+import { unsubscribePageHtml, optOutFooter } from "../convex/lib/compliance.ts";
 import { SEARCHABLE_MARKETS } from "../convex/lib/domain.ts";
 
 /** Idioma que garantidamente não existe nos mapas → devolve a copy de fallback (inglês). */
@@ -325,19 +325,6 @@ test("emailSystemPrompt: a instrução de opt-out por resposta não volta", () =
   for (const palavra of ["stop", "unsubscribe", "remove"]) {
     assert.ok(prompt.includes(`"${palavra}"`), `a palavra "${palavra}" precisa estar vetada`);
   }
-});
-
-test("callerNameFrom: só um nome HUMANO chega ao prompt (email cru vira marcador)", () => {
-  assert.equal(callerNameFrom("Duda <duda@osprano.com>"), "Duda");
-  assert.equal(callerNameFrom("  Team Osprano  <hi@osprano.com> "), "Team Osprano");
-  // Sem display name o RESEND_FROM é um endereço: dizer isso em voz alta como "meu nome"
-  // é pior que o marcador — então vira undefined e o prompt cai no `[seu nome]`.
-  assert.equal(callerNameFrom("contato@osprano.com"), undefined);
-  assert.equal(callerNameFrom("<contato@osprano.com>"), undefined);
-  assert.equal(callerNameFrom(""), undefined);
-  assert.equal(callerNameFrom("   "), undefined);
-  assert.equal(callerNameFrom(undefined), undefined);
-  assert.equal(callerNameFrom(null), undefined);
 });
 
 test("as três regiões suíças têm copy própria e distinta entre si", () => {
