@@ -461,34 +461,6 @@ export const markReplied = mutation({
   },
 });
 
-/** OUTR-01: persiste o que o usuário editou no composer, antes de prepareSend.
-    Tira qualquer rodapé de opt-out que tenha vindo no texto (rascunho legado): o rodapé com
-    identidade do cliente e fonte do dado é montado só em `prepareSend`, na hora de enviar.
-    OPTIN-04: mesmo gate de draft/send/markSent — persistir rascunho de email para um lead
-    sem base legal não deve acontecer. Não quebra fluxo legítimo: só existe rascunho para
-    editar se `draft` (já gateado) rodou antes. */
-export const updateDraft = mutation({
-  args: { leadId: v.id("leads"), subject: v.string(), body: v.string() },
-  handler: async (ctx, { leadId, subject, body }): Promise<{ subject: string; body: string }> => {
-    const orgId = await requireOrgId(ctx);
-    const lead = await ctx.db.get(leadId);
-    if (!lead || lead.orgId !== orgId) throw userError("Lead não encontrado");
-    if (!canContactByEmail(lead)) {
-      throw userError("Mercado opt-in: registre o consentimento do prospect antes de enviar email.");
-    }
-    const row = await emailRowForLead(ctx, leadId);
-    if (!row) throw userError("Nenhum rascunho encontrado para este lead.");
-    const unsubscribeToken = row.unsubscribeToken ?? crypto.randomUUID().replace(/-/g, "");
-    const normalizedBody = stripOptOutFooter(body); // rodapé só em prepareSend
-    await ctx.db.patch(row._id, {
-      subject,
-      body: normalizedBody,
-      unsubscribeToken,
-    });
-    return { subject, body: normalizedBody };
-  },
-});
-
 /** Registrar supressão manual ("respondeu stop"). Org-scoped. UI na Fase 3. */
 export const suppress = mutation({
   args: { leadId: v.id("leads") },

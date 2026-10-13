@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import type { ReactNode } from "react";
 import {
   MdOutlineAutoAwesome,
@@ -17,6 +18,8 @@ import type { Id } from "@convex/_generated/dataModel";
 import type { Doc } from "@convex/_generated/dataModel";
 import { NAME_PLACEHOLDER, langForLead, detectLocalityClaims } from "@convex/lib/outreachAi";
 import type { OutreachWarning } from "@convex/lib/outreachAi";
+import { stripOptOutFooter } from "@convex/lib/compliance";
+import { composeLinks } from "@/lib/compose-links";
 import { errorMessage } from "@/lib/errors";
 import { AiQuotaNotice, useAiBlocked } from "@/components/ai-quota";
 
@@ -77,12 +80,11 @@ function EmailWarnings({
     <div className="space-y-1.5" role="status">
       {needsName && (
         <Note tone="stop">
-          <p className="font-semibold text-foreground">Falta o seu nome — não envie assim</p>
+          <p className="font-semibold text-foreground">Falta o seu nome, não envie assim</p>
           <p>
-            O texto ainda tem o marcador <span className="font-mono">{NAME_PLACEHOLDER}</span> —
-            troque pelo seu nome antes de enviar. Ele fica em português no meio do idioma do
-            prospect justamente para você não passar batido. Enviar por aqui é um clique: o
-            prospect receberia o marcador literal.
+            O texto ainda tem o marcador <span className="font-mono">{NAME_PLACEHOLDER}</span>.
+            Troque pelo seu nome antes de enviar; o Osprano recusa preparar o envio com o
+            marcador.
           </p>
         </Note>
       )}
@@ -116,31 +118,31 @@ function EmailWarnings({
  * A troca de key acontece uma única vez (quando a query deixa de ser `undefined`),
  * então digitação do usuário nunca é sobrescrita depois da hidratação inicial.
  */
-export function OutreachComposer({ leadId, hasEmail }: { leadId: Id<"leads">; hasEmail: boolean }) {
+export function OutreachComposer({ leadId }: { leadId: Id<"leads">; hasEmail?: boolean }) {
   const existing = useQuery(api.outreach.getForLead, { leadId });
+  const sender = useQuery(api.sender.get);
   return (
     <ComposerBody
       key={existing === undefined ? "loading" : "loaded"}
       leadId={leadId}
-      hasEmail={hasEmail}
       existing={existing ?? null}
+      senderReady={sender === undefined ? null : sender !== null}
     />
   );
 }
 
 function ComposerBody({
   leadId,
-  hasEmail,
   existing,
+  senderReady,
 }: {
   leadId: Id<"leads">;
-  hasEmail: boolean;
   existing: Doc<"outreach"> | null;
+  senderReady: boolean | null; // null = carregando
 }) {
   const draft = useAction(api.outreach.draft);
-  const send = useAction(api.outreach.send);
+  const prepareSend = useMutation(api.outreach.prepareSend);
   const markSent = useMutation(api.outreach.markSent);
-  const updateDraft = useMutation(api.outreach.updateDraft);
   // O lead (país + cidade) é o que permite RECALCULAR os avisos aqui no cliente — sem ele
   // um rascunho vindo do banco apareceria limpo. Vem por query e não por prop porque este
   // componente já se vira sozinho com o `leadId` (mesmo padrão de `outreach.getForLead`).
@@ -149,10 +151,12 @@ function ComposerBody({
 
   const hasDraft = !!(existing && (existing.subject || existing.body));
   const [subject, setSubject] = useState(existing?.subject ?? "");
-  const [body, setBody] = useState(existing?.body ?? "");
+  const [body, setBody] = useState(stripOptOutFooter(existing?.body ?? ""));
   const [open, setOpen] = useState(hasDraft); // pré-preenchido, sem gastar IA
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  // Versão final devolvida pelo servidor (com rodapé). Editar assunto/corpo a descarta.
+  const [ready, setReady] = useState<{ to: string; subject: string; body: string } | null>(null);
   // null = nada gerado NESTA sessão (o rascunho na tela veio do banco, sem avisos junto).
   // Array (mesmo vazio) = veredito do backend para o texto recém-gerado.
   const [generatedWarnings, setGeneratedWarnings] = useState<OutreachWarning[] | null>(null);
@@ -202,6 +206,7 @@ function ComposerBody({
   if (!open) {
     return (
       <div>
+        {senderReady === false && <SenderNotice />}
         <button
           onClick={() =>
             run("draft", async () => {
@@ -214,7 +219,7 @@ function ComposerBody({
               setOpen(true);
             })
           }
-          disabled={busy === "draft" || aiBlocked}
+          disabled={busy === "draft" || aiBlocked || senderReady !== true}
           className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-brand-fg disabled:opacity-50"
         >
           <MdOutlineAutoAwesome size={14} />
@@ -232,6 +237,7 @@ function ComposerBody({
 
   return (
     <div className="mt-3 space-y-2 rounded-lg border border-border bg-surface-2 p-3">
+      {senderReady === false && <SenderNotice />}
       {/* Destinatário, acima do assunto: ela precisa ver PARA QUEM antes de mexer no texto.
           Vem do `lead` reativo (não do prop `hasEmail`) para nunca ficar desatualizado
           quando o email é preenchido em Informações > Contato com o composer já aberto. */}
@@ -244,7 +250,10 @@ function ComposerBody({
       )}
       <input
         value={subject}
-        onChange={(e) => setSubject(e.target.value)}
+        onChange={(e) => {
+          setSubject(e.target.value);
+          setReady(null);
+        }}
         placeholder="Assunto"
         className="w-full rounded-md border border-border bg-surface-solid px-2 py-1.5 text-sm font-medium"
       />
@@ -253,79 +262,151 @@ function ComposerBody({
       <EmailWarnings warnings={shownWarnings} needsName={needsName} />
       <textarea
         value={body}
-        onChange={(e) => setBody(e.target.value)}
+        onChange={(e) => {
+          setBody(e.target.value);
+          setReady(null);
+        }}
         rows={7}
         className="w-full resize-y rounded-md border border-border bg-surface-solid px-2 py-1.5 text-sm"
       />
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          onClick={() =>
-            run("copy", async () => {
-              // `updateDraft` re-garante o rodapé de opt-out e devolve o par normalizado —
-              // copiar o `body` local (o que a IA gerou, sem o rodapé injetado no `draft`)
-              // era exatamente o defeito de compliance: aguarda o servidor ANTES de escrever
-              // no clipboard, e atualiza o textarea para mostrar o texto que foi de fato copiado.
-              const normalized = await updateDraft({ leadId, subject, body });
-              setSubject(normalized.subject);
-              setBody(normalized.body);
-              await navigator.clipboard.writeText(`${normalized.subject}\n\n${normalized.body}`);
-              setMsg("Copiado — envie do seu email.");
-            })
-          }
-          disabled={busy === "copy"}
-          className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-semibold hover:bg-surface disabled:opacity-50"
-        >
-          <MdOutlineContentCopy size={14} />
-          Copiar
-        </button>
-        <button
-          onClick={() => run("mark", async () => {
-            const normalized = await updateDraft({ leadId, subject, body });
-            setSubject(normalized.subject);
-            setBody(normalized.body);
-            await markSent({ leadId });
-            setMsg("Marcado como enviado.");
-          })}
-          disabled={busy === "mark"}
-          className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-semibold hover:bg-surface disabled:opacity-50"
-        >
-          <MdOutlineCheck size={14} />
-          Marcar enviado
-        </button>
-        {hasEmail && (
+      <Note tone="info">
+        <p>
+          Ao clicar em Enviar, o Osprano confere se este contato pode receber e-mail e acrescenta o
+          rodapé de descadastro com seus dados e a fonte do contato. O Osprano não envia nada: a
+          mensagem sai do seu e-mail.
+        </p>
+      </Note>
+      {ready === null ? (
+        <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={() => run("send", async () => {
-              // ÚLTIMA trava antes de um envio IRREVERSÍVEL, e só para o defeito DETERMINÍSTICO:
-              // `[seu nome]` literal no texto nunca é intencional. Confirma, não bloqueia — ela
-              // pode seguir. A alegação de localidade NÃO entra aqui de propósito: é heurística
-              // (regex por idioma) e pode dar falso positivo — travar o envio num palpite treina
-              // a usuária a clicar "OK" no automático, e aí a trava não vale para nada.
-              // Só neste botão: "Copiar" e "Marcar enviado" não mandam nada para ninguém.
-              if (
-                needsName &&
-                !window.confirm(
-                  `O email ainda tem o marcador ${NAME_PLACEHOLDER} no lugar do seu nome — ` +
-                    `o prospect receberia esses caracteres literais.\n\nEnviar assim mesmo?`,
-                )
-              ) {
-                setMsg(`Envio cancelado — troque ${NAME_PLACEHOLDER} pelo seu nome.`);
-                return;
-              }
-              const normalized = await updateDraft({ leadId, subject, body });
-              setSubject(normalized.subject);
-              setBody(normalized.body);
-              await send({ leadId });
-              setMsg("Enviado via Resend.");
-            })}
-            disabled={busy === "send"}
+            onClick={() =>
+              run("prepare", async () => {
+                const r = await prepareSend({ leadId, subject, body });
+                setSubject(r.subject);
+                setReady(r);
+              })
+            }
+            disabled={!lead?.email || senderReady !== true || busy === "prepare"}
             className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-brand-fg disabled:opacity-50"
           >
             <MdOutlineSend size={14} />
-            {busy === "send" ? "Enviando…" : "Enviar via Resend"}
+            {busy === "prepare" ? "Preparando…" : "Enviar"}
           </button>
-        )}
-      </div>
+        </div>
+      ) : (
+        <ReadyBlock
+          ready={ready}
+          busy={busy}
+          onCopy={() =>
+            run("copy", async () => {
+              await navigator.clipboard.writeText(`${ready.subject}\n\n${ready.body}`);
+              setMsg(`Copiado. Cole no seu e-mail e envie para ${ready.to}.`);
+            })
+          }
+          onMark={() =>
+            run("mark", async () => {
+              await markSent({ leadId });
+              setMsg("Marcada como enviada e registrada no Histórico.");
+            })
+          }
+          onBack={() => setReady(null)}
+        />
+      )}
       {msg && <p className="text-xs text-muted">{msg}</p>}
+    </div>
+  );
+}
+
+function SenderNotice() {
+  return (
+    <Note tone="stop">
+      <p>
+        Complete seu perfil de remetente (nome, empresa, endereço e e-mail de resposta) para
+        escrever e enviar.
+      </p>
+      <Link href="/settings" className="font-semibold underline">
+        Abrir Ajustes &gt; Remetente
+      </Link>
+    </Note>
+  );
+}
+
+const linkBtn =
+  "inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-semibold hover:bg-surface disabled:opacity-50";
+
+/** Mensagem final do servidor + formas de abrir no e-mail do cliente. Abrir/copiar não marca nada. */
+function ReadyBlock({
+  ready,
+  busy,
+  onCopy,
+  onMark,
+  onBack,
+}: {
+  ready: { to: string; subject: string; body: string };
+  busy: string | null;
+  onCopy: () => void;
+  onMark: () => void;
+  onBack: () => void;
+}) {
+  const links = composeLinks(ready);
+  const targets = [
+    { label: "Abrir no Gmail", href: links.gmail, external: true },
+    { label: "Abrir no Outlook", href: links.outlook, external: true },
+    { label: "App de e-mail", href: links.mailto, external: false },
+  ];
+  const off = targets.filter((t) => t.href === null).map((t) => t.label.replace("Abrir no ", ""));
+  return (
+    <div className="space-y-2">
+      <div className="rounded-md border border-border bg-surface-solid p-2">
+        <p className="text-xs text-muted">
+          Pronta para enviar para <span className="font-medium text-foreground">{ready.to}</span>
+        </p>
+        <p className="mt-1 text-sm font-bold">{ready.subject}</p>
+        <pre className="mt-1 whitespace-pre-wrap break-words font-sans text-sm">{ready.body}</pre>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        {targets.map((t) =>
+          t.href ? (
+            <a
+              key={t.label}
+              href={t.href}
+              {...(t.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+              className={linkBtn}
+            >
+              {t.label}
+            </a>
+          ) : (
+            <button key={t.label} disabled className={linkBtn}>
+              {t.label}
+            </button>
+          ),
+        )}
+        <button onClick={onCopy} disabled={busy === "copy"} className={linkBtn}>
+          <MdOutlineContentCopy size={14} />
+          Copiar
+        </button>
+      </div>
+      {off.length > 0 && (
+        <Note tone="warn">
+          <p>
+            Mensagem longa demais para abrir direto em {off.join(", ")}. Use Copiar e cole no seu
+            e-mail.
+          </p>
+        </Note>
+      )}
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          onClick={onMark}
+          disabled={busy === "mark"}
+          className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-brand-fg disabled:opacity-50"
+        >
+          <MdOutlineCheck size={14} />
+          Marquei como enviada
+        </button>
+        <button onClick={onBack} className={linkBtn}>
+          Voltar a editar
+        </button>
+      </div>
     </div>
   );
 }
