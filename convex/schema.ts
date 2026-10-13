@@ -72,6 +72,8 @@ export default defineSchema({
     termsVersion: v.optional(v.string()),
     termsAcceptedAt: v.optional(v.number()),
     professionalUse: v.optional(v.boolean()),
+    // perfil de remetente (SEND-01): identidade do cliente na assinatura, no rodapé e no prompt da IA
+    sender: v.optional(v.object({ name: v.string(), company: v.string(), address: v.string(), replyTo: v.string() })),
   })
     .index("by_org", ["orgId"])
     .index("by_customer", ["stripeCustomerId"]),
