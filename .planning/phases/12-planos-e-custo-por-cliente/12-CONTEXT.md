@@ -21,6 +21,7 @@ Planos reais com limites que cabem no preço, cota reservada antes de tudo que c
 - Teste (`trial`): 25 leads, 25 gerações, detalhes 25, sites 2; **único por pessoa**, não renova.
 - O plano `free` atual deixa de existir: workspaces com `free` passam a ser `trial` (migração ou leitura tolerante; Claude decide, sem quebrar o workspace de produção da Duda).
 - Os textos de features da landing (`PLANS.features`) seguem a regra da Fase 9: só o que existe. Teste `tests/landing-honesty.test.ts` precisa continuar verde (a Fase 9 avisou que ele amarra o formato do texto aos limites).
+- **Página Planos no beta (orquestrador, 2026-10-13):** o botão de checkout do Stripe sai da interface durante o beta para não vender pelos preços antigos do Stripe (€49 sob um cartão de €59); cada plano vira "Pedir este plano" por e-mail de suporte. O backend (`convex/billing.ts`, `convex/lib/stripe.ts`, `convex/http.ts`) fica intacto; a Fase 11 religa o checkout com os preços novos e atualiza o teste que trava isso.
 - **Plano para beta:** comando interno (`internalMutation`, rodado por `npx convex run`) para a Duda dar um plano a um workspace por e-mail ou orgId, sem Stripe. O workspace dela também recebe `agency` por esse comando.
 
 ### Cota de IA (PLAN-02)
