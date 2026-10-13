@@ -104,11 +104,11 @@ Milestone v1.3 "Pronto pra vender" (redefinido em 2026-10-12; substitui "Automa�
 
 ### Dados do Google conformes
 
-- [ ] **GPLC-01**: Lead vindo do Google persiste só o `place_id` (e latitude/longitude por no máximo 30 dias); nome, endereço, telefone, nota e site vindos do Google não são gravados.
-- [ ] **GPLC-02**: Ao ver um lead ou a lista de leads, os dados do Google aparecem buscados sob demanda, sem serem gravados, com o custo contado na cota do cliente e sem estourar o custo por cliente previsto no plano.
-- [ ] **GPLC-03**: O cliente confirma ou edita os dados do lead (nome, telefone, e-mail, endereço); só dado confirmado pelo cliente ou vindo do OpenStreetMap entra no preview público, na mensagem e no prompt da IA.
-- [ ] **GPLC-04**: Os leads já existentes com dados do Google são migrados para o modelo novo sem perder estágio, notas, histórico, site gerado nem dados confirmados.
-- [ ] **GPLC-05**: Toda tela que mostra conteúdo do Google exibe a atribuição do Google Maps, e conteúdo do Google nunca aparece junto de um mapa.
+- [x] **GPLC-01**: Lead vindo do Google persiste só o `place_id` (e latitude/longitude por no máximo 30 dias); nome, endereço, telefone, nota e site vindos do Google não são gravados.
+- [x] **GPLC-02**: Ao ver um lead ou a lista de leads, os dados do Google aparecem buscados sob demanda, sem serem gravados, com o custo contado na cota do cliente e sem estourar o custo por cliente previsto no plano.
+- [x] **GPLC-03**: O cliente confirma ou edita os dados do lead (nome, telefone, e-mail, endereço); só dado confirmado pelo cliente ou vindo do OpenStreetMap entra no preview público, na mensagem e no prompt da IA.
+- [x] **GPLC-04**: Os leads já existentes com dados do Google são migrados para o modelo novo sem perder estágio, notas, histórico, site gerado nem dados confirmados.
+- [x] **GPLC-05**: Toda tela que mostra conteúdo do Google exibe a atribuição do Google Maps, e conteúdo do Google nunca aparece junto de um mapa.
 
 ### Remetente e envio pelo e-mail do cliente
 
@@ -171,7 +171,7 @@ Milestone v1.3 "Pronto pra vender" (redefinido em 2026-10-12; substitui "Automa�
 
 ### Escala
 
-- [ ] **SCAL-01**: Paginação/take nas queries `.collect()` (`leads.list/stats/analytics`, `previews.listSites`, `outreach.outbox`, `isEmailSuppressed`)
+- [x] **SCAL-01**: Paginação/take nas queries `.collect()` (`leads.list/stats/analytics`, `previews.listSites`, `outreach.outbox`, `isEmailSuppressed`)
 - [ ] **SCAL-02**: Quota aplicada também em `leads.create` (criação manual)
 - [ ] **SCAL-03**: Rate-limit/dedupe em `previews.recordOpen`; confirmar que `getBySlug` não devolve `token`
 
@@ -272,12 +272,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LEGAL-03 | Phase 9 | Complete |
 | LEGAL-04 | Phase 9 | Complete |
 | LEGAL-05 | Phase 9 | Complete |
-| GPLC-01 | Phase 10 | Pending |
-| GPLC-02 | Phase 10 | Pending |
-| GPLC-03 | Phase 10 | Pending |
-| GPLC-04 | Phase 10 | Pending |
-| GPLC-05 | Phase 10 | Pending |
-| SCAL-01 | Phase 10 | Pending |
+| GPLC-01 | Phase 10 | Complete |
+| GPLC-02 | Phase 10 | Complete |
+| GPLC-03 | Phase 10 | Complete |
+| GPLC-04 | Phase 10 | Complete |
+| GPLC-05 | Phase 10 | Complete |
+| SCAL-01 | Phase 10 | Complete |
 | BILL-05 | Phase 11 | Pending |
 | BILL-06 | Phase 11 | Pending |
 | BILL-07 | Phase 11 | Pending |
