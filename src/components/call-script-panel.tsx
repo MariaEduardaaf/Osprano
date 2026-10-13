@@ -22,6 +22,7 @@ import {
 } from "@convex/lib/outreachAi";
 import type { OutreachWarning } from "@convex/lib/outreachAi";
 import { errorMessage } from "@/lib/errors";
+import { AiQuotaNotice, useAiBlocked } from "@/components/ai-quota";
 
 /**
  * Nome do idioma em PORTUGUÊS — é só RÓTULO DE UI, para a usuária brasileira ler.
@@ -196,6 +197,7 @@ export function CallScriptPanel({
   const [script, setScript] = useState<string>(initialScript ?? "");
   const [translation, setTranslation] = useState<string>(initialTranslation ?? "");
   const [busy, setBusy] = useState(false);
+  const aiBlocked = useAiBlocked();
   const [msg, setMsg] = useState<string | null>(null);
   // null = nada gerado NESTA sessão (o script na tela veio do banco, sem avisos junto).
   // Array (mesmo vazio) = veredito do backend, que é o autoritativo.
@@ -288,12 +290,13 @@ export function CallScriptPanel({
             setBusy(false);
           }
         }}
-        disabled={busy}
+        disabled={busy || aiBlocked}
         className="inline-flex items-center gap-1.5 rounded-md bg-brand px-2.5 py-1 text-[11px] font-semibold text-brand-fg disabled:opacity-50"
       >
         <MdOutlineAutoAwesome size={13} />
         {busy ? "Gerando…" : script ? "Regenerar script" : "Gerar script"}
       </button>
+      <AiQuotaNotice />
 
       {msg && <p className="text-[10px] text-muted">{msg}</p>}
 

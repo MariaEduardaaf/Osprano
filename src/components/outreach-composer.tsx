@@ -18,6 +18,7 @@ import type { Doc } from "@convex/_generated/dataModel";
 import { NAME_PLACEHOLDER, langForLead, detectLocalityClaims } from "@convex/lib/outreachAi";
 import type { OutreachWarning } from "@convex/lib/outreachAi";
 import { errorMessage } from "@/lib/errors";
+import { AiQuotaNotice, useAiBlocked } from "@/components/ai-quota";
 
 /**
  * Caixa de aviso — MESMO formato visual do painel de script (componente `Note` em
@@ -144,6 +145,7 @@ function ComposerBody({
   // um rascunho vindo do banco apareceria limpo. Vem por query e não por prop porque este
   // componente já se vira sozinho com o `leadId` (mesmo padrão de `outreach.getForLead`).
   const lead = useQuery(api.leads.get, { id: leadId });
+  const aiBlocked = useAiBlocked();
 
   const hasDraft = !!(existing && (existing.subject || existing.body));
   const [subject, setSubject] = useState(existing?.subject ?? "");
@@ -212,12 +214,13 @@ function ComposerBody({
               setOpen(true);
             })
           }
-          disabled={busy === "draft"}
+          disabled={busy === "draft" || aiBlocked}
           className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-brand-fg disabled:opacity-50"
         >
           <MdOutlineAutoAwesome size={14} />
           {busy === "draft" ? "Escrevendo…" : "Escrever com IA"}
         </button>
+        <AiQuotaNotice className="mt-1.5" />
         {/* O composer só abre (`setOpen(true)`) quando `draft` dá certo — um erro aqui
             (ex.: ANTHROPIC_API_KEY ausente) nunca chega a `open`, e `msg` teria que
             renderizar dentro do bloco expandido, que não existe ainda. Sem isto o clique
