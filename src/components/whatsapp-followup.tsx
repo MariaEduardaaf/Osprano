@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { MdOutlineChat, MdOutlineSend, MdOpenInNew } from "react-icons/md";
-import { useAction, useMutation } from "convex/react";
+import { MdOutlineChat, MdOpenInNew } from "react-icons/md";
+import { useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { errorMessage } from "@/lib/errors";
@@ -22,7 +22,6 @@ export function WhatsAppFollowup({
   phone?: string;
   optInAt?: number;
 }) {
-  const send = useAction(api.whatsapp.sendFollowup);
   const recordOptIn = useMutation(api.leads.recordWaOptIn);
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
@@ -93,38 +92,22 @@ export function WhatsAppFollowup({
         placeholder="Mensagem…"
         className="w-full resize-y rounded-md border border-border bg-surface-solid px-2 py-1 text-[11px]"
       />
-      <div className="flex items-center gap-1.5">
-        <button
-          onClick={async () => {
-            setBusy(true);
-            setMsg(null);
-            try {
-              await send({ leadId, message });
-              setMsg("Enviado.");
-            } catch (e) {
-              setMsg(errorMessage(e, "Falha"));
-            } finally {
-              setBusy(false);
-            }
-          }}
-          disabled={busy || !message.trim()}
-          className="inline-flex items-center gap-1 rounded-md bg-brand px-2.5 py-1 text-[11px] font-semibold text-brand-fg disabled:opacity-50"
+      {phone ? (
+        <a
+          href={`https://wa.me/${phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 rounded-md bg-brand px-2.5 py-1 text-[11px] font-semibold text-brand-fg"
         >
-          <MdOutlineSend size={13} />
-          {busy ? "…" : "Enviar"}
-        </button>
-        {phone && (
-          <a
-            href={`https://wa.me/${phone.replace(/[^0-9]/g, "")}`}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-[11px] font-semibold hover:bg-surface-2"
-          >
-            <MdOpenInNew size={13} />
-            wa.me
-          </a>
-        )}
-      </div>
+          <MdOpenInNew size={13} />
+          Abrir no WhatsApp
+        </a>
+      ) : (
+        <p className="text-[11px] text-muted">Lead sem telefone.</p>
+      )}
+      <p className="text-[10px] text-muted">
+        A mensagem sai do seu WhatsApp; o Osprano não envia por você.
+      </p>
       {msg && <p className="text-[10px] text-muted">{msg}</p>}
     </div>
   );

@@ -17,9 +17,17 @@ import { shareableFacts } from "./lib/googleData";
  * Kanban stage does NOT unlock WhatsApp — moving a card never grants consent.
  * Cold WhatsApp is unlawful in the EU without prior opt-in.
  */
+// No beta o Osprano não transmite mensagem de cliente por nenhum canal (SEND-02): o token e o
+// número são da Duda. Religar só com número do próprio cliente.
 export const sendFollowup = action({
   args: { leadId: v.id("leads"), message: v.string() },
   handler: async (ctx, { leadId, message }): Promise<{ sent: boolean }> => {
+    const CLIENT_SEND_VIA_WHATSAPP = false;
+    if (!CLIENT_SEND_VIA_WHATSAPP) {
+      throw userError(
+        "O envio de WhatsApp pelo Osprano está desligado: use o link do WhatsApp para mandar do seu número.",
+      );
+    }
     const orgId = await requireOrgId(ctx);
     assertAccepted(await ctx.runQuery(internal.workspaces.getInternal, { orgId }), orgId);
     const lead = await ctx.runQuery(internal.leads.getInternal, { leadId });
