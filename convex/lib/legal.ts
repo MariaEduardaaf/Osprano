@@ -32,8 +32,8 @@ export const LEGAL_IDENTITY: LegalIdentity = {
   taxId: "58.493.767/0001-80",
   address: "Rua Manoel Vicente de Brito, 1401, Farolândia, Aracaju/SE, CEP 49032-100", // sede no CNPJ
   country: "Brasil",
-  supportEmail: PLACEHOLDER,
-  privacyEmail: PLACEHOLDER,
+  supportEmail: "madualvesfr@gmail.com",
+  privacyEmail: "madualvesfr@gmail.com",
   // Representante na UE (GDPR art. 27). "" se o advogado confirmar que não se aplica
   // (aí a página não mostra a linha).
   euRepresentative: PLACEHOLDER,
