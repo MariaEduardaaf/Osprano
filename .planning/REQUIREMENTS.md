@@ -121,12 +121,12 @@ Milestone v1.3 "Pronto pra vender" (redefinido em 2026-10-12; substitui "Automa�
 
 ### Planos e custo por cliente
 
-- [ ] **PLAN-01**: Existem os planos Solo (EUR 29), Pro (EUR 59) e Agência (EUR 149), com limites mensais de leads (150 / 500 / 1.500), gerações por IA (300 / 1.000 / 3.000) e verificações de site, definidos num único lugar do código e espelhados no Stripe.
-- [ ] **PLAN-02**: Toda geração por IA (mensagem, roteiro de ligação) reserva cota antes de chamar a Anthropic; sem cota, o botão fica bloqueado com aviso e link para o upgrade.
-- [ ] **PLAN-03**: Cada cliente tem teto diário de buscas no Google e de verificações; o app tem um teto global de segurança que pausa as buscas no Google e avisa a Duda antes de passar do orçamento.
-- [ ] **PLAN-04**: Um teste grátis único por pessoa (25 leads e 25 gerações) substitui o plano grátis permanente; criar outra conta ou workspace não renova o teste.
+- [x] **PLAN-01**: Existem os planos Solo (EUR 29), Pro (EUR 59) e Agência (EUR 149), com limites mensais de leads (150 / 500 / 1.500), gerações por IA (300 / 1.000 / 3.000) e verificações de site, definidos num único lugar do código e espelhados no Stripe.
+- [x] **PLAN-02**: Toda geração por IA (mensagem, roteiro de ligação) reserva cota antes de chamar a Anthropic; sem cota, o botão fica bloqueado com aviso e link para o upgrade.
+- [x] **PLAN-03**: Cada cliente tem teto diário de buscas no Google e de verificações; o app tem um teto global de segurança que pausa as buscas no Google e avisa a Duda antes de passar do orçamento.
+- [x] **PLAN-04**: Um teste grátis único por pessoa (25 leads e 25 gerações) substitui o plano grátis permanente; criar outra conta ou workspace não renova o teste.
 - [ ] **PLAN-05**: A cota renova no ciclo de cobrança do Stripe, não numa janela solta de 30 dias.
-- [ ] **PLAN-06**: O uso e os limites aparecem no topo do app, com aviso em 80% e 100%.
+- [x] **PLAN-06**: O uso e os limites aparecem no topo do app, com aviso em 80% e 100%.
 
 ### Cobrança
 
@@ -172,7 +172,7 @@ Milestone v1.3 "Pronto pra vender" (redefinido em 2026-10-12; substitui "Automa�
 ### Escala
 
 - [x] **SCAL-01**: Paginação/take nas queries `.collect()` (`leads.list/stats/analytics`, `previews.listSites`, `outreach.outbox`, `isEmailSuppressed`)
-- [ ] **SCAL-02**: Quota aplicada também em `leads.create` (criação manual)
+- [x] **SCAL-02**: Quota aplicada também em `leads.create` (criação manual)
 - [ ] **SCAL-03**: Rate-limit/dedupe em `previews.recordOpen`; confirmar que `getBySlug` não devolve `token`
 
 ## v2 Requirements
@@ -283,13 +283,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BILL-07 | Phase 11 | Pending |
 | BILL-08 | Phase 11 | Pending |
 | BILL-09 | Phase 11 | Pending |
-| PLAN-01 | Phase 12 | Pending |
-| PLAN-02 | Phase 12 | Pending |
-| PLAN-03 | Phase 12 | Pending |
-| PLAN-04 | Phase 12 | Pending |
+| PLAN-01 | Phase 12 | Complete |
+| PLAN-02 | Phase 12 | Complete |
+| PLAN-03 | Phase 12 | Complete |
+| PLAN-04 | Phase 12 | Complete |
 | PLAN-05 | Phase 11 | Pending |
-| PLAN-06 | Phase 12 | Pending |
-| SCAL-02 | Phase 12 | Pending |
+| PLAN-06 | Phase 12 | Complete |
+| SCAL-02 | Phase 12 | Complete |
 | SEND-01 | Phase 13 | Pending |
 | SEND-02 | Phase 13 | Pending |
 | SEND-03 | Phase 13 | Pending |

@@ -21,7 +21,7 @@ Este milestone leva o Osprano — SaaS de prospecção e venda de sites para o m
 - [x] **Phase 9: Honestidade e superfície jurídica** - Landing só com o que o produto faz, páginas legais, aceite no cadastro, suporte e exclusão de conta (milestone v1.3, completed 2026-10-12)
 - [x] **Phase 10: Dados do Google conformes** - Só `place_id` persistido, dados do Google sob demanda com atribuição, dado confirmado pelo cliente alimenta preview e IA (milestone v1.3, completed 2026-10-13)
 - [ ] **Phase 11: Cobrança endurecida** (adiada em 2026-10-13: vem antes do lançamento, depois do beta) - Webhook seguro, pagamento falho, assinatura única, IVA e fatura, sem falha silenciosa (milestone v1.3)
-- [ ] **Phase 12: Planos e custo por cliente** - Solo/Pro/Agência com limites, cota de IA, teste grátis único, tetos diários e global (milestone v1.3)
+- [x] **Phase 12: Planos e custo por cliente** - Solo/Pro/Agência com limites, cota de IA, teste grátis único, tetos diários e global (milestone v1.3, completed 2026-10-13, não publicado)
 - [ ] **Phase 13: Remetente e envio pelo e-mail do cliente** - Perfil de remetente, "Enviar" abre o e-mail do cliente, supressão global, Noruega em validação (milestone v1.3)
 - [ ] **Phase 14: Prospecção assistida: verificação, ligação e preparação** - Confere site e redes sociais, fila "Ligar", "Preparar" gera tudo numa fila de revisão, sem envio (milestone v1.3)
 - [ ] **Phase 15: Primeiro uso, operação e idioma** - Onboarding, monitor de erros, painel interno, inglês e português (milestone v1.3)

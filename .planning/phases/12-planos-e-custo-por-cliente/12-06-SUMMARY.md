@@ -31,3 +31,9 @@ All gates green; schema live on DEV; internal commands respond; headless visual 
 None. Test Clerk user and its workspace were deleted via the app; `f12-smoke` workspace and the test trialClaims row remain on DEV.
 
 ## Self-Check: PASSED
+
+## Orquestrador, 2026-10-13
+
+- Template JWT "convex" do Clerk **de DEV** atualizado pela Backend API: claims agora `{"aud":"convex","email":"{{user.primary_email_address}}"}` (antes só `aud`). Conferência de `trialClaims.via = "email"` fica para o checkpoint de navegador da Fase 13 (aceite novo).
+- **Produção:** o mesmo ajuste precisa ser feito no template "convex" da instância de produção do Clerk (dashboard → JWT Templates → convex → acrescentar `"email": "{{user.primary_email_address}}"`). Item em 12-PROD-STEPS.md.
+- Item 3 (botões de IA travados na gaveta do lead com cota esgotada) entra no checkpoint de navegador da Fase 13, que já testa o composer.
