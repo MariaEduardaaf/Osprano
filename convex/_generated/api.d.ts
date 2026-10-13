@@ -42,6 +42,7 @@ import type * as model_leads from "../model/leads.js";
 import type * as model_plans from "../model/plans.js";
 import type * as model_previews from "../model/previews.js";
 import type * as model_purge from "../model/purge.js";
+import type * as model_suppressions from "../model/suppressions.js";
 import type * as model_tenant from "../model/tenant.js";
 import type * as model_uploads from "../model/uploads.js";
 import type * as model_workspace from "../model/workspace.js";
@@ -97,6 +98,7 @@ declare const fullApi: ApiFromModules<{
   "model/plans": typeof model_plans;
   "model/previews": typeof model_previews;
   "model/purge": typeof model_purge;
+  "model/suppressions": typeof model_suppressions;
   "model/tenant": typeof model_tenant;
   "model/uploads": typeof model_uploads;
   "model/workspace": typeof model_workspace;
