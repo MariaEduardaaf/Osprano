@@ -23,7 +23,7 @@ See: .planning/PROJECT.md (updated 2026-10-12)
 
 ## Current Position
 
-Phase: 13 de 16 (Remetente), executando. Fase 12 completa no branch em 2026-10-13 (não publicada; passos de produção em 12-PROD-STEPS.md). Fase 11 adiada pela Duda (beta fechado).
+Phase: Fases 12 e 13 completas no branch em 2026-10-13 (não publicadas). Próximo: publicar 12+13 em produção (passos em 12-PROD-STEPS.md + Clerk JWT email + ANTHROPIC_API_KEY) e abrir o beta fechado; depois Fase 14. Fase 11 adiada.
 Plan: —
 Status: Ready to plan
 Last activity: 2026-10-12 — Roadmap do v1.3 "Pronto pra vender" criado (Fases 9-16; substitui "Automação da prospecção", Fases 9-14 nunca iniciadas)

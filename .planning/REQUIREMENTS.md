@@ -112,12 +112,12 @@ Milestone v1.3 "Pronto pra vender" (redefinido em 2026-10-12; substitui "Automa�
 
 ### Remetente e envio pelo e-mail do cliente
 
-- [ ] **SEND-01**: O workspace tem um perfil de remetente (nome, empresa, endereço, e-mail de resposta), exigido antes da primeira mensagem; assinatura, rodapé de opt-out e prompt da IA usam esses dados, nunca os da Duda.
-- [ ] **SEND-02**: "Enviar" abre a mensagem pronta no e-mail do próprio cliente (Gmail, Outlook ou o app padrão) ou copia o texto; o Osprano não transmite e-mail de cliente pelo provedor dele.
-- [ ] **SEND-03**: Antes de abrir ou copiar, o servidor confere na hora `canContactByEmail`, supressão e mercado; o corpo sempre leva o rodapé de opt-out com link de descadastro e a fonte do dado (art. 14).
-- [ ] **SEND-04**: O cliente marca a mensagem como enviada e o lead vai para Abordado com o registro no Histórico.
-- [ ] **SEND-05**: A supressão é global: quem se descadastra pelo link de qualquer cliente não pode mais ser contatado por nenhum cliente.
-- [ ] **BASE-03**: A Noruega passa a ser mercado de ligação primeiro (fora de `LAUNCH_MARKETS`, `legalReview: "pending"`) até validação jurídica.
+- [x] **SEND-01**: O workspace tem um perfil de remetente (nome, empresa, endereço, e-mail de resposta), exigido antes da primeira mensagem; assinatura, rodapé de opt-out e prompt da IA usam esses dados, nunca os da Duda.
+- [x] **SEND-02**: "Enviar" abre a mensagem pronta no e-mail do próprio cliente (Gmail, Outlook ou o app padrão) ou copia o texto; o Osprano não transmite e-mail de cliente pelo provedor dele.
+- [x] **SEND-03**: Antes de abrir ou copiar, o servidor confere na hora `canContactByEmail`, supressão e mercado; o corpo sempre leva o rodapé de opt-out com link de descadastro e a fonte do dado (art. 14).
+- [x] **SEND-04**: O cliente marca a mensagem como enviada e o lead vai para Abordado com o registro no Histórico.
+- [x] **SEND-05**: A supressão é global: quem se descadastra pelo link de qualquer cliente não pode mais ser contatado por nenhum cliente.
+- [x] **BASE-03**: A Noruega passa a ser mercado de ligação primeiro (fora de `LAUNCH_MARKETS`, `legalReview: "pending"`) até validação jurídica.
 
 ### Planos e custo por cliente
 
@@ -290,12 +290,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PLAN-05 | Phase 11 | Pending |
 | PLAN-06 | Phase 12 | Complete |
 | SCAL-02 | Phase 12 | Complete |
-| SEND-01 | Phase 13 | Pending |
-| SEND-02 | Phase 13 | Pending |
-| SEND-03 | Phase 13 | Pending |
-| SEND-04 | Phase 13 | Pending |
-| SEND-05 | Phase 13 | Pending |
-| BASE-03 | Phase 13 | Pending |
+| SEND-01 | Phase 13 | Complete |
+| SEND-02 | Phase 13 | Complete |
+| SEND-03 | Phase 13 | Complete |
+| SEND-04 | Phase 13 | Complete |
+| SEND-05 | Phase 13 | Complete |
+| BASE-03 | Phase 13 | Complete |
 | VERIF-01 | Phase 14 | Pending |
 | VERIF-02 | Phase 14 | Pending |
 | VERIF-03 | Phase 14 | Pending |
