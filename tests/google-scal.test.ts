@@ -50,11 +50,9 @@ test("listSites, outbox e isEmailSuppressed sem .collect()", () => {
   assert.ok(!sites.includes(".collect()") && sites.includes("by_org_open") && sites.includes(".take(SITES_LIMIT)"));
   const out = body(read("outreach.ts"), "outbox");
   assert.ok(!out.includes(".collect()") && out.includes("by_org_channel") && out.includes(".take(OUTBOX_LIMIT)"));
-  const sup = read("suppressions.ts");
-  const i = sup.indexOf("export async function isEmailSuppressed");
-  const fn = sup.slice(i, sup.indexOf("\nexport", i + 1));
-  assert.ok(!fn.includes(".collect()"));
-  assert.equal(fn.split(".first()").length - 1, 2);
+  const sup = read("model/suppressions.ts");
+  assert.ok(!sup.includes(".collect()") && !sup.includes(".filter("));
+  assert.ok(sup.includes(".take(SUPPRESSION_SCAN)"));
 });
 
 test("leads.ts não tem list nem .collect()", () => {
