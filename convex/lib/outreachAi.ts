@@ -181,20 +181,27 @@ export const NAME_PLACEHOLDER = "[seu nome]";
 export interface OutreachIdentity {
   /** Nome real de quem liga/assina. Ausente → o prompt emite `NAME_PLACEHOLDER`. */
   callerName?: string;
+  /** Empresa ou marca do remetente (perfil de remetente, SEND-01). */
+  company?: string;
 }
 
 /**
  * Regras de IDENTIDADE do prompt: ou o nome exato, ou o marcador — nunca um nome inventado.
  * `role` entra na frase ("caller"/"sender") só para o texto ficar natural nos dois prompts.
  */
-function identityRules(role: "caller" | "sender", callerName?: string): string {
+function identityRules(role: "caller" | "sender", callerName?: string, company?: string): string {
   const name = callerName?.trim();
+  const co = company?.trim();
   if (name) {
     return (
       `IDENTITY — the ${role}'s name is EXACTLY "${name}". ` +
       `Use that exact spelling when introducing the ${role}. Do NOT translate it, localize it, ` +
       `abbreviate it, add a surname to it, or replace it with any other name. ` +
-      `Never invent any other personal name anywhere in the output. `
+      `Never invent any other personal name anywhere in the output. ` +
+      (co
+        ? `The ${role} works under the business name EXACTLY "${co}". You may mention it once, exactly as written. ` +
+          `Never invent any other company, agency or brand name. `
+        : "")
     );
   }
   return (
@@ -211,7 +218,8 @@ function identityRules(role: "caller" | "sender", callerName?: string): string {
 /**
  * Regras de HONESTIDADE do prompt (as mesmas para ligação e email).
  *
- * Quem prospecta é brasileira, remota, e nunca esteve no país do prospect. O modelo, sem
+ * Quem envia é cliente do Osprano; a regra proíbe alegar presença local que ninguém
+ * verificou (o Osprano não tem como saber onde a pessoa está). O modelo, sem
  * esta trava, escrevia "aquí en Valencia" / "ici à Genève": uma afirmação factual FALSA,
  * dita ao prospect, no idioma que ela não fala — ela não teria como notar.
  */
@@ -228,7 +236,7 @@ function honestyRules(role: "caller" | "sender", lang: string): string {
     `(c) NEVER claim to know the area, to have walked past, visited, eaten at, shopped at, or been ` +
     `a customer of this business, nor to have been referred by anyone; ` +
     `(d) NEVER invent any fact you were not given: years of experience, number or names of clients, ` +
-    `clients in that country, portfolio, agency/company name, team, awards, prices, or availability; ` +
+    `clients in that country, portfolio, agency/company name (other than the one given in IDENTITY), team, awards, prices, or availability; ` +
     `(e) you may state ONLY what the ${role} does (independent web professional), what was observed ` +
     `on the business's public online presence, and the free preview site already built for them. ` +
     `If a detail was not given to you, leave it out — do not guess a plausible one. `
@@ -310,7 +318,7 @@ export function emailSystemPrompt(lang: string, identity: OutreachIdentity = {})
     `professional reaching a local business about their online presence. ` +
     `Write the ENTIRE email (subject included) in ${lang} — the prospect's language, ` +
     `never a related variety of it. Max ~120 words. Professional, no hype, no fake urgency. ` +
-    identityRules("sender", identity.callerName) +
+    identityRules("sender", identity.callerName, identity.company) +
     honestyRules("sender", lang) +
     observationRules() +
     optOutRules(lang) +
@@ -337,7 +345,7 @@ export function callScriptSystemPrompt(lang: string, identity: OutreachIdentity 
     `Portuguese (pt-BR) rendering of that same script, written only so the Brazilian caller understands ` +
     `what they are reading aloud. Even when the prospect's language is itself a form of Portuguese, ` +
     `"script" stays in ${lang} and only "translation" is pt-BR. ` +
-    identityRules("caller", identity.callerName) +
+    identityRules("caller", identity.callerName, identity.company) +
     honestyRules("caller", lang) +
     observationRules() +
     `The call MUST: (1) open by identifying the caller BY NAME (see IDENTITY), (2) stay inside the ` +
@@ -366,8 +374,8 @@ export function callScriptSystemPrompt(lang: string, identity: OutreachIdentity 
 export type OutreachField = "subject" | "body" | "script" | "translation";
 
 /**
- * Código do aviso. `locality-claim`: o texto parece afirmar presença local (falso — quem
- * escreve está no Brasil). `no-verified-signal`: gerado sem nenhum sinal verificado, então
+ * Código do aviso. `locality-claim`: o texto parece afirmar presença local (o Osprano
+ * não tem como confirmar onde quem envia está). `no-verified-signal`: gerado sem nenhum sinal verificado, então
  * NÃO alega problema nenhum (a UI pode sugerir rodar o score para um ângulo mais específico).
  */
 export type OutreachWarningCode = "locality-claim" | "no-verified-signal";
@@ -679,7 +687,7 @@ export function detectLocalityClaims(
       excerpt,
       message:
         `Possível alegação de presença local ${FIELD_LABEL_PT[opts.field]}. ` +
-        `Quem assina está no Brasil e nunca esteve na cidade do prospect — leia o trecho e ` +
+        `O Osprano não tem como confirmar que você está na cidade do prospect: leia o trecho e ` +
         `reescreva ou apague antes de usar (o texto NÃO foi alterado automaticamente).`,
     });
     if (warnings.length >= 5) break; // teto: aviso demais vira ruído e ninguém lê nenhum

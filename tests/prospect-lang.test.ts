@@ -522,7 +522,9 @@ test("detectLocalityClaims: pega a alegação de local em cada idioma do mercado
     assert.equal(aviso.field, "script");
     assert.ok(aviso.excerpt && aviso.excerpt.length > 0, `${lang}: aviso sem trecho`);
     assert.ok(aviso.message.includes("no script da ligação"), `${lang}: mensagem sem o campo`);
-    assert.ok(/Brasil/.test(aviso.message), `${lang}: a mensagem precisa dizer o fato`);
+    assert.ok(!/Brasil/.test(aviso.message));
+    assert.ok(aviso.message.includes("não tem como confirmar"), `${lang}: a mensagem precisa dizer o fato`);
+    assert.ok(!aviso.message.includes("—"));
     // NUNCA reescreve: quem não lê o idioma não pode editar o texto do prospect.
     assert.ok(!("text" in aviso), "o detector não devolve texto corrigido");
   }
@@ -619,4 +621,13 @@ test("detectLocalityClaims: texto vazio ou lead sem cidade não quebra", () => {
     1,
     "sem cidade em mãos, o padrão do idioma ainda vale",
   );
+});
+
+test("prompts usam nome e empresa do remetente", () => {
+  const id = { callerName: "Ana Lima", company: "Lima Web" };
+  const e = emailSystemPrompt("Spanish", id);
+  assert.ok(e.includes('"Ana Lima"') && e.includes('"Lima Web"'));
+  assert.ok(e.includes("Never invent any other company"));
+  assert.ok(callScriptSystemPrompt("German", id).includes('"Lima Web"'));
+  assert.ok(!emailSystemPrompt("Spanish", { callerName: "Ana Lima" }).includes("business name EXACTLY"));
 });
