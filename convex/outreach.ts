@@ -4,6 +4,7 @@ import { api, internal } from "./_generated/api";
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { requireOrgId } from "./model/tenant";
+import { withAiQuota } from "./model/aiQuota";
 import { assertAccepted } from "./model/workspace";
 import { writeEmail, writeCallScript, langForLead } from "./lib/outreachAi";
 import type { OutreachWarning } from "./lib/outreachAi";
@@ -261,9 +262,9 @@ export const draft = action({
     // Mesma identidade do rodapé de opt-out (RESEND_FROM), agora também no CORPO: sem
     // isso a IA inventava quem assina. Sem display name no RESEND_FROM → undefined, e o
     // prompt emite o marcador `[seu nome]` em vez de um nome falso.
-    const email = await writeEmail(key, safe, `${appUrl}/p/${token}`, {
+    const email = await withAiQuota(ctx, orgId, () => writeEmail(key, safe, `${appUrl}/p/${token}`, {
       callerName: callerNameFrom(process.env.RESEND_FROM),
-    });
+    }));
 
     // Devolve o que foi REALMENTE persistido (com o rodapé de opt-out), não `email` cru:
     // `email.body` nunca viu `withOptOutFooter` (rodada só dentro de `upsertDraft`), e a
@@ -316,9 +317,9 @@ export const callScript = action({
     // identidade do email). Ausente/sem display name → o script sai com `[seu nome]`,
     // que a usuária troca antes de discar. NUNCA um nome inventado pelo modelo: ela lê
     // o script em voz alta num idioma que não fala e se apresentaria como outra pessoa.
-    const result = await writeCallScript(key, safe, {
+    const result = await withAiQuota(ctx, orgId, () => writeCallScript(key, safe, {
       callerName: callerNameFrom(process.env.RESEND_FROM),
-    });
+    }));
     await ctx.runMutation(internal.leads.setCallScript, {
       leadId,
       script: result.script,
