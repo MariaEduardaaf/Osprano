@@ -287,7 +287,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PLAN-02 | Phase 12 | Pending |
 | PLAN-03 | Phase 12 | Pending |
 | PLAN-04 | Phase 12 | Pending |
-| PLAN-05 | Phase 12 | Pending |
+| PLAN-05 | Phase 11 | Pending |
 | PLAN-06 | Phase 12 | Pending |
 | SCAL-02 | Phase 12 | Pending |
 | SEND-01 | Phase 13 | Pending |

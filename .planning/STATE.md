@@ -23,7 +23,7 @@ See: .planning/PROJECT.md (updated 2026-10-12)
 
 ## Current Position
 
-Phase: 11 de 16 (Cobrança endurecida), pronta para planejar. Fases 9 e 10 em produção desde 2026-10-12 (main = v1.3-pronto-pra-vender em b3ef3f7); migração dos 11 leads do Google feita e auditada
+Phase: 12 e 13 de 16 (Planos e custo; Remetente), planejamento. Fase 11 adiada pela Duda em 2026-10-13 (beta fechado sem cobrança automática; volta antes do lançamento). Fases 9 e 10 em produção desde 2026-10-12 (main = v1.3-pronto-pra-vender em b3ef3f7); migração dos 11 leads do Google feita e auditada
 Plan: —
 Status: Ready to plan
 Last activity: 2026-10-12 — Roadmap do v1.3 "Pronto pra vender" criado (Fases 9-16; substitui "Automação da prospecção", Fases 9-14 nunca iniciadas)

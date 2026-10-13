@@ -20,7 +20,7 @@ Este milestone leva o Osprano — SaaS de prospecção e venda de sites para o m
 - [x] **Phase 8: Modelos de site** - 4 modelos por segmento com 3 paletas cada, editor completo com upload de fotos e prévia ao vivo, preview e site publicado renderizando o modelo salvo, correções do UAT final (milestone v1.2, completed 2026-09-18)
 - [x] **Phase 9: Honestidade e superfície jurídica** - Landing só com o que o produto faz, páginas legais, aceite no cadastro, suporte e exclusão de conta (milestone v1.3, completed 2026-10-12)
 - [x] **Phase 10: Dados do Google conformes** - Só `place_id` persistido, dados do Google sob demanda com atribuição, dado confirmado pelo cliente alimenta preview e IA (milestone v1.3, completed 2026-10-13)
-- [ ] **Phase 11: Cobrança endurecida** - Webhook seguro, pagamento falho, assinatura única, IVA e fatura, sem falha silenciosa (milestone v1.3)
+- [ ] **Phase 11: Cobrança endurecida** (adiada em 2026-10-13: vem antes do lançamento, depois do beta) - Webhook seguro, pagamento falho, assinatura única, IVA e fatura, sem falha silenciosa (milestone v1.3)
 - [ ] **Phase 12: Planos e custo por cliente** - Solo/Pro/Agência com limites, cota de IA, teste grátis único, tetos diários e global (milestone v1.3)
 - [ ] **Phase 13: Remetente e envio pelo e-mail do cliente** - Perfil de remetente, "Enviar" abre o e-mail do cliente, supressão global, Noruega em validação (milestone v1.3)
 - [ ] **Phase 14: Prospecção assistida: verificação, ligação e preparação** - Confere site e redes sociais, fila "Ligar", "Preparar" gera tudo numa fila de revisão, sem envio (milestone v1.3)
@@ -268,7 +268,7 @@ Plans:
 
 **Goal**: O Stripe é a fonte de verdade do estado da assinatura: webhook seguro, pagamento falho tratado, assinatura única, imposto e fatura corretos, e nenhuma falha silenciosa.
 **Depends on**: Phase 9
-**Requirements**: BILL-05, BILL-06, BILL-07, BILL-08, BILL-09
+**Requirements**: BILL-05, BILL-06, BILL-07, BILL-08, BILL-09, PLAN-05
 **Success Criteria** (what must be TRUE):
   1. O webhook rejeita evento com timestamp fora de ±5 min ou assinatura inválida (comparação em tempo constante), provado por teste
   2. Com pagamento atrasado ou falho, o app mostra aviso, restringe o uso depois do prazo de carência e volta ao normal quando o pagamento entra
@@ -281,13 +281,13 @@ Plans:
 ### Phase 12: Planos e custo por cliente
 
 **Goal**: Os três planos existem com limites reais, cada chamada que custa dinheiro reserva cota antes, o teste grátis não renova e a Duda tem teto de gasto.
-**Depends on**: Phase 10, Phase 11
-**Requirements**: PLAN-01, PLAN-02, PLAN-03, PLAN-04, PLAN-05, PLAN-06, SCAL-02
+**Depends on**: Phase 10 (Fase 11 adiada em 2026-10-13: beta fechado sem cobrança automática; espelhar preços no Stripe e PLAN-05 vão para a Fase 11)
+**Requirements**: PLAN-01, PLAN-02, PLAN-03, PLAN-04, PLAN-06, SCAL-02
 **Success Criteria** (what must be TRUE):
-  1. Solo (EUR 29), Pro (EUR 59) e Agência (EUR 149) aparecem com limites de leads, gerações por IA e verificações definidos num único lugar do código, e iguais aos preços do Stripe
+  1. Solo (EUR 29), Pro (EUR 59) e Agência (EUR 149) aparecem com limites de leads, gerações por IA e verificações definidos num único lugar do código (iguais ao Stripe só na Fase 11); a Duda consegue dar um plano a um usuário beta por comando interno
   2. Gerar mensagem ou roteiro de ligação sem cota deixa o botão bloqueado, com aviso e link de upgrade; a cota é reservada antes de chamar a Anthropic; criar lead manual também consome cota
   3. Quem se cadastra recebe um teste único de 25 leads e 25 gerações; criar outra conta ou workspace com a mesma pessoa não dá novo teste
-  4. A cota renova no ciclo de cobrança do Stripe; o uso e os limites aparecem no topo do app com aviso em 80% e 100%
+  4. O uso e os limites aparecem no topo do app com aviso em 80% e 100% (renovar no ciclo do Stripe fica na Fase 11)
   5. Cada cliente tem teto diário de buscas no Google e de verificações; passar do teto global de segurança pausa as buscas no Google e avisa a Duda
 **Plans**: TBD
 **Depende de você**: `ANTHROPIC_API_KEY` em produção (e rotação da chave exposta em 2026-09-16); orçamento mensal máximo para o teto global; os três preços criados no Stripe (vêm da Fase 11).
