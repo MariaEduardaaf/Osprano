@@ -1,5 +1,6 @@
 import type { MutationCtx } from "../_generated/server";
 import { deleteLeadCascade } from "./leads.ts";
+import { globalizeOrgSuppression } from "./suppressions.ts";
 
 // Lotes conservadores para caber nos limites por mutation do Convex (~16k leituras,
 // ~8k escritas, 1 s). A action chama em loop; cada lote é uma transação.
@@ -42,13 +43,13 @@ export async function purgeOrgBatch(ctx: MutationCtx, orgId: string): Promise<{ 
     await ctx.db.delete(u._id);
     touched++;
   }
-  // Só supressões DESTA org. Supressão global (orgId indefinido) nunca é apagada aqui.
-  // Fase 13 (SEND-05) torna o descadastro global: a partir dela, os descadastros deixam de ser apagados com a conta.
+  // Supressões da org viram globais (SEND-05): quem pediu para não ser contatado continua fora da lista
+  // de todos, mesmo depois de a cliente apagar a conta.
   for (const s of await ctx.db
     .query("suppressions")
     .withIndex("by_org_email", (q) => q.eq("orgId", orgId))
     .take(ROW_BATCH)) {
-    await ctx.db.delete(s._id);
+    await globalizeOrgSuppression(ctx, s);
     touched++;
   }
   // Higiene: hoje nada insere em users.

@@ -24,7 +24,7 @@ function seed() {
   s.events.push({ orgId: "A" });
   storage.push("st_orphan");
   s.uploads.push({ orgId: "A", leadId: "gone", storageId: "st_orphan" });
-  s.suppressions.push({ orgId: "A", email: "a@x.com" }, { email: "g@x.com" }, { orgId: "B", email: "b@x.com" });
+  s.suppressions.push({ orgId: "A", email: "a@x.com" }, { email: "g@x.com" }, { orgId: "B", email: "b@x.com" }, { orgId: "A", email: "g@x.com" });
   s.users.push({ clerkId: "A" });
   s.workspaces.push({ orgId: "A" }, { orgId: "B" });
   let n = 0;
@@ -49,7 +49,8 @@ test("purgeOrgBatch: first call is partial, loop wipes org A only", async () => 
   assert.equal(tables.get("users")!.length, 0);
   assert.deepEqual([...live].filter((id) => id.startsWith("st_la") || id === "st_orphan"), []);
 
-  assert.equal(tables.get("suppressions")!.filter((r) => r.orgId === undefined).length, 1);
+  const globals = tables.get("suppressions")!.filter((r) => r.orgId === undefined);
+  assert.deepEqual(globals.map((r) => r.email).sort(), ["a@x.com", "g@x.com"]);
   assert.equal(tables.get("leads")!.filter((r) => r.orgId === "B").length, 2);
   assert.equal(tables.get("previews")!.filter((r) => r.orgId === "B").length, 2);
   assert.equal(tables.get("suppressions")!.filter((r) => r.orgId === "B").length, 1);
