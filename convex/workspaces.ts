@@ -3,7 +3,7 @@ import { v } from "convex/values";
 import { requireOrgId, isDemoEnabled } from "./model/tenant";
 import { getWorkspace, ensureWorkspace, reserveUsage, refundUsage, acceptTermsFor } from "./model/workspace";
 import { LEGAL_VERSION, isAccepted } from "./lib/legal";
-import { PLANS } from "./lib/domain";
+import { PLANS, planOf, limitFor, dailyLimitFor, dayKey } from "./lib/domain";
 
 const planV = v.union(v.literal("free"), v.literal("pro"), v.literal("agency"));
 
@@ -13,16 +13,24 @@ export const current = query({
   handler: async (ctx) => {
     const orgId = await requireOrgId(ctx);
     const ws = await getWorkspace(ctx, orgId);
-    const plan = ws?.plan ?? "free";
+    const plan = planOf(ws?.plan ?? "trial");
+    const lim = { plan, trialSpent: ws?.trialSpent };
     return {
       plan,
+      planName: PLANS[plan].name,
+      isTrial: plan === "trial",
+      trialSpent: plan === "trial" && ws?.trialSpent === true,
       leadsUsed: ws?.leadsUsed ?? 0,
       sitesUsed: ws?.sitesUsed ?? 0,
       detailsUsed: ws?.detailsUsed ?? 0,
+      aiUsed: ws?.aiUsed ?? 0,
+      searchesToday: ws?.dayKey === dayKey(Date.now()) ? (ws.searchesToday ?? 0) : 0,
       limits: {
-        leads: PLANS[plan].leadsPerMonth,
-        sites: PLANS[plan].sitesPerMonth,
-        details: PLANS[plan].detailsPerMonth,
+        leads: limitFor(lim, "leads"),
+        sites: limitFor(lim, "sites"),
+        details: limitFor(lim, "details"),
+        ai: limitFor(lim, "ai"),
+        searchesPerDay: dailyLimitFor(lim, "searches"),
       },
       subscriptionStatus: ws?.subscriptionStatus ?? null,
       acceptedVersion: ws?.termsVersion ?? null,

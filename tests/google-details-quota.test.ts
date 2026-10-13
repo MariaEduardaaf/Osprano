@@ -25,6 +25,7 @@ test("limites por plano", () => {
   assert.equal(planLimit("free", "details"), 25);
   assert.equal(planLimit("pro", "details"), 300);
   assert.equal(planLimit("agency", "details"), 400);
+  assert.equal(planLimit("solo", "details"), 100);
   assert.equal(PLANS.pro.detailsPerMonth, 300);
 });
 
@@ -32,7 +33,7 @@ test("free reserva 25 e o 26o falha", async () => {
   const { ctx, row } = setup();
   await reserveUsage(ctx, "A", "details", 25);
   assert.equal(row().detailsUsed, 25);
-  await assert.rejects(() => reserveUsage(ctx, "A", "details", 1), /25 consultas ao Google\/mês/);
+  await assert.rejects(() => reserveUsage(ctx, "A", "details", 1), /25 consultas ao Google/);
 });
 
 test("refund nunca fica negativo", async () => {
@@ -59,10 +60,10 @@ test("sem aceite lança", async () => {
 
 test("regressão leads e sites", async () => {
   const { ctx, row } = setup();
-  await reserveUsage(ctx, "A", "leads", 60);
+  await reserveUsage(ctx, "A", "leads", 25);
   await reserveUsage(ctx, "A", "sites", 2);
-  assert.equal(row().leadsUsed, 60);
+  assert.equal(row().leadsUsed, 25);
   assert.equal(row().sitesUsed, 2);
-  await assert.rejects(() => reserveUsage(ctx, "A", "leads", 1), /60 leads\/mês/);
-  await assert.rejects(() => reserveUsage(ctx, "A", "sites", 1), /2 sites\/mês/);
+  await assert.rejects(() => reserveUsage(ctx, "A", "leads", 1), /25 leads/);
+  await assert.rejects(() => reserveUsage(ctx, "A", "sites", 1), /2 sites/);
 });

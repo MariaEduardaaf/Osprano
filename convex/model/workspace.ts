@@ -1,6 +1,6 @@
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 import type { Doc } from "../_generated/dataModel";
-import { planLimit, type UsageKind } from "../lib/domain.ts";
+import { limitFor, type UsageKind } from "../lib/domain.ts";
 import { userError } from "../lib/errors.ts";
 import { isAccepted, LEGAL_VERSION } from "../lib/legal.ts";
 import { isDemoEnabled } from "./tenant.ts";
@@ -19,7 +19,7 @@ export async function ensureWorkspace(ctx: MutationCtx, orgId: string): Promise<
   if (existing) return existing;
   const id = await ctx.db.insert("workspaces", {
     orgId,
-    plan: "free",
+    plan: "trial",
     leadsUsed: 0,
     sitesUsed: 0,
     detailsUsed: 0,
@@ -79,7 +79,7 @@ export async function reserveUsage(
   const ws = await ensureFresh(ctx, orgId);
   assertAccepted(ws, orgId);
   const used = usedOf(ws, kind);
-  const limit = planLimit(ws.plan, kind);
+  const limit = limitFor(ws, kind);
   if (used + count > limit) {
     const unit = kind === "details" ? "consultas ao Google" : kind;
     throw userError(`Limite do plano ${ws.plan} atingido (${limit} ${unit}/mês). Faça upgrade em Planos.`);

@@ -52,11 +52,17 @@ export default defineSchema({
 
   workspaces: defineTable({
     orgId: v.string(),
-    plan: v.union(v.literal("free"), v.literal("pro"), v.literal("agency")),
+    plan: v.union(v.literal("free"), v.literal("trial"), v.literal("solo"), v.literal("pro"), v.literal("agency")), // "free" = legado (Fase 12 migra para trial; remover depois da migração em prod)
     // usage (reset monthly from periodStart)
     leadsUsed: v.number(),
     sitesUsed: v.number(),
     detailsUsed: v.optional(v.number()), // consultas ao Google Places (Place Details) no mês; ausente = 0
+    aiUsed: v.optional(v.number()), // gerações por IA no período; ausente = 0
+    verificationsUsed: v.optional(v.number()), // verificações no período; ausente = 0
+    dayKey: v.optional(v.string()), // dia UTC dos contadores diários
+    searchesToday: v.optional(v.number()),
+    verificationsToday: v.optional(v.number()),
+    trialSpent: v.optional(v.boolean()), // esta pessoa já usou o teste em outra conta
     periodStart: v.number(),
     // billing (Stripe)
     stripeCustomerId: v.optional(v.string()),
@@ -256,4 +262,20 @@ export default defineSchema({
   })
     .index("by_email", ["email"])
     .index("by_org_email", ["orgId", "email"]),
+
+  // PLAN-04: marca de "teste grátis já usado" por pessoa. key = SHA-256 do e-mail normalizado (ou do
+  // subject do Clerk, se o token não trouxer e-mail). Sobrevive à exclusão de conta de propósito.
+  trialClaims: defineTable({
+    key: v.string(),
+    orgId: v.string(),
+    via: v.union(v.literal("email"), v.literal("subject")),
+    claimedAt: v.number(),
+  }).index("by_key", ["key"]),
+
+  // PLAN-03: gasto estimado do app inteiro por mês (Google + Anthropic), teto global de segurança.
+  spend: defineTable({
+    month: v.string(),
+    usd: v.number(),
+    warnedAt: v.optional(v.number()),
+  }).index("by_month", ["month"]),
 });

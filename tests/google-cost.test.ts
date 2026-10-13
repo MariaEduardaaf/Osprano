@@ -6,10 +6,10 @@ import { DETAILS_FIELDS_FULL, DETAILS_PRICE_USD_PER_1000, skuForFields } from ".
 const perQuery = DETAILS_PRICE_USD_PER_1000[skuForFields(DETAILS_FIELDS_FULL)] / 1000;
 const worst = (p: keyof typeof PLANS) => PLANS[p].detailsPerMonth * perQuery;
 
-test("pro e agency: pior caso de Place Details <= 15% do preço", () => {
-  for (const p of ["pro", "agency"] as const) assert.ok(worst(p) <= PLANS[p].price * 0.15, p);
+test("solo, pro e agency: pior caso de Place Details <= 15% do preço", () => {
+  for (const p of ["solo", "pro", "agency"] as const) assert.ok(worst(p) <= PLANS[p].price * 0.15, p);
 });
 
-test("free: pior caso <= US$ 1", () => {
-  assert.ok(worst("free") <= 1);
+test("trial: pior caso <= US$ 1", () => {
+  assert.ok(worst("trial") <= 1);
 });

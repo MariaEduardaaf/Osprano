@@ -647,10 +647,14 @@ export const PIPELINE_STAGES: { id: Stage; label: string }[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Plans (freemium)
+// Planos do beta (Fase 12). Fonte única de limites. 'free' é legado: workspaces
+// antigos são lidos como 'trial'. O teste não renova (ver ensureFresh).
 // ---------------------------------------------------------------------------
 
-export type Plan = "free" | "pro" | "agency";
+export type Plan = "trial" | "solo" | "pro" | "agency";
+export type StoredPlan = Plan | "free"; // "free" = legado, lido como "trial"
+export type MonthlyKind = "leads" | "sites" | "details" | "ai" | "verifications";
+export type DailyKind = "searches" | "verifications";
 export type UsageKind = "leads" | "sites" | "details";
 
 export interface PlanDef {
@@ -659,44 +663,121 @@ export interface PlanDef {
   price: number; // EUR / month
   leadsPerMonth: number;
   sitesPerMonth: number;
-  detailsPerMonth: number; // consultas ao Google Places (Place Details) por mês; Fase 12 recalibra
+  detailsPerMonth: number; // consultas ao Google Places (Place Details)
+  aiPerMonth: number; // gerações por IA (Anthropic)
+  verificationsPerMonth: number; // verificações (Serper, Fase 14)
+  searchesPerDay: number; // buscas no Google por dia
+  verificationsPerDay: number;
   features: string[];
 }
 
 export const PLANS: Record<Plan, PlanDef> = {
-  free: {
-    id: "free",
-    name: "Gratuito",
+  trial: {
+    id: "trial",
+    name: "Teste grátis",
     price: 0,
-    leadsPerMonth: 60,
+    leadsPerMonth: 25,
     sitesPerMonth: 2,
     detailsPerMonth: 25,
-    features: ["60 leads/mês", "2 sites/mês", "Digital Presence Score", "Preview rastreado"],
+    aiPerMonth: 25,
+    verificationsPerMonth: 25,
+    searchesPerDay: 6,
+    verificationsPerDay: 25,
+    features: [
+      "25 leads no teste",
+      "25 gerações por IA no teste",
+      "2 sites no teste",
+      "Digital Presence Score",
+      "Preview rastreado",
+    ],
+  },
+  solo: {
+    id: "solo",
+    name: "Solo",
+    price: 29,
+    leadsPerMonth: 150,
+    sitesPerMonth: 10,
+    detailsPerMonth: 100,
+    aiPerMonth: 300,
+    verificationsPerMonth: 150,
+    searchesPerDay: 15,
+    verificationsPerDay: 30,
+    features: [
+      "150 leads/mês",
+      "300 gerações por IA/mês",
+      "10 sites/mês",
+      "Digital Presence Score",
+      "Preview rastreado",
+    ],
   },
   pro: {
     id: "pro",
     name: "Pro",
-    price: 49,
-    leadsPerMonth: 2000,
-    sitesPerMonth: 50,
+    price: 59,
+    leadsPerMonth: 500,
+    sitesPerMonth: 40,
     detailsPerMonth: 300,
-    features: ["2.000 leads/mês", "50 sites/mês", "Todos os mercados", "Abordagem escrita por IA"],
+    aiPerMonth: 1000,
+    verificationsPerMonth: 500,
+    searchesPerDay: 30,
+    verificationsPerDay: 100,
+    features: ["500 leads/mês", "1.000 gerações por IA/mês", "40 sites/mês", "Tudo do Solo"],
   },
   agency: {
     id: "agency",
     name: "Agência",
     price: 149,
-    leadsPerMonth: 10000,
-    sitesPerMonth: 500,
+    leadsPerMonth: 1500,
+    sitesPerMonth: 150,
     detailsPerMonth: 400,
-    features: ["10.000 leads/mês", "500 sites/mês", "Tudo do Pro"],
+    aiPerMonth: 3000,
+    verificationsPerMonth: 1500,
+    searchesPerDay: 60,
+    verificationsPerDay: 300,
+    features: ["1.500 leads/mês", "3.000 gerações por IA/mês", "150 sites/mês", "Tudo do Pro"],
   },
 };
 
-export function planLimit(plan: Plan, kind: UsageKind): number {
-  if (kind === "details") return PLANS[plan].detailsPerMonth;
-  return kind === "leads" ? PLANS[plan].leadsPerMonth : PLANS[plan].sitesPerMonth;
+export const PAID_PLANS: PlanDef[] = [PLANS.solo, PLANS.pro, PLANS.agency];
+
+/** "free" (legado) vale como "trial". */
+export function planOf(p: StoredPlan): Plan {
+  return p === "free" ? "trial" : p;
 }
+
+const MONTHLY_FIELD = {
+  leads: "leadsPerMonth",
+  sites: "sitesPerMonth",
+  details: "detailsPerMonth",
+  ai: "aiPerMonth",
+  verifications: "verificationsPerMonth",
+} as const;
+const DAILY_FIELD = { searches: "searchesPerDay", verifications: "verificationsPerDay" } as const;
+
+export function planLimit(plan: StoredPlan, kind: MonthlyKind): number {
+  return PLANS[planOf(plan)][MONTHLY_FIELD[kind]];
+}
+
+export function dailyLimit(plan: StoredPlan, kind: DailyKind): number {
+  return PLANS[planOf(plan)][DAILY_FIELD[kind]];
+}
+
+type PlanState = { plan: StoredPlan; trialSpent?: boolean };
+const spent = (ws: PlanState) => planOf(ws.plan) === "trial" && ws.trialSpent === true;
+
+/** Limite efetivo: teste já usado em outra conta = 0. */
+export function limitFor(ws: PlanState, kind: MonthlyKind): number {
+  return spent(ws) ? 0 : planLimit(ws.plan, kind);
+}
+
+export function dailyLimitFor(ws: PlanState, kind: DailyKind): number {
+  return spent(ws) ? 0 : dailyLimit(ws.plan, kind);
+}
+
+/** "AAAA-MM-DD" em UTC. */
+export const dayKey = (now: number): string => new Date(now).toISOString().slice(0, 10);
+/** "AAAA-MM" em UTC. */
+export const monthKey = (now: number): string => new Date(now).toISOString().slice(0, 7);
 
 /** Clamp do parâmetro `max` de descoberta: default 20, piso 1, teto 50, arredonda decimais. */
 export function clampDiscoveryCount(max?: number): number {
