@@ -5,6 +5,7 @@ import { v } from "convex/values";
 import { requireOrgId } from "./model/tenant";
 import { isSearchableMarket, MARKETS, clampDiscoveryCount, keepOnlyWithoutSite } from "./lib/domain";
 import { userError } from "./lib/errors";
+import { COST_USD } from "./lib/budget";
 import {
   DETAILS_BATCH_MAX,
   DETAILS_FIELDS_FULL,
@@ -70,11 +71,23 @@ export async function runPlacesSearch(
       count: want,
     });
 
+    const plannedPages = Math.ceil(want / 20);
+    let pagesFetched = 0;
+    let searchesReserved = false;
+    // ponytail: página que falhou continua contando no teto diário e no orçamento (o Google pode cobrar); superestima de propósito.
+    const refundUnusedPages = async () => {
+      if (searchesReserved && plannedPages > pagesFetched) {
+        await ctx.runMutation(internal.workspaces.refund, { orgId, kind: "searches", count: plannedPages - pagesFetched });
+      }
+    };
+
     let places: PlaceResult[] = [];
     let inserted = 0;
     let droppedWithSite = 0;
     const shown: SearchResult["shown"] = [];
     try {
+      await ctx.runMutation(internal.workspaces.reserve, { orgId, kind: "searches", count: plannedPages, usd: plannedPages * COST_USD.textSearch });
+      searchesReserved = true;
       const collected: PlaceResult[] = [];
       let pageToken: string | undefined;
       for (let page = 0; page < 3 && collected.length < want; page++) {
@@ -86,6 +99,7 @@ export async function runPlacesSearch(
         };
         if (pageToken) reqBody.pageToken = pageToken;
 
+        pagesFetched += 1;
         const res = await fetch("https://places.googleapis.com/v1/places:searchText", {
           method: "POST",
           headers: {
@@ -143,6 +157,7 @@ export async function runPlacesSearch(
         shown.push({ leadId, place: toPlaceLite(p) });
       }
     } catch (err) {
+      await refundUnusedPages();
       const toRefund = want - inserted;
       if (toRefund > 0) {
         await ctx.runMutation(internal.workspaces.refund, { orgId, kind: "leads", count: toRefund });
@@ -150,6 +165,7 @@ export async function runPlacesSearch(
       throw err;
     }
 
+    await refundUnusedPages();
     const leftover = want - inserted;
     if (leftover > 0) {
       await ctx.runMutation(internal.workspaces.refund, { orgId, kind: "leads", count: leftover });
@@ -218,7 +234,7 @@ export const details = action({
     if (!lead || lead.orgId !== orgId || lead.source !== "places" || !lead.placeId) {
       throw userError("Lead não encontrado");
     }
-    await ctx.runMutation(internal.workspaces.reserve, { orgId, kind: "details", count: 1 });
+    await ctx.runMutation(internal.workspaces.reserve, { orgId, kind: "details", count: 1, usd: COST_USD.detailsFull });
 
     let res: Response;
     try {
@@ -264,7 +280,7 @@ export const detailsMany = action({
     );
     if (eligible.length === 0) return { places: [], gone: [], failed: 0 };
 
-    await ctx.runMutation(internal.workspaces.reserve, { orgId, kind: "details", count: eligible.length });
+    await ctx.runMutation(internal.workspaces.reserve, { orgId, kind: "details", count: eligible.length, usd: eligible.length * COST_USD.detailsList });
 
     const places: Array<{ leadId: Id<"leads">; place: GooglePlaceLite }> = [];
     const gone: Id<"leads">[] = [];

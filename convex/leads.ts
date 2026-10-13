@@ -9,6 +9,7 @@ import { paginationOptsValidator } from "convex/server";
 import type { Id } from "./_generated/dataModel";
 import { requireOrgId } from "./model/tenant";
 import { deleteLeadCascade } from "./model/leads";
+import { reserveUsage } from "./model/workspace";
 import { userError } from "./lib/errors";
 import { confirmPatch } from "./lib/googleData";
 import {
@@ -723,6 +724,7 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const orgId = await requireOrgId(ctx);
+    await reserveUsage(ctx, orgId, "leads", 1); // SCAL-02: lead manual também conta na cota (e exige aceite)
     const now = Date.now();
     const web = classifyWebsite(args.website);
     const signals: Signals = {
