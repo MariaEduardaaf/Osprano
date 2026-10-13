@@ -8,6 +8,7 @@ import {
   MdPersonOutline,
   MdOutlineSecurity,
   MdOutlineCreditCard,
+  MdOutlineMail,
   MdAdd,
   MdOpenInNew,
   MdOutlineLaptopMac,
@@ -16,6 +17,7 @@ import {
 import { useUser, useClerk } from "@clerk/nextjs";
 import { api } from "@convex/_generated/api";
 import { PageHeader } from "@/components/ui";
+import { SenderProfileForm } from "@/components/sender-profile-form";
 import { DeleteAccount } from "@/components/delete-account";
 import { errorMessage } from "@/lib/errors";
 
@@ -26,6 +28,7 @@ const ACCOUNT = { name: "Conta Osprano", email: "voce@osprano.com", initial: "O"
 
 const SECTIONS: { id: string; label: string; Icon: IconType }[] = [
   { id: "perfil", label: "Perfil", Icon: MdPersonOutline },
+  { id: "remetente", label: "Remetente", Icon: MdOutlineMail },
   { id: "seguranca", label: "Segurança", Icon: MdOutlineSecurity },
   { id: "plano", label: "Plano & uso", Icon: MdOutlineCreditCard },
 ];
@@ -393,6 +396,7 @@ export default function SettingsPage() {
         {/* right panel */}
         <div className="p-6 sm:p-8">
           {tab === "perfil" && <ProfileSection />}
+          {tab === "remetente" && <SenderProfileForm />}
           {tab === "seguranca" && <SecuritySection />}
           {tab === "plano" && <PlanPanel />}
         </div>

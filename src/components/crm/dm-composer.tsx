@@ -1,24 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation } from "convex/react";
+import Link from "next/link";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Doc } from "@convex/_generated/dataModel";
 import { MdOutlineContentCopy, MdOutlineCheck, MdOpenInNew, MdOutlineInfo } from "react-icons/md";
 import { socialLinks } from "@/lib/lead-links";
 import { dmMessage } from "@/lib/dm-template";
 import { errorMessage } from "@/lib/errors";
+import { NAME_PLACEHOLDER } from "@convex/lib/outreachAi";
 import { CONFIRM_NAME_MESSAGE, isGoogleLead, shareableName } from "@convex/lib/googleData";
 
 const SIGNATURE_KEY = "osprano.dmSignature";
-const DEFAULT_SIGNATURE = "Duda";
 
 /** Lê a assinatura lembrada; localStorage pode faltar (aba privada, storage bloqueado). */
-function readSignature(): string {
+function readSignature(fallback: string): string {
   try {
-    return localStorage.getItem(SIGNATURE_KEY) || DEFAULT_SIGNATURE;
+    return localStorage.getItem(SIGNATURE_KEY) || fallback;
   } catch {
-    return DEFAULT_SIGNATURE;
+    return fallback;
   }
 }
 
@@ -38,6 +39,7 @@ type Channel = "instagram" | "facebook";
  * leads sem site (spec abordagem-por-dm). Sem gate de compliance: markDm não é cold email.
  */
 export function DmComposer({ lead }: { lead: Doc<"leads"> }) {
+  const sender = useQuery(api.sender.get);
   const name = shareableName(lead);
   if (!name) {
     return (
@@ -46,10 +48,22 @@ export function DmComposer({ lead }: { lead: Doc<"leads"> }) {
       </p>
     );
   }
-  return <DmComposerBody lead={lead} name={name} />;
+  // Espera a query: a assinatura inicial vem do perfil e o estado só inicializa uma vez.
+  if (sender === undefined) return null;
+  return <DmComposerBody lead={lead} name={name} defaultSignature={sender?.name ?? NAME_PLACEHOLDER} noProfile={sender === null} />;
 }
 
-function DmComposerBody({ lead, name }: { lead: Doc<"leads">; name: string }) {
+function DmComposerBody({
+  lead,
+  name,
+  defaultSignature,
+  noProfile,
+}: {
+  lead: Doc<"leads">;
+  name: string;
+  defaultSignature: string;
+  noProfile: boolean;
+}) {
   const markDm = useMutation(api.outreach.markDm);
   const { instagram, facebook } = socialLinks(lead);
   // Nota e avaliações do Google nunca entram na mensagem.
@@ -61,9 +75,9 @@ function DmComposerBody({ lead, name }: { lead: Doc<"leads">; name: string }) {
     reviewsCount: google ? undefined : lead.reviewsCount,
   };
 
-  const [signature, setSignature] = useState(readSignature);
+  const [signature, setSignature] = useState(() => readSignature(defaultSignature));
   const [touched, setTouched] = useState(false);
-  const [body, setBody] = useState(() => dmMessage(dmLead, { signature: readSignature() }));
+  const [body, setBody] = useState(() => dmMessage(dmLead, { signature: readSignature(defaultSignature) }));
   const [channel, setChannel] = useState<Channel>(lead.instagram ? "instagram" : "facebook");
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -113,6 +127,17 @@ function DmComposerBody({ lead, name }: { lead: Doc<"leads">; name: string }) {
           <MdOpenInNew size={12} />
         </a>
       </div>
+      {noProfile && (
+        <p className="flex items-start gap-1.5 text-[11px] leading-relaxed text-faint">
+          <MdOutlineInfo size={13} className="mt-0.5 shrink-0" />
+          <span>
+            Sem perfil de remetente, a assinatura sai como {NAME_PLACEHOLDER}.{" "}
+            <Link href="/settings" className="font-semibold underline">
+              Preencher em Ajustes &gt; Remetente
+            </Link>
+          </span>
+        </p>
+      )}
       {missingProfile && (
         <p className="flex items-start gap-1.5 text-[11px] leading-relaxed text-faint">
           <MdOutlineInfo size={13} className="mt-0.5 shrink-0" />
