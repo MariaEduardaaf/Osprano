@@ -339,9 +339,9 @@ export default function LeadsPage() {
           <span>
             <strong>
               {legalReviewMarket.flag} {legalReviewMarket.name}
-            </strong>{" "}
-            em validação jurídica — ligação B2B permitida; email/WhatsApp só após consentimento
-            registrado.
+            </strong>
+            : validação jurídica pendente. Ligação B2B permitida; e-mail e WhatsApp só depois de
+            consentimento registrado.
           </span>
         </div>
       )}

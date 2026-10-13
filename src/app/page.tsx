@@ -374,7 +374,7 @@ export default async function Home() {
             </p>
             <div className="mt-8 grid gap-4 sm:grid-cols-3">
               {[
-                ["Mercados opt-out", "UK · Holanda · Irlanda · Suécia · Noruega"],
+                ["Mercados opt-out", "UK · Holanda · Irlanda · Suécia"],
                 ["Opt-out em cada email", "Identificação e descadastro em todo envio"],
                 ["A armadilha do autônomo", "Só incorporados / inbox de função"],
               ].map(([t, d]) => (

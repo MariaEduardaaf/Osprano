@@ -23,7 +23,6 @@ export const MARKETS: Record<string, Market> = {
   NL: { code: "NL", name: "Holanda", flag: "🇳🇱", coldEmail: "opt_out" },
   IE: { code: "IE", name: "Irlanda", flag: "🇮🇪", coldEmail: "opt_out" },
   SE: { code: "SE", name: "Suécia", flag: "🇸🇪", coldEmail: "opt_out" },
-  NO: { code: "NO", name: "Noruega", flag: "🇳🇴", coldEmail: "conditional" },
   // Cold email é ilegal (opt-in): pesquisáveis, mas só contatáveis por ligação primeiro.
   DE: { code: "DE", name: "Alemanha", flag: "🇩🇪", coldEmail: "opt_in", legalReview: "pending" },
   CH: { code: "CH", name: "Suíça", flag: "🇨🇭", coldEmail: "opt_in", legalReview: "pending" },
@@ -31,13 +30,15 @@ export const MARKETS: Record<string, Market> = {
   IT: { code: "IT", name: "Itália", flag: "🇮🇹", coldEmail: "opt_in", legalReview: "pending" },
   ES: { code: "ES", name: "Espanha", flag: "🇪🇸", coldEmail: "opt_in", legalReview: "pending" },
   PT: { code: "PT", name: "Portugal", flag: "🇵🇹", coldEmail: "opt_in", legalReview: "pending" },
+  // BASE-03: regime norueguês é condicional, tratado como opt-in (ligação primeiro) até validação jurídica da Duda.
+  NO: { code: "NO", name: "Noruega", flag: "🇳🇴", coldEmail: "opt_in", legalReview: "pending" },
 };
 
 /** Markets the V1 cold-email motion is allowed to target. */
-export const LAUNCH_MARKETS = ["GB", "NL", "IE", "SE", "NO"];
+export const LAUNCH_MARKETS = ["GB", "NL", "IE", "SE"];
 
 /** OPTIN-01: mercados opt-in — descoberta liberada, cold email nunca (ligação primeiro). */
-export const OPT_IN_MARKETS = ["ES", "IT", "PT", "DE", "DK", "CH"];
+export const OPT_IN_MARKETS = ["ES", "IT", "PT", "DE", "DK", "CH", "NO"];
 
 /** Mercados em que a descoberta é permitida (launch + opt-in). */
 export const SEARCHABLE_MARKETS = [...LAUNCH_MARKETS, ...OPT_IN_MARKETS];
@@ -385,12 +386,17 @@ export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
-/** OPTIN-04: consentimento explícito destrava email independente de mercado/forma jurídica. */
+/**
+ * OPTIN-04: consentimento explícito destrava email independente de mercado/forma jurídica.
+ * `emailable` gravado pode estar desatualizado quando um país sai da lista de e-mail
+ * (ex.: Noruega, BASE-03); por isso o país é conferido na hora.
+ */
 export function canContactByEmail(lead: {
+  countryCode: string;
   emailable?: boolean | null;
   contactOptInAt?: number | null;
 }): boolean {
-  if (lead.emailable === true) return true;
+  if (lead.emailable === true && isLaunchMarket(lead.countryCode)) return true;
   return typeof lead.contactOptInAt === "number" && lead.contactOptInAt > 0;
 }
 

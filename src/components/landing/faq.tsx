@@ -10,7 +10,7 @@ const QA: { q: string; a: string }[] = [
   },
   {
     q: "O que significa \"compliant by design\"?",
-    a: "O Osprano só libera abordagem por email nos mercados onde isso é legal (opt-out: UK, Holanda, Irlanda, Suécia, Noruega) e só para entidades incorporadas / caixas de função. Cada email sai com identificação e opt-out. Nada de cold WhatsApp na UE, que é ilegal.",
+    a: "O Osprano só libera abordagem por email nos mercados onde isso é legal (opt-out: UK, Holanda, Irlanda, Suécia) e só para entidades incorporadas / caixas de função. Cada email sai com identificação e opt-out. Nada de cold WhatsApp na UE, que é ilegal.",
   },
   {
     q: "Quem escreve a abordagem?",

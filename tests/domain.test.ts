@@ -328,10 +328,10 @@ test("isSearchableMarket: launch + opt-in markets are searchable, others are not
 });
 
 test("canContactByEmail: emailable=true always wins; contactOptInAt overrides regardless of market", () => {
-  assert.equal(canContactByEmail({ emailable: true }), true);
-  assert.equal(canContactByEmail({ emailable: false }), false);
-  assert.equal(canContactByEmail({ emailable: false, contactOptInAt: Date.now() }), true);
-  assert.equal(canContactByEmail({}), false);
+  assert.equal(canContactByEmail({ countryCode: "GB", emailable: true }), true);
+  assert.equal(canContactByEmail({ countryCode: "GB", emailable: false }), false);
+  assert.equal(canContactByEmail({ countryCode: "GB", emailable: false, contactOptInAt: Date.now() }), true);
+  assert.equal(canContactByEmail({ countryCode: "GB" }), false);
 });
 
 test("hasWaOptIn: generalized to accept either waOptInAt or contactOptInAt", () => {
@@ -606,4 +606,14 @@ test("leadCategoryMatchesSearch: sem categoria buscada, não filtra (tudo casa)"
 
 test("leadCategoryMatchesSearch: lead sem categoria não casa com busca com categoria", () => {
   assert.equal(leadCategoryMatchesSearch(undefined, "barber shop"), false);
+});
+
+test("BASE-03: Noruega é ligação primeiro", () => {
+  assert.ok(!LAUNCH_MARKETS.includes("NO"));
+  assert.ok(OPT_IN_MARKETS.includes("NO"));
+  assert.equal(MARKETS.NO.coldEmail, "opt_in");
+  assert.equal(MARKETS.NO.legalReview, "pending");
+  assert.equal(canContactByEmail({ countryCode: "NO", emailable: true }), false);
+  assert.equal(canContactByEmail({ countryCode: "NO", emailable: false, contactOptInAt: Date.now() }), true);
+  assert.equal(isEmailable({ countryCode: "NO", legalForm: "incorporated" } as never), false);
 });
