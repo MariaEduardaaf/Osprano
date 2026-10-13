@@ -30,7 +30,7 @@ export const LEGAL_IDENTITY: LegalIdentity = {
   legalName: "58.493.767 MARIA EDUARDA ALVES FREIRE", // razão social (Receita Federal)
   taxIdLabel: "CNPJ",
   taxId: "58.493.767/0001-80",
-  address: PLACEHOLDER, // endereço completo da sede
+  address: "Rua Manoel Vicente de Brito, 1401, Farolândia, Aracaju/SE, CEP 49032-100", // sede no CNPJ
   country: "Brasil",
   supportEmail: PLACEHOLDER,
   privacyEmail: PLACEHOLDER,
