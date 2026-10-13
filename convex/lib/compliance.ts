@@ -48,6 +48,91 @@ export function optOutFooter(lang: string, unsubscribeUrl: string, senderIdentit
   return build(senderIdentity, unsubscribeUrl);
 }
 
+// Mesmo começo de todo FOOTER_COPY; se mudar lá, muda aqui.
+const FOOTER_SEPARATOR = "\n\n—\n";
+// Mesmo marcador de `hasUnsubscribeLink` (convex/lib/env.ts); repetido para o módulo continuar puro.
+const UNSUB_MARK = "/unsubscribe?token=";
+
+const dsPtPt = {
+  line: (l: string) => `Obtivemos os seus dados de contacto profissional em fontes públicas: ${l}.`,
+  generic: "o seu site público ou diretórios de empresas",
+};
+
+/**
+ * Linha de fonte do dado pessoal (art. 14(2)(f) GDPR). Mesmas chaves de FOOTER_COPY.
+ * Texto escrito pelo agente: revisar com o advogado junto com o rodapé.
+ */
+const DATA_SOURCE_COPY: Record<string, { line: (label: string) => string; generic: string }> = {
+  English: {
+    line: (l) => `We found your business contact details in public sources: ${l}.`,
+    generic: "your public website or business directories",
+  },
+  Dutch: {
+    line: (l) => `Wij hebben uw zakelijke contactgegevens gevonden in openbare bronnen: ${l}.`,
+    generic: "uw openbare website of bedrijvengidsen",
+  },
+  Swedish: {
+    line: (l) => `Vi hittade dina företagsuppgifter i offentliga källor: ${l}.`,
+    generic: "din offentliga webbplats eller företagskataloger",
+  },
+  Norwegian: {
+    line: (l) => `Vi fant bedriftens kontaktinformasjon i offentlige kilder: ${l}.`,
+    generic: "din offentlige nettside eller bedriftskataloger",
+  },
+  Spanish: {
+    line: (l) => `Hemos obtenido los datos de contacto de su negocio de fuentes públicas: ${l}.`,
+    generic: "su sitio web público o directorios de empresas",
+  },
+  Italian: {
+    line: (l) => `Abbiamo trovato i dati di contatto della sua attività in fonti pubbliche: ${l}.`,
+    generic: "il suo sito web pubblico o elenchi di imprese",
+  },
+  [PT_PT]: dsPtPt,
+  Portuguese: dsPtPt,
+  German: {
+    line: (l) => `Ihre geschäftlichen Kontaktdaten stammen aus öffentlichen Quellen: ${l}.`,
+    generic: "Ihrer öffentlichen Website oder Branchenverzeichnissen",
+  },
+  Danish: {
+    line: (l) => `Vi har fundet virksomhedens kontaktoplysninger i offentlige kilder: ${l}.`,
+    generic: "din offentlige hjemmeside eller virksomhedsfortegnelser",
+  },
+  // Espaço insecável antes de `:` (ver rodapé French).
+  French: {
+    line: (l) => `Nous avons trouvé les coordonnées professionnelles de votre entreprise dans des sources publiques : ${l}.`,
+    generic: "votre site web public ou des annuaires d'entreprises",
+  },
+};
+
+const SOURCE_LABEL: Record<string, string> = { places: "Google Maps", osm: "OpenStreetMap", fsq: "Foursquare" };
+
+export function dataSourceLine(lang: string, source: string | undefined): string {
+  const c = DATA_SOURCE_COPY[lang] ?? DATA_SOURCE_COPY.English;
+  return c.line((source && SOURCE_LABEL[source]) || c.generic);
+}
+
+/**
+ * Rascunhos antigos têm rodapé com a identidade do RESEND_FROM (nome da Duda)
+ * persistido; o corpo final nunca pode levar esse rodapé. Só conta como rodapé
+ * o que vem depois do separador E contém o link de descadastro.
+ */
+export function stripOptOutFooter(body: string): string {
+  let out = body;
+  for (;;) {
+    const i = out.lastIndexOf(FOOTER_SEPARATOR);
+    if (i < 0 || !out.slice(i).includes(UNSUB_MARK)) return out;
+    out = out.slice(0, i);
+  }
+}
+
+/** Único lugar que monta o texto que vai ao prospect (SEND-03); chamado por `outreach.prepareSend`. */
+export function composeOutgoingBody(
+  body: string,
+  o: { lang: string; unsubscribeUrl: string; identity: string; source: string | undefined },
+): string {
+  return `${stripOptOutFooter(body).trimEnd()}${optOutFooter(o.lang, o.unsubscribeUrl, o.identity)}\n${dataSourceLine(o.lang, o.source)}`;
+}
+
 interface UnsubscribePageCopy {
   /** Valor do atributo `lang` do <html> — tag BCP-47, não o nome do idioma. */
   htmlLang: string;

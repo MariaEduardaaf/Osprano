@@ -1,6 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { optOutFooter, senderIdentityFrom, unsubscribePageHtml } from "../convex/lib/compliance.ts";
+import {
+  optOutFooter,
+  senderIdentityFrom,
+  unsubscribePageHtml,
+  dataSourceLine,
+  stripOptOutFooter,
+  composeOutgoingBody,
+} from "../convex/lib/compliance.ts";
 import { hasUnsubscribeLink } from "../convex/lib/env.ts";
 
 const URL = "https://x.convex.site/unsubscribe?token=abc";
@@ -136,4 +143,48 @@ test("idempotência: editar o corpo ACIMA do rodapé mantém um só bloco", () =
   const result = applyFooterIfMissing(edited, token, "English", url, "Ana");
   assert.equal(result, edited);
   assert.equal(result.match(/\n\n—\n/g)?.length, 1, result);
+});
+
+const LANGS_NON_EN = ["Dutch", "Swedish", "Norwegian", "Spanish", "Italian", "European Portuguese (pt-PT)", "Portuguese", "German", "Danish", "French"];
+
+test("dataSourceLine: nomeia a origem do lead", () => {
+  assert.ok(dataSourceLine("English", "osm").includes("OpenStreetMap"));
+  assert.ok(dataSourceLine("English", "places").includes("Google Maps"));
+  assert.ok(dataSourceLine("English", "fsq").includes("Foursquare"));
+});
+
+test("dataSourceLine: manual/scrape/undefined viram origem genérica", () => {
+  const g = dataSourceLine("English", "manual");
+  assert.equal(dataSourceLine("English", "scrape"), g);
+  assert.equal(dataSourceLine("English", undefined), g);
+  assert.ok(!/Google|OpenStreetMap|Foursquare/.test(g));
+});
+
+test("dataSourceLine: paridade de idiomas com o rodapé", () => {
+  const en = dataSourceLine("__x__", "manual");
+  assert.equal(en, dataSourceLine("English", "manual"));
+  for (const l of LANGS_NON_EN) assert.notEqual(dataSourceLine(l, "manual"), en, l);
+  assert.equal(dataSourceLine("Portuguese", "osm"), dataSourceLine("European Portuguese (pt-PT)", "osm"));
+  assert.equal(dataSourceLine("French", "osm").match(/ [?!:;]/), null);
+});
+
+test("stripOptOutFooter: remove rodapés, ignora falsos", () => {
+  const f = optOutFooter("English", "https://x/unsubscribe?token=abc", "Ana");
+  assert.equal(stripOptOutFooter("Olá\n\nTexto" + f), "Olá\n\nTexto");
+  assert.equal(stripOptOutFooter("Olá\n\nTexto" + f + optOutFooter("German", "https://x/unsubscribe?token=z", "B")), "Olá\n\nTexto");
+  assert.equal(stripOptOutFooter("Texto\n\n—\nsem link"), "Texto\n\n—\nsem link");
+  assert.equal(stripOptOutFooter("Texto sem rodapé"), "Texto sem rodapé");
+  assert.equal(stripOptOutFooter("T\n\n—\nSent by X. Unsubscribe: undefined/unsubscribe?token=t"), "T");
+});
+
+test("composeOutgoingBody: identidade, descadastro e fonte; idempotente", () => {
+  const o = { lang: "German", unsubscribeUrl: "https://c/unsubscribe?token=t1", identity: "Ana Lima, Lima Web, Rua A 1, ana@lima.pt", source: "osm" };
+  const out = composeOutgoingBody("Corpo\n\n", o);
+  assert.ok(out.startsWith("Corpo\n\n—\n"));
+  for (const t of [o.identity, o.unsubscribeUrl, "OpenStreetMap", "Abmelden"]) assert.ok(out.includes(t), t);
+  assert.ok(out.endsWith(dataSourceLine("German", "osm")));
+  assert.equal(out.match(/\/unsubscribe\?token=/g)?.length, 1);
+  const again = composeOutgoingBody(out, { ...o, unsubscribeUrl: "https://c/unsubscribe?token=t2" });
+  assert.equal(again.match(/\/unsubscribe\?token=/g)?.length, 1);
+  assert.ok(again.includes("token=t2") && !again.includes("token=t1"));
 });
