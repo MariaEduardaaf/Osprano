@@ -1,4 +1,5 @@
-import { MdOutlineCameraAlt, MdOutlineFacebook } from "react-icons/md";
+import { MdOutlineFacebook } from "react-icons/md";
+import { FaInstagram } from "react-icons/fa6";
 import type { Doc } from "@convex/_generated/dataModel";
 import { socialLinks } from "@/lib/lead-links";
 
@@ -27,7 +28,7 @@ export function SocialButtons({ lead, variant = "compact" }: { lead: Lead; varia
         title={instagram.label === "Instagram" ? "Abrir perfil" : "Buscar o perfil e colar no lead"}
         className={cls}
       >
-        <MdOutlineCameraAlt size={iconSize} />
+        <FaInstagram size={iconSize} />
         {!primary && instagram.label}
       </a>
       <a
