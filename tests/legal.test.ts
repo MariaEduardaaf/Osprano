@@ -12,9 +12,13 @@ import {
   PLACEHOLDER,
 } from "../convex/lib/legal.ts";
 
-test("placeholders padrão listam o que falta", () => {
-  const p = legalPlaceholders();
-  for (const k of ["legalName", "taxId", "address", "supportEmail", "privacyEmail", "euRepresentative"]) {
+test("placeholders listam o que falta", () => {
+  const pending = ["legalName", "taxId", "address", "supportEmail", "privacyEmail", "euRepresentative"];
+  const partial = Object.fromEntries(
+    Object.entries(LEGAL_IDENTITY).map(([k, v]) => [k, pending.includes(k) ? PLACEHOLDER : v]),
+  ) as typeof LEGAL_IDENTITY;
+  const p = legalPlaceholders(partial);
+  for (const k of pending) {
     assert.ok(p.includes(k as never), k);
   }
   for (const k of ["brand", "taxIdLabel", "country"]) assert.ok(!p.includes(k as never), k);

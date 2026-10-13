@@ -27,9 +27,9 @@ export interface LegalIdentity {
 
 export const LEGAL_IDENTITY: LegalIdentity = {
   brand: "Osprano",
-  legalName: PLACEHOLDER, // razão social
+  legalName: "58.493.767 MARIA EDUARDA ALVES FREIRE", // razão social (Receita Federal)
   taxIdLabel: "CNPJ",
-  taxId: PLACEHOLDER,
+  taxId: "58.493.767/0001-80",
   address: PLACEHOLDER, // endereço completo da sede
   country: "Brasil",
   supportEmail: PLACEHOLDER,
